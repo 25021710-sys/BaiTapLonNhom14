@@ -1,7 +1,10 @@
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class Bidder extends User{
+public class Bidder extends User implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private BigDecimal walletBalance;
