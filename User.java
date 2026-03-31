@@ -1,11 +1,12 @@
-public class User {
-    static void main(String[] args) {
-        System.out.println("Bai Tap Lon");
-        System.out.println("hello");
-        System.out.println("Thinh van duc");
-        System.out.println("1234");
-        System.out.println("Duy Anh da lam duoc roi a");
-        System.out.println("Dat pull hộ tôi xem nào");
-        System.out.println("Duy anh chộ chưa");
-    }
+abstract class User {
+    protected String userId;
+    protected String username;
+    protected String passwordHash;
+    protected String fullName;
+    protected String email;
+    public String getUserId() { return userId; }
+    public String getUsername() { return username; }
+    public String getPasswordHash() { return passwordHash; }
+    public String getFullName() { return fullName; }
+    public String getEmail() { return email; }
 }
