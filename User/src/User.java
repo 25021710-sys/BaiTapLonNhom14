@@ -21,6 +21,6 @@ abstract class User{
     public String getDescription() { return description; }
     @Override
     public String toString(){
-        return getUsername() + "(" + getUserId() + ")";
+        return getUsername() + "(" + getUserId() + " , " + ")";
     }
 }
