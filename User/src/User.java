@@ -19,5 +19,8 @@ abstract class User{
     public String getFullName() { return fullName; }
     public String getEmail() { return email; }
     public String getDescription() { return description; }
-
+    @Override
+    public String toString(){
+        return getUsername() + "(" + getUserId() + ")";
+    }
 }
