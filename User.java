@@ -4,5 +4,7 @@ public class User {
         System.out.println("hello");
         System.out.println("Thinh van duc");
         System.out.println("1234");
+        System.out.println("Duy Anh da lam duoc roi a");
+
     }
 }
