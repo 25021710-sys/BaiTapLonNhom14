@@ -12,7 +12,7 @@ public class Bidder extends User implements Serializable {
     private int auctionsWon;
 
     public Bidder(){
-        super();
+        super(username, passwordHash, email, fullName, UserRole.BIDDER);
         this.walletBalance = BigDecimal.ZERO;
         this.totalBidsPlaced = 0;
         this.auctionsWon = 0;
