@@ -1,13 +1,21 @@
 package com.auction.server.model;
 
-class User{
+public class User{
     protected String userId;
     protected String username;
     protected String passwordHash;
     protected String fullName;
     protected String email;
+    protected double balance;
+    public enum UserStatus { IDLE, BIDDING, SELLING }
+    protected UserStatus status = UserStatus.IDLE;
 
-    public User(String username, String passwordHash, String email, String fullName, UserRole userRole) {
+    public User(String userId, String username, String passwordHash, String email, String fullName) {
+        this.userId = userId;
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.email = email;
+        this.fullName = fullName;
     }
 
     public void setUserId(String userId){this.userId = userId;}
@@ -22,12 +30,7 @@ class User{
     public String getFullName() { return fullName; }
     public String getEmail() { return email; }
 
-    @Override
-    public String toString(){
-        return getUsername() + "(" + getUserId() + " , " + ")";
-    }
-
-    public enum UserRole {
-        BIDDER, SELLER, ADMIN
+    public void setBalance(double balance){
+        this.balance = balance;
     }
 }
