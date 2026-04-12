@@ -1,4 +1,6 @@
-abstract class User{
+package com.auction.server.model;
+
+class User{
     protected String userId;
     protected String username;
     protected String passwordHash;
@@ -20,12 +22,12 @@ abstract class User{
     public String getFullName() { return fullName; }
     public String getEmail() { return email; }
 
-    public abstract boolean canBid();
-    public abstract boolean canSell();
-    public abstract boolean manageSystem();
-
     @Override
     public String toString(){
         return getUsername() + "(" + getUserId() + " , " + ")";
+    }
+
+    public enum UserRole {
+        BIDDER, SELLER, ADMIN
     }
 }
