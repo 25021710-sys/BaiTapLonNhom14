@@ -7,8 +7,8 @@ public class DBContext {
     public static Connection getConnection() throws Exception {
         String url = "jdbc:mysql://localhost:3306/auction_db";
         String user = "root";
-        String pass = "";
+        String password = "";
         Class.forName("com.mysql.cj.jdbc.Driver");
-        return DriverManager.getConnection(url, user, pass);
+        return DriverManager.getConnection(url, user, password);
     }
 }
