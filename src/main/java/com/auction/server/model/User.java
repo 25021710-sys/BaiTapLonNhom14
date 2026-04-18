@@ -1,36 +1,42 @@
 package com.auction.server.model;
 
-public class User{
-    protected String userId;
+import java.time.LocalDateTime;
+
+public class User extends Entity {
     protected String username;
     protected String passwordHash;
-    protected String fullName;
     protected String email;
-    protected double balance;
-    public enum UserStatus { IDLE, BIDDING, SELLING }
-    protected UserStatus status = UserStatus.IDLE;
+    protected String fullName;
+    protected boolean active;
+    protected String role; // ADMIN, SELLER, BIDDER
 
-    public User(String userId, String username, String passwordHash, String email, String fullName) {
-        this.userId = userId;
+    public User() { super(); }
+
+    public User(int id, LocalDateTime createdAt, String username, String passwordHash, String email, String fullName, boolean active, String role) {
+        super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
         this.fullName = fullName;
+        this.active = active;
+        this.role = role;
     }
 
-    public void setUserId(String userId){this.userId = userId;}
-    public void setUsername(String username){this.username = username;}
-    public void setPasswordHash(String passwordHash){this.passwordHash = passwordHash;}
-    public void setFullName(String fullName){this.fullName = fullName;}
-    public void setEmail(String email){this.email = email;}
-
-    public String getUserId() { return userId; }
     public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
     public String getPasswordHash() { return passwordHash; }
-    public String getFullName() { return fullName; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
-    public void setBalance(double balance){
-        this.balance = balance;
+    @Override
+    public void printInfo() {
+        System.out.println("User: " + username + " - Role: " + role);
     }
 }

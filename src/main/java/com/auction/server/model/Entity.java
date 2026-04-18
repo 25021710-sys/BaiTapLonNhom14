@@ -1,64 +1,26 @@
 package com.auction.server.model;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-public abstract class Entity implements Serializable {
-    private static final long serialVersionUID = 1L;
+// Lớp cha cao nhất, cung cấp id và thời gian tạo cho TẤT CẢ các lớp khác
+public abstract class Entity {
+    protected int id;
+    protected LocalDateTime createdAt;
 
-    private String id;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    protected Entity() {
-        this.id = UUID.randomUUID().toString();
+    public Entity() {
         this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
     }
 
-    public Entity(String id) {
+    public Entity(int id, LocalDateTime createdAt) {
         this.id = id;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = createdAt;
     }
 
-    public abstract String getDisplayInfo();
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public String getId() {
-        return id;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void touch() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Entity other)) return false;
-        return id != null && id.equals(other.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{id = '" + id + "'}";
-    }
+    public abstract void printInfo();
 }
