@@ -25,4 +25,7 @@
             <version>2.10.1</version>
         </dependency>
     </dependencies>
+    <build>
+        <sourceDirectory>.</sourceDirectory>
+    </build>
 </project>
