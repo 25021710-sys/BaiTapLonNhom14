@@ -6,14 +6,14 @@ import javafx.scene.*;
 import javafx.stage.Stage;
 public class LoginController {
     @FXML
-    private TextField usernameField;
+    private TextField emailField;
     @FXML
     private PasswordField passwordField;
     @FXML
     private Label errorLabel;
     @FXML
     public void handleLogin(){
-        String user = usernameField.getText();
+        String user = emailField.getText();
         String pass = passwordField.getText();
         // Validation
         if (user.isEmpty() || pass.isEmpty()) {
