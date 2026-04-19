@@ -1,4 +1,4 @@
 package com.auction.server.dao;
 
-public class ItemDao {
+public class ItemDAO {
 }
