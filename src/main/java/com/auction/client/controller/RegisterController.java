@@ -27,18 +27,23 @@ public class RegisterController {
         String user = usernameField.getText();
         String email = emailField.getText();
         String pass = passwordField.getText();
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
         // Validation
         if (user.isEmpty() || pass.isEmpty() || email.isEmpty()) {
             errorLabel.setText("Vui lòng nhập đầy đủ thông tin");
             errorLabel.setVisible(true);
             return;
+        } else if (!email.matches(emailRegex)){
+            errorLabel.setText("Định dạng Email không hợp lệ (ví dụ: abc@gmail.com)");
+            errorLabel.setVisible(true);
+            emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
         }
     }
     @FXML
     public void goToLogin(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/auction/client/view/LoginView.fxml")
+                    getClass().getResource("/view/LoginView.fxml")
             );
             Parent root = loader.load();
 
