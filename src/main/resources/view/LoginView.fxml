@@ -35,7 +35,7 @@
       </VBox.margin></Label>
     <PasswordField fx:id="passwordField" opacity="0.25" prefWidth="200" />
     <Label fx:id="errorLabel" textFill="#227d80" visible="false" />
-    <Button alignment="CENTER" onAction="#handleLogin" prefHeight="38.0" prefWidth="559.0" styleClass="primary-button" text="Sign in" />
+    <Button alignment="CENTER" onAction="#handleLogin" prefHeight="38.0" prefWidth="563.0" styleClass="primary-button" text="Sign in" />
     <TextFlow textAlignment="CENTER">
         <Text text="Don't have an account? " />
         <Hyperlink onAction="#goToRegister" text="Register" />
