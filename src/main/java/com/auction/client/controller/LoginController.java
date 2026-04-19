@@ -17,20 +17,25 @@ public class LoginController {
     private Label errorLabel;
     @FXML
     public void handleLogin(){
-        String user = emailField.getText();
+        String email = emailField.getText();
         String pass = passwordField.getText();
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
         // Validation
-        if (user.isEmpty() || pass.isEmpty()) {
+        if (email.isEmpty() || pass.isEmpty()) {
             errorLabel.setText("Vui lòng nhập đầy đủ thông tin");
             errorLabel.setVisible(true);
             return;
+        } else if (!email.matches(emailRegex)){
+            errorLabel.setText("Định dạng Email không hợp lệ (ví dụ: abc@gmail.com)");
+            errorLabel.setVisible(true);
+            emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
         }
     }
     @FXML
     public void goToRegister(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/auction/client/view/RegisterView.fxml")
+                    getClass().getResource("/view/RegisterView.fxml")
             );
             Parent root = loader.load();
 
