@@ -7,7 +7,7 @@ public class Art extends Item {
 
     public Art() {
         super();
-        this.category = "ART"; // Tự động gán danh mục khi tạo mới
+        this.category = "ART";
     }
 
     public String getArtist() { return artist; }
