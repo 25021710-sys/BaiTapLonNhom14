@@ -30,7 +30,7 @@ public class LoginController {
     public void goToRegister(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/auction/client/view/register.fxml")
+                    getClass().getResource("/com/auction/client/view/RegisterView.fxml")
             );
             Parent root = loader.load();
 
