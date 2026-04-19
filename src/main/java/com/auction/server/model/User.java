@@ -6,9 +6,7 @@ public class User extends Entity {
     private String username;
     private String passwordHash;
     private String email;
-    private String fullName;
     private double balance;      // Dùng khi người này mua (Bidder)
-    private String shopName;     // Dùng khi người này bán (Seller)
     private String role;         // Phân quyền chính: ADMIN, USER
     private boolean active;
 
@@ -23,14 +21,12 @@ public class User extends Entity {
         this.role = "USER"; // Mặc định mọi người đều là USER thường
     }
 
-    public User(int id, LocalDateTime createdAt, String username, String passwordHash, String email, String fullName, double balance, String shopName, String role, boolean active) {
+    public User(int id, LocalDateTime createdAt, String username, String passwordHash, String email, double balance, String role, boolean active) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
-        this.fullName = fullName;
         this.balance = balance;
-        this.shopName = shopName;
         this.role = role;
         this.active = active;
     }
@@ -44,14 +40,8 @@ public class User extends Entity {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
     public double getBalance() { return balance; }
     public void setBalance(double balance) { this.balance = balance; }
-
-    public String getShopName() { return shopName; }
-    public void setShopName(String shopName) { this.shopName = shopName; }
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
@@ -74,6 +64,6 @@ public class User extends Entity {
 
     @Override
     public void printInfo() {
-        System.out.println("User: " + username + " | Balance: " + balance + " | Shop: " + (shopName != null ? shopName : "N/A"));
+        System.out.println("User: " + username + " | Balance: " + balance);
     }
 }
