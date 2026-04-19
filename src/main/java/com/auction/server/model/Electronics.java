@@ -5,9 +5,11 @@ public class Electronics extends Item {
     private String model;
     private int warrantyMonths;
 
-    public Electronics() {
-        super();
-        this.category = "ELECTRONICS";
+    public Electronics(String name,double startingPrice,String sellerId,String brand,String model,int warrantyMonths ) {
+        super(name,startingPrice,sellerId,ItemCategory.ELECTRONICS);
+        this.brand=brand;
+        this.model=model;
+        this.warrantyMonths=warrantyMonths;
     }
 
     public String getBrand() { return brand; }

@@ -6,9 +6,12 @@ public class Vehicle extends Item {
     private int year;            // Năm sản xuất
     private int mileage;         // Số km đã đi
 
-    public Vehicle() {
-        super();
-        this.category = "VEHICLE";
+    public Vehicle(String name,double startingPrice,String sellerId,String make,String vehicleModel,int year,int mileage) {
+        super(name,startingPrice,sellerId,ItemCategory.VEHICLE);
+        this.make=make;
+        this.vehicleModel=vehicleModel;
+        this.year=year;
+        this.mileage=mileage;
     }
 
     public String getMake() { return make; }

@@ -5,9 +5,11 @@ public class Art extends Item {
     private int yearCreated;
     private String medium; // chất liệu
 
-    public Art() {
-        super();
-        this.category = "ART";
+    public Art(String name,double startingPrice,String sellerId,String artist,int yearCreated, String medium) {
+        super(name, startingPrice,sellerId,ItemCategory.ART);
+        this.artist=artist;
+        this.yearCreated=yearCreated;
+        this.medium=medium;
     }
 
     public String getArtist() { return artist; }
