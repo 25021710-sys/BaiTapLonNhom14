@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
-<HBox alignment="CENTER_LEFT" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
+<HBox alignment="CENTER_LEFT" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
 
     <VBox alignment="TOP_CENTER" maxHeight="-Infinity" prefHeight="439.0" prefWidth="200.0" styleClass="sidebar">
         <HBox.margin>
@@ -29,9 +24,8 @@
         <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="userLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
-            <image>
-               <Image url="@../../../../../../../Downloads/user.jpg" />
-            </image></ImageView>
+                <Image url="@../image/user.jpg" />
+            </ImageView>
 
             <Label prefHeight="35.0" prefWidth="66.0" text="My Profile" />
 
@@ -41,13 +35,29 @@
            </VBox.margin>
         </HBox>
         <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+            <Region HBox.hgrow="ALWAYS" />
+            <ImageView fx:id="NotificationLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
+                <Image url="@../image/notification.png" />
+            </ImageView>
+
+            <Label prefHeight="35.0" prefWidth="77.0" text="Notification" />
+
+            <Region HBox.hgrow="ALWAYS" />
             <VBox.margin>
                 <Insets top="15.0" />
             </VBox.margin>
         </HBox>
         <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+            <Region HBox.hgrow="ALWAYS" />
+            <ImageView fx:id="LogoutLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
+                <Image url="@../image/logout.png" />
+            </ImageView>
+
+            <Label prefHeight="35.0" prefWidth="66.0" text="Log out" />
+
+            <Region HBox.hgrow="ALWAYS" />
             <VBox.margin>
-                <Insets bottom="20.0" top="15.0" />
+                <Insets top="15.0" />
             </VBox.margin>
         </HBox>
     </VBox>
