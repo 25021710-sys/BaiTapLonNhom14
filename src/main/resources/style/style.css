@@ -33,13 +33,13 @@
 
 .sidebar {
     -fx-background-color: white; /* BẮT BUỘC phải có màu nền để thấy bo góc */
-    -fx-background-radius: 20;
+    -fx-background-radius: 10;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
 }
 
 .content-card {
     -fx-background-color: white; /* BẮT BUỘC phải có màu nền */
-    -fx-background-radius: 20;
+    -fx-background-radius: 10;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
 }
 .menu-item {

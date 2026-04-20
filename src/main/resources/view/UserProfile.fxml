@@ -62,7 +62,7 @@
         </HBox>
     </VBox>
 
-    <AnchorPane HBox.hgrow="ALWAYS">
+    <AnchorPane HBox.hgrow="ALWAYS" fx:id="contentArea">
         <VBox styleClass="content-card" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
         </VBox>
     </AnchorPane>
