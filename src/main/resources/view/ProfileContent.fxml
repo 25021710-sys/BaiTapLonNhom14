@@ -4,6 +4,6 @@
 <?import javafx.scene.image.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox>
+<VBox spacing="12"   stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.ProfileContentController">
 
 </VBox>
