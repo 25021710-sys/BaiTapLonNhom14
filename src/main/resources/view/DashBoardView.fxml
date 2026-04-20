@@ -11,7 +11,7 @@
    <left>
       <VBox prefHeight="400.0" prefWidth="138.0" BorderPane.alignment="CENTER">
          <children>
-            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="118.0" text="Danh sách đấu gi" />
+            <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="118.0" text="Danh sách đấu giá" />
             <Button mnemonicParsing="false" text="Sản phẩm của tôi" />
          </children>
       </VBox>
