@@ -53,16 +53,21 @@ public class User extends Entity {
     public void setStatus(UserStatus status) { this.status = status; }
 
     // Logic nghiệp vụ bổ sung
-
-    // try-catch
-    public void deposit(double amount) { this.balance += amount; }
-    // try-catch
-    public boolean withdraw(double amount) {
-        if (this.balance >= amount) {
-            this.balance -= amount;
-            return true;
+    public void deposit(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Lỗi: Số tiền nạp phải lớn hơn 0!");
         }
-        return false;
+        this.balance += amount;
+    }
+
+    public void withdraw(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Lỗi: Số tiền rút phải lớn hơn 0!");
+        }
+        if (this.balance < amount) {
+            throw new IllegalStateException("Lỗi: Số dư không đủ! (Bạn đang có: " + this.balance + ")");
+        }
+        this.balance -= amount;
     }
 
     @Override
