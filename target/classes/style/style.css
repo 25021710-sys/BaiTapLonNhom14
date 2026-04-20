@@ -72,3 +72,8 @@
     -fx-font-weight: bold; /* Làm chữ đậm lên để nhấn mạnh */
     -fx-text-fill: #000000; /* Chữ đen rõ hơn */
 }
+.avatar{
+    -fx-background-radius: 10; /* Bo góc 10px */
+        -fx-border-radius: 20;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);
+}
