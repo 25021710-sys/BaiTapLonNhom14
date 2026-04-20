@@ -30,7 +30,6 @@ public class DatabaseConnection {
         } catch (ClassNotFoundException | SQLException e) {
             System.out.println("Lỗi kết nối Database: " + e.getMessage());
         }
-
         return connection;
     }
 }

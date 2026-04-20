@@ -63,3 +63,12 @@
     -fx-text-fill: #2d3436;
     -fx-font-size: 14px;
 }
+/* Khi menu được chọn (Active) */
+.menu-item.active {
+    -fx-background-color: #d1d1d1; /* Đậm hơn màu :pressed một chút */
+}
+
+.menu-item.active .label {
+    -fx-font-weight: bold; /* Làm chữ đậm lên để nhấn mạnh */
+    -fx-text-fill: #000000; /* Chữ đen rõ hơn */
+}
