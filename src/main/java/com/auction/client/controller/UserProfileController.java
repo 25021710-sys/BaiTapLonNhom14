@@ -36,4 +36,19 @@ public class UserProfileController {
             System.out.println("Lỗi: Không tìm thấy file " + fxmlPath);
         }
     }
+    @FXML
+    public void showProfile() {
+        setPage("ProfileContent.fxml"); // File FXML chỉ chứa ruột của trang Profile
+    }
+
+    @FXML
+    public void showNotification() {
+        setPage("NotificationView.fxml");
+    }
+
+    @FXML
+    public void handleLogout() {
+        // Code để quay lại màn hình LoginView.fxml
+        setPage("LoginView.fxml");
+    }
 }
