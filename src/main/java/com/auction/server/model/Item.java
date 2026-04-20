@@ -7,7 +7,7 @@ public abstract class Item extends Entity {
     protected String sellerId;
     protected ItemCategory category;
 
-    public Item() { super(); }
+    public Item() {  super(); }
 
     public Item(String name,double startingPrice,String sellerId, ItemCategory category){
         this.name=name;

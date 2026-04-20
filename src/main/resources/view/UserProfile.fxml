@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.Region?>
+<HBox alignment="CENTER_LEFT" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.LoginController">
+
+    <VBox alignment="TOP_CENTER" maxHeight="-Infinity" prefHeight="439.0" prefWidth="200.0" styleClass="sidebar">
+        <HBox.margin>
+            <Insets bottom="20.0" left="20.0" right="10.0" top="20.0" />
+        </HBox.margin>
+        <HBox prefHeight="73.0" prefWidth="200.0">
+           <VBox.margin>
+               <Insets top="40.0" />
+           </VBox.margin>
+        </HBox>
+      <Separator prefWidth="200.0">
+         <VBox.margin>
+            <Insets bottom="5.0" top="15.0" />
+         </VBox.margin>
+      </Separator>
+        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+            <Label text="👤" />
+
+            <Label text="My Profile" />
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Label text="&gt;" textFill="#b2b2b2" />
+           <VBox.margin>
+               <Insets top="15.0" />
+           </VBox.margin>
+        </HBox>
+        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+            <VBox.margin>
+                <Insets top="15.0" />
+            </VBox.margin>
+        </HBox>
+        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+            <VBox.margin>
+                <Insets bottom="20.0" top="15.0" />
+            </VBox.margin>
+        </HBox>
+    </VBox>
+
+    <AnchorPane HBox.hgrow="ALWAYS">
+        <VBox styleClass="content-card" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
+        </VBox>
+    </AnchorPane>
+
+</HBox>
