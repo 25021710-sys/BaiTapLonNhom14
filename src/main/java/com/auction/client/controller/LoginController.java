@@ -31,7 +31,7 @@ public class LoginController {
             emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             return;
         } else {
-            goToDashBoard(event);
+            goToUserProfile(event);
         }
     }
     @FXML
