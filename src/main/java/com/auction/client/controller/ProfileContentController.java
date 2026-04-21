@@ -26,7 +26,10 @@ public class ProfileContentController {
     private void handleEdit() {
         // 1. Chuyển các Label thành TextField hoặc mở khóa TextField
         nameLabel.setVisible(false);
+        nameLabel.setManaged(false); // Quan trọng: Để Label không chiếm chỗ nữa
+
         nameField.setVisible(true);
+        nameField.setManaged(true);  // Quan trọng: Để TextField chiếm chỗ của Label
         nameField.setText(nameLabel.getText()); // Copy dữ liệu cũ sang ô nhập
 
         // 2. Đổi nút Edit thành nút Save
@@ -34,5 +37,9 @@ public class ProfileContentController {
 
         // 3. Hiện nút Cancel (nếu bạn có chuẩn bị sẵn)
         cancelButton.setVisible(true);
+    }
+    @FXML
+    private void handleCancel(){
+
     }
 }
