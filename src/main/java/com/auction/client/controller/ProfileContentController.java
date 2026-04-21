@@ -3,6 +3,7 @@ package com.auction.client.controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 public class ProfileContentController {
@@ -11,17 +12,21 @@ public class ProfileContentController {
     @FXML
     private Button editButton;
     @FXML
-    private Label displayLocation;
+    private Label passLabel;
     @FXML
-    private Label displayEmail;
+    private PasswordField passField;
     @FXML
-    private Label displayName;
+    private Label desLabel;
     @FXML
-    private Label displayDesc;
+    private TextField desField;
     @FXML
     private Label nameLabel;
     @FXML
     private TextField nameField;
+    @FXML
+    private Label locationLabel;
+    @FXML
+    private TextField locationField;
     @FXML
     private void handleEdit() {
         if (editButton.getText().equals("Edit")) {
