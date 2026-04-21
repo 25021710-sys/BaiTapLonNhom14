@@ -68,4 +68,21 @@ public class LoginController {
             e.printStackTrace();
         }
     }
+    @FXML
+    public void goToUserProfile(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/UserProfile.fxml")
+            );
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            stage.setScene(new Scene(root));
+            stage.setTitle("Go to UserProfile");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
