@@ -59,7 +59,6 @@ public class UserProfileController {
 
     @FXML
     public void handleLogout() {
-        // Code để quay lại màn hình LoginView.fxml
         setPage("LoginView.fxml");
     }
 }

@@ -31,7 +31,7 @@ public class LoginController {
             emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             return;
         } else {
-            goToDashBoard(event);
+            goToUserProfile(event);
         }
     }
     @FXML
@@ -63,6 +63,23 @@ public class LoginController {
 
             stage.setScene(new Scene(root));
             stage.setTitle("Go to DashBoard");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    @FXML
+    public void goToUserProfile(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/UserProfile.fxml")
+            );
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            stage.setScene(new Scene(root));
+            stage.setTitle("Go to UserProfile");
 
         } catch (IOException e) {
             e.printStackTrace();
