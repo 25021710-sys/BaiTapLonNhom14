@@ -24,22 +24,44 @@ public class ProfileContentController {
     private TextField nameField;
     @FXML
     private void handleEdit() {
-        // 1. Chuyển các Label thành TextField hoặc mở khóa TextField
-        nameLabel.setVisible(false);
-        nameLabel.setManaged(false); // Quan trọng: Để Label không chiếm chỗ nữa
-
-        nameField.setVisible(true);
-        nameField.setManaged(true);  // Quan trọng: Để TextField chiếm chỗ của Label
-        nameField.setText(nameLabel.getText()); // Copy dữ liệu cũ sang ô nhập
-
-        // 2. Đổi nút Edit thành nút Save
-        editButton.setText("Save Changes");
-
-        // 3. Hiện nút Cancel (nếu bạn có chuẩn bị sẵn)
-        cancelButton.setVisible(true);
+        if (editButton.getText().equals("Edit")) {
+            // --- ĐANG LÀ EDIT: MỞ FORM CHO SỬA ---
+            showEditMode(true);
+            editButton.setText("Save Changes");
+            cancelButton.setVisible(true);
+            cancelButton.setManaged(true);
+        } else {
+            // --- ĐANG LÀ SAVE: LƯU VÀ ĐÓNG FORM ---
+            handleSave();
+        }
     }
     @FXML
     private void handleCancel(){
+        showEditMode(false);
+        editButton.setText("Edit");
+        cancelButton.setVisible(false);
+        cancelButton.setManaged(false);
+    }
+    @FXML
+    private void handleSave(){
+        // 1. Lấy dữ liệu từ TextField cập nhật ngược lại cho Label
+        nameLabel.setText(nameField.getText());
+        // (Chỗ này bạn có thể viết thêm code để lưu vào Database)
 
+        // 2. Quay lại chế độ xem (Giống hệt lúc bấm Cancel)
+        showEditMode(false);
+
+        // 3. Đổi tên nút về lại ban đầu
+        editButton.setText("Edit");
+        cancelButton.setVisible(false);
+        cancelButton.setManaged(false);
+
+        System.out.println("Đã lưu thành công!");
+    }
+    public void showEditMode(boolean mode) {
+        nameLabel.setVisible(!mode);
+        nameLabel.setManaged(!mode);
+        nameField.setVisible(mode);
+        nameField.setManaged(mode);
     }
 }

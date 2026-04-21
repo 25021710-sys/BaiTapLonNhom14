@@ -50,10 +50,10 @@
       </rowConstraints>
     </GridPane>
     <HBox prefHeight="100.0" prefWidth="200.0" spacing="20">
-        <Button fx:id="editButton" prefHeight="26.0" prefWidth="86.0" text="Edit">
+        <Button fx:id="editButton" prefHeight="26.0" prefWidth="86.0" text="Edit" onAction="#handleEdit">
 
         </Button>
-        <Button fx:id="cancelButton" prefHeight="26.0" prefWidth="86.0" text="Cancel" visible="false">
+        <Button fx:id="cancelButton" prefHeight="26.0" prefWidth="86.0" text="Cancel" visible="false" onAction="#handleCancel">
 
         </Button>
     </HBox>
