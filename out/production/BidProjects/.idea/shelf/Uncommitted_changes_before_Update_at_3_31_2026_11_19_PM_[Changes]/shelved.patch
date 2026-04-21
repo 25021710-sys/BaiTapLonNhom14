@@ -1,0 +1,21 @@
+Index: User/src/User.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>abstract class User {\r\n    protected String userId;\r\n    protected String username;\r\n    protected String passwordHash;\r\n    protected String fullName;\r\n    protected String email;\r\n    public String getUserId() { return userId; }\r\n    public String getUsername() { return username; }\r\n    public String getPasswordHash() { return passwordHash; }\r\n    public String getFullName() { return fullName; }\r\n    public String getEmail() { return email; }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/User/src/User.java b/User/src/User.java
+--- a/User/src/User.java	(revision 969146ae49c4f0ab21fe38365809d308772fd80a)
++++ b/User/src/User.java	(date 1774973543193)
+@@ -1,5 +1,8 @@
+-abstract class User {
+-    protected String userId;
++public abstract class User extends Entity{
++
++    private static final long serialVersionUID = 1L;
++
++    private String userId;
+     protected String username;
+     protected String passwordHash;
+     protected String fullName;
