@@ -23,7 +23,7 @@ public class RegisterController {
     @FXML
     private TextField usernameField;
     @FXML
-    public void handleSignup(){
+    public void handleSignup(ActionEvent event){
         String user = usernameField.getText();
         String email = emailField.getText();
         String pass = passwordField.getText();
@@ -37,6 +37,9 @@ public class RegisterController {
             errorLabel.setText("Định dạng Email không hợp lệ (ví dụ: abc@gmail.com)");
             errorLabel.setVisible(true);
             emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            return;
+        } else {
+            goToLogin(event);
         }
     }
     @FXML
