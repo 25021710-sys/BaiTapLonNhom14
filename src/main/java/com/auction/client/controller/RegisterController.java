@@ -1,5 +1,7 @@
 package com.auction.client.controller;
 
+import com.auction.server.dao.UserDAO;
+import com.auction.server.model.User;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,23 +25,55 @@ public class RegisterController {
     @FXML
     private TextField usernameField;
     @FXML
-    public void handleSignup(ActionEvent event){
-        String user = usernameField.getText();
-        String email = emailField.getText();
+    public void handleSignup(ActionEvent event) {
+        String user = usernameField.getText().trim();
+        String email = emailField.getText().trim();
         String pass = passwordField.getText();
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+
+        // Reset style và ẩn error trước khi check
+        errorLabel.setVisible(false);
+        emailField.setStyle("");
+
         // Validation
         if (user.isEmpty() || pass.isEmpty() || email.isEmpty()) {
             errorLabel.setText("Vui lòng nhập đầy đủ thông tin");
             errorLabel.setVisible(true);
             return;
-        } else if (!email.matches(emailRegex)){
-            errorLabel.setText("Định dạng Email không hợp lệ (ví dụ: abc@gmail.com)");
+        }
+
+        if (!email.matches(emailRegex)) {
+            errorLabel.setText("Định dạng Email không hợp lệ!");
             errorLabel.setVisible(true);
             emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             return;
-        } else {
-            goToLogin(event);
+        }
+
+        try {
+            UserDAO userDAO = new UserDAO();
+            // LƯU Ý: Đảm bảo thứ tự (user, pass, email) khớp với định nghĩa trong UserDAO
+            User newUser = userDAO.register(user, pass, email);
+
+            if (newUser != null) {
+                System.out.println("Đăng ký thành công: " + user);
+                goToLogin(event);
+            } else {
+                // newUser = null thường là do trùng Email (dựa trên code UserDAO của bạn)
+                errorLabel.setText("Email này đã được sử dụng!");
+                errorLabel.setVisible(true);
+                emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            }
+        } catch (Exception e) {
+            // In ra lỗi cụ thể để debug
+            System.err.println("Lỗi Registration: " + e.getMessage());
+            e.printStackTrace();
+
+            if (e.getMessage().contains("Duplicate entry")) {
+                errorLabel.setText("Tên đăng nhập hoặc Email đã tồn tại!");
+            } else {
+                errorLabel.setText("Lỗi kết nối Database!");
+            }
+            errorLabel.setVisible(true);
         }
     }
     @FXML

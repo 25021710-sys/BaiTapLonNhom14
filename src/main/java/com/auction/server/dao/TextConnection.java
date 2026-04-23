@@ -7,7 +7,7 @@ public class TextConnection {
         try {
             UserDAO userDAO = new UserDAO();
             // Thử đăng ký một user thật sự
-            User newUser = userDAO.register("test_user", "test@gmail.com", "123456");
+            User newUser = userDAO.register("test_user", "123456", "test@gmail.com");
 
             if (newUser != null) {
                 System.out.println("Đã thêm user thành công! ID: " + newUser.getId());
