@@ -14,6 +14,12 @@ public class User extends Entity {
     public enum UserStatus { IDLE, BIDDING, SELLING }
     private UserStatus status = UserStatus.IDLE;
 
+    public User(String username, String passwordHash, String email) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.email = email;
+    }
+
     public User() {
         super();
         this.active = true;
@@ -21,7 +27,7 @@ public class User extends Entity {
         this.role = "USER"; // Mặc định mọi người đều là USER thường
     }
 
-    public User(int id, LocalDateTime createdAt, String username, String passwordHash, String email, double balance, String role, boolean active) {
+    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
