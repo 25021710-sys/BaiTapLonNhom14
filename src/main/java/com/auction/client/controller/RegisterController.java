@@ -46,7 +46,10 @@ public class RegisterController {
             return;
         }
         if (user.length() < 8 || pass.length() < 8){
-            showError("Tên người dùng và mật khẩu phải ít nhất 8 ký tự");
+            errorLabel.setText("Tên người dùng và mật khẩu phải ít nhất 8 ký tự");
+            errorLabel.setVisible(true);
+            usernameField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            passwordField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             return;
         }
 

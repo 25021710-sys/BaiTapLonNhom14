@@ -20,8 +20,8 @@ public class LoginController {
     private Label errorLabel;
     @FXML
     public void handleLogin(ActionEvent event) throws SQLException {
-        String email = emailField.getText();
-        String pass = passwordField.getText();
+        String email = emailField.getText().trim();
+        String pass = passwordField.getText().trim();
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
         // Validation
         if (email.isEmpty() || pass.isEmpty()) {
@@ -39,6 +39,7 @@ public class LoginController {
 
             } else {
                 showError("Sai mật khẩu hoặc email");
+                passwordField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
             }
         }
     }
