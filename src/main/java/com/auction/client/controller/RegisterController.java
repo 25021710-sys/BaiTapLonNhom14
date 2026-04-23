@@ -37,15 +37,16 @@ public class RegisterController {
 
         // Validation
         if (user.isEmpty() || pass.isEmpty() || email.isEmpty()) {
-            errorLabel.setText("Vui lòng nhập đầy đủ thông tin");
-            errorLabel.setVisible(true);
+            showError("Vui lòng nhập thông tin đầy đủ");
             return;
         }
 
         if (!email.matches(emailRegex)) {
-            errorLabel.setText("Định dạng Email không hợp lệ!");
-            errorLabel.setVisible(true);
-            emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+            showError("Định dạng Email không hợp lệ!");
+            return;
+        }
+        if (user.length() < 8 || pass.length() < 8){
+            showError("Tên người dùng và mật khẩu phải ít nhất 8 ký tự");
             return;
         }
 
@@ -92,5 +93,10 @@ public class RegisterController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
     }
 }
