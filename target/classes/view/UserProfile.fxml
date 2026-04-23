@@ -28,6 +28,7 @@
             <Insets bottom="5.0" top="15.0" />
          </VBox.margin>
       </Separator>
+        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item" onMouseClicked="#showProfile">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="userLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/user.jpg" />
@@ -40,6 +41,7 @@
                <Insets top="15.0" />
            </VBox.margin>
         </HBox>
+        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item" onMouseClicked="#showNotification">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="NotificationLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/notification.png" />
