@@ -1,0 +1,40 @@
+.time-bar {
+    -fx-background-color: #C0392B; /* Màu đỏ */
+    /* 0 (Trên-Trái) | 10 (Trên-Phải) | 10 (Dưới-Phải) | 0 (Dưới-Trái) */
+    -fx-background-radius: 0 10 10 0;
+
+    -fx-padding: 5 15 5 10; /* Cách lề phải rộng hơn một chút cho cân đối */
+    -fx-alignment: CENTER_LEFT; /* Căn chữ về phía bên trái */
+}
+
+.time-label {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Label tiêu đề (Giá khởi điểm, Giá hiện tại) */
+.label-title {
+    -fx-text-fill: #95A5A6; /* Màu xám để làm nổi bật giá trị */
+    -fx-font-size: 11px;
+}
+
+/* Label giá trị (15.000 VNĐ,...) */
+.label-value {
+    -fx-text-fill: #FFFFFF; /* Màu trắng thuần */
+    -fx-font-size: 14px;
+}
+
+/* Nút tham gia đg
+.btn-block {
+    -fx-background-color: #1C3A47;
+    -fx-text-fill: #3498DB;
+    -fx-border-color: #3498DB;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.product-card {
+    -fx-background-color: #142932;
+    -fx-background-radius: 15;
+}

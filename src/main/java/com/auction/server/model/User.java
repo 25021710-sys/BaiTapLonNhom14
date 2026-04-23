@@ -6,15 +6,19 @@ public class User extends Entity {
     private String username;
     private String passwordHash;
     private String email;
-    private String fullName;
     private double balance;      // Dùng khi người này mua (Bidder)
-    private String shopName;     // Dùng khi người này bán (Seller)
     private String role;         // Phân quyền chính: ADMIN, USER
     private boolean active;
 
     // Các trạng thái hoạt động thực tế của User
     public enum UserStatus { IDLE, BIDDING, SELLING }
     private UserStatus status = UserStatus.IDLE;
+
+    public User(String username, String passwordHash, String email) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.email = email;
+    }
 
     public User() {
         super();
@@ -23,14 +27,12 @@ public class User extends Entity {
         this.role = "USER"; // Mặc định mọi người đều là USER thường
     }
 
-    public User(int id, LocalDateTime createdAt, String username, String passwordHash, String email, String fullName, double balance, String shopName, String role, boolean active) {
+    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
-        this.fullName = fullName;
         this.balance = balance;
-        this.shopName = shopName;
         this.role = role;
         this.active = active;
     }
@@ -44,14 +46,8 @@ public class User extends Entity {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
     public double getBalance() { return balance; }
     public void setBalance(double balance) { this.balance = balance; }
-
-    public String getShopName() { return shopName; }
-    public void setShopName(String shopName) { this.shopName = shopName; }
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
@@ -63,17 +59,25 @@ public class User extends Entity {
     public void setStatus(UserStatus status) { this.status = status; }
 
     // Logic nghiệp vụ bổ sung
-    public void deposit(double amount) { this.balance += amount; }
-    public boolean withdraw(double amount) {
-        if (this.balance >= amount) {
-            this.balance -= amount;
-            return true;
+    public void deposit(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Lỗi: Số tiền nạp phải lớn hơn 0!");
         }
-        return false;
+        this.balance += amount;
+    }
+
+    public void withdraw(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Lỗi: Số tiền rút phải lớn hơn 0!");
+        }
+        if (this.balance < amount) {
+            throw new IllegalStateException("Lỗi: Số dư không đủ! (Bạn đang có: " + this.balance + ")");
+        }
+        this.balance -= amount;
     }
 
     @Override
     public void printInfo() {
-        System.out.println("User: " + username + " | Balance: " + balance + " | Shop: " + (shopName != null ? shopName : "N/A"));
+        System.out.println("User: " + username + " | Balance: " + balance);
     }
 }

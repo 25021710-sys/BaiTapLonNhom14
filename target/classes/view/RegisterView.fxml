@@ -9,7 +9,7 @@
     <padding>
         <Insets bottom="20" left="20" right="20" top="20" />
     </padding>
-    <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="84.0" prefWidth="546.0" text="Create new account in Auction Online" textAlignment="CENTER" textFill="#298a85">
+    <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="84.0" prefWidth="546.0" text="Create a new account in Auction Online" textAlignment="CENTER" textFill="#298a85">
         <VBox.margin>
             <Insets />
         </VBox.margin>

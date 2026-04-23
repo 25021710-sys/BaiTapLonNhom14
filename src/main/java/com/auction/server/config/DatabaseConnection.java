@@ -9,8 +9,8 @@ public class DatabaseConnection {
     private static Connection connection = null;
 
     // 2. Thông tin "địa chỉ" của Railway
-    private static final String URL = "jdbc:mysql://metro.proxy.rlwy.net:25032/railway";
-    private static final String USER = "root";
+    private static final String URL = "jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/railway";
+    private static final String USER = "2da7P72yRjHDRu2.root";
     private static final String PASSWORD = "dwxofeHifpCuB53s";
 
     // 3. Đặt hàm khởi tạo là 'private' -> Ngăn chặn người khác tạo thêm
@@ -30,7 +30,6 @@ public class DatabaseConnection {
         } catch (ClassNotFoundException | SQLException e) {
             System.out.println("Lỗi kết nối Database: " + e.getMessage());
         }
-
         return connection;
     }
 }

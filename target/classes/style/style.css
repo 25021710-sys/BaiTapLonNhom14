@@ -11,3 +11,53 @@
 .primary-button:hover {
     -fx-background-color: #145f5f; /* Đậm hơn một chút khi di chuột vào */
 }
+.root {
+    -fx-background-color: #F0F2F5; /* Nền xám nhạt */
+}
+
+.sidebar {
+    -fx-background-color: white; /* BẮT BUỘC phải có màu nền để thấy bo góc */
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
+}
+
+.content-card {
+    -fx-background-color: white; /* BẮT BUỘC phải có màu nền */
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
+}
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-cursor: hand; /* Hiện bàn tay khi di chuột vào */
+}
+
+/* Khi di chuột qua dòng menu */
+.menu-item:hover {
+    -fx-background-color: #f4f4f4; /* Màu xám nhạt */
+}
+
+/* Khi đang nhấn giữ chuột */
+.menu-item:pressed {
+    -fx-background-color: #e0e0e0;
+}
+
+/* Chữ trong menu */
+.menu-item .label {
+    -fx-text-fill: #2d3436;
+    -fx-font-size: 14px;
+}
+/* Khi menu được chọn (Active) */
+.menu-item.active {
+    -fx-background-color: #d1d1d1; /* Đậm hơn màu :pressed một chút */
+}
+
+.menu-item.active .label {
+    -fx-font-weight: bold; /* Làm chữ đậm lên để nhấn mạnh */
+    -fx-text-fill: #000000; /* Chữ đen rõ hơn */
+}
+.avatar{
+    -fx-background-radius: 10; /* Bo góc 10px */
+        -fx-border-radius: 20;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);
+}
