@@ -14,6 +14,12 @@ public class User extends Entity {
     public enum UserStatus { IDLE, BIDDING, SELLING }
     private UserStatus status = UserStatus.IDLE;
 
+    public User(String username, String passwordHash, String email) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.email = email;
+    }
+
     public User() {
         super();
         this.active = true;
