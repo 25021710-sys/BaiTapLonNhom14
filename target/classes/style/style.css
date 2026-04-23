@@ -1,31 +1,15 @@
-/* Làm đẹp cho các ô nhập liệu (TextField & PasswordField) */
-.text-field, .password-field {
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
-    -fx-border-color: #dcdcdc;
-    -fx-background-color: #ffffff;
-    -fx-padding: 8 12;
+.primary-button {
+    -fx-background-color: #1c7c7c; /* Màu xanh giống màu text của bạn */
+    -fx-background-radius: 1000;      /* Bo góc */
+    -fx-text-fill: white;          /* Chữ màu trắng */
     -fx-font-size: 14px;
-}
-
-/* Đổi màu viền khi người dùng nhấn vào ô */
-.text-field:focused, .password-field:focused {
-    -fx-border-color: #00796b; /* Màu xanh giống cái nút của bạn */
-    -fx-border-width: 2;
-    -fx-background-insets: 0;
-}
-
-/* Làm đẹp cái nút Sign In */
-.button {
-    -fx-background-color: #00796b;
-    -fx-text-fill: white;
-    -fx-background-radius: 8;
-    -fx-cursor: hand;
     -fx-font-weight: bold;
+    -fx-padding: 10 20 10 20;      /* Tạo khoảng trống bên trong nút */
+    -fx-cursor: hand;              /* Hiện bàn tay khi trỏ vào */
 }
 
-.button:hover {
-    -fx-background-color: #004d40; /* Đậm hơn khi di chuột vào */
+.primary-button:hover {
+    -fx-background-color: #145f5f; /* Đậm hơn một chút khi di chuột vào */
 }
 .root {
     -fx-background-color: #F0F2F5; /* Nền xám nhạt */
