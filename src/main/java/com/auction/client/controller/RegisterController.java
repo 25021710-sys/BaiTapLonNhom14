@@ -1,5 +1,7 @@
 package com.auction.client.controller;
 
+import com.auction.server.dao.UserDAO;
+import com.auction.server.model.User;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -40,6 +42,23 @@ public class RegisterController {
             return;
         } else {
             goToLogin(event);
+        }
+        try {
+            UserDAO userDAO = new UserDAO(); // Khởi tạo DAO
+            User newUser = userDAO.register(user, email, pass); // Truyền 3 tham số vào
+
+            if (newUser != null) {
+                System.out.println("Đăng ký thành công user: " + user);
+                // 3. Nếu thành công mới chuyển màn hình
+                goToLogin(event);
+            } else {
+                errorLabel.setText("Tên đăng nhập đã tồn tại!");
+                errorLabel.setVisible(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            errorLabel.setText("Lỗi hệ thống khi đăng ký!");
+            errorLabel.setVisible(true);
         }
     }
     @FXML
