@@ -15,23 +15,16 @@ import javafx.scene.shape.Rectangle;
 import java.io.IOException;
 
 public class UserProfileController {
-    @FXML
-    private ImageView HistoryLogo;
-    @FXML
-    private Label sideBarName;
-    @FXML
-    private Label sideBarEmail;
-    @FXML
-    private ImageView userAvatar;
-    @FXML
-    private ImageView userLogo;
-    @FXML
-    private ImageView BalanceLogo;
-    @FXML
-    private ImageView LogoutLogo;
-    @FXML
-    private AnchorPane contentArea;
+    @FXML private Label sideBarName;
+    @FXML private Label sideBarEmail;
+    @FXML private ImageView HistoryLogo;
+    @FXML private ImageView userAvatar;
+    @FXML private ImageView userLogo;
+    @FXML private ImageView BalanceLogo;
+    @FXML private ImageView LogoutLogo;
+    @FXML private AnchorPane contentArea;
     @FXML private ImageView sideBarAvatar;
+
     private void setPage(String fxmlPath) {
         try {
             // 1. Load file giao diện mới
@@ -56,6 +49,9 @@ public class UserProfileController {
     public void showBalance() {
         setPage("BalanceView.fxml");
     }
+
+    @FXML
+    public void showBidHistory() {setPage("BidHistoryView.fxml"); }
 
     @FXML
     public void handleLogout() {

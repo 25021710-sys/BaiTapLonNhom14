@@ -54,7 +54,7 @@
                 <Insets top="15.0" />
             </VBox.margin>
         </HBox>
-        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+        <HBox onMouseClicked="#handleLogout" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="LogoutLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/logout.png" />
@@ -67,7 +67,7 @@
                 <Insets top="15.0" />
             </VBox.margin>
         </HBox>
-        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+        <HBox onMouseClicked="#showBidHistory" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="HistoryLogo" fitHeight="47.0" fitWidth="49.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/History.png" />
