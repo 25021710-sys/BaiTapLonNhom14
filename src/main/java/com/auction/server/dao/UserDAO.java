@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class UserDAO {
 
-    public User register(String username, String email, String password) throws SQLException {
+    public User register(String username, String password, String email) throws SQLException {
         String checkSql = "SELECT * FROM users WHERE email = ?";
         try (Connection connection = DatabaseConnection.getConnection();
         PreparedStatement checkPs = connection.prepareStatement(checkSql)){
