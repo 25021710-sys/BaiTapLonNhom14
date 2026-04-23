@@ -26,7 +26,7 @@ public class UserProfileController {
     @FXML
     private ImageView userLogo;
     @FXML
-    private ImageView NotificationLogo;
+    private ImageView BalanceLogo;
     @FXML
     private ImageView LogoutLogo;
     @FXML
@@ -53,8 +53,8 @@ public class UserProfileController {
     }
 
     @FXML
-    public void showNotification() {
-        setPage("NotificationView.fxml");
+    public void showBalance() {
+        setPage("BalanceView.fxml");
     }
 
     @FXML
