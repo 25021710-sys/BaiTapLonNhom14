@@ -27,7 +27,7 @@ public class User extends Entity {
         this.role = "USER"; // Mặc định mọi người đều là USER thường
     }
 
-    public User(int id, LocalDateTime createdAt, String username, String passwordHash, String email, double balance, String role, boolean active) {
+    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;

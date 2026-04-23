@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class UserDAO {
 
-    public User Register(String username, String email, String password) throws SQLException {
+    public User register(String username, String email, String password) throws SQLException {
         String checkSql = "SELECT * FROM users WHERE username = ?";
         try (Connection connection = DatabaseConnection.getConnection();
         PreparedStatement checkPs = connection.prepareStatement(checkSql)){
@@ -22,8 +22,8 @@ public class UserDAO {
             String insertSql = "INSERT INTO users (username, password_hash, email, balance, role, active) VALUES (?, ?, ?, ?, ?, ?)";
             PreparedStatement insertPs = connection.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS);
             insertPs.setString(1, username);
-            insertPs.setString(2, password); // sau này hash
-            insertPs.setString(3, email);
+            insertPs.setString(2, email);
+            insertPs.setString(3, password);// sau này hash
             insertPs.setDouble(4, 0.0);
             insertPs.setString(5, "USER");
             insertPs.setBoolean(6, true);
@@ -36,18 +36,19 @@ public class UserDAO {
 
                     return new User(
                             id,
-                            java.time.LocalDateTime.now(),
                             username,
                             password,
                             email,
                             0.0,
                             "USER",
-                            true
+                            true,
+                            java.time.LocalDateTime.now()
                     );
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            System.out.println("ERROR: " + e.getMessage());
         }
         return null;
     }
