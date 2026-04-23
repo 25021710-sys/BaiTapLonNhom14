@@ -25,7 +25,7 @@ public class PasswordUtil {
             throw new RuntimeException("SHA-256 không khả dụng", e);
         }
     }
-    public static boolean verify(String password,String salt,String storeHash){
+    public static boolean verify(String password, String salt, String storeHash){
         return hash(password, salt).equals(storeHash);
     }
 }
