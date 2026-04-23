@@ -25,7 +25,7 @@
         <VBox.margin>
             <Insets />
         </VBox.margin></Label>
-    <TextField fx:id="emailField" opacity="0.25" prefHeight="34.0" prefWidth="538.0">
+    <TextField fx:id="emailField" prefHeight="34.0" prefWidth="538.0">
         <VBox.margin>
             <Insets />
         </VBox.margin></TextField>
@@ -33,7 +33,7 @@
         <VBox.margin>
             <Insets />
         </VBox.margin></Label>
-    <TextField fx:id="usernameField" opacity="0.25" prefHeight="34.0" prefWidth="538.0">
+    <TextField fx:id="usernameField" prefHeight="34.0" prefWidth="538.0">
         <VBox.margin>
             <Insets />
         </VBox.margin></TextField>
@@ -41,7 +41,7 @@
         <VBox.margin>
             <Insets />
         </VBox.margin></Label>
-    <PasswordField fx:id="passwordField" opacity="0.25" prefHeight="34.0" prefWidth="538.0" />
+    <PasswordField fx:id="passwordField" prefHeight="34.0" prefWidth="538.0" />
     <Label fx:id="errorLabel" textFill="#227d80" visible="false" />
     <Button alignment="CENTER" onAction="#handleSignup" prefHeight="38.0" prefWidth="563.0" styleClass="primary-button" text="Sign up" />
     <TextFlow textAlignment="CENTER">
