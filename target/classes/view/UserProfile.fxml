@@ -28,7 +28,7 @@
             <Insets bottom="5.0" top="15.0" />
          </VBox.margin>
       </Separator>
-        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item" onMouseClicked="#showProfile">
+        <HBox onMouseClicked="#showProfile" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="userLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/user.jpg" />
@@ -41,20 +41,20 @@
                <Insets top="15.0" />
            </VBox.margin>
         </HBox>
-        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item" onMouseClicked="#showNotification">
+        <HBox onMouseClicked="#showBalance" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
-            <ImageView fx:id="NotificationLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
-                <Image url="@../image/notification.png" />
+            <ImageView fx:id="BalanceLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
+                <Image url="@../image/balance.png" />
             </ImageView>
 
-            <Label prefHeight="35.0" prefWidth="77.0" text="Notification" />
+            <Label prefHeight="35.0" prefWidth="89.0" text="Total Balance" />
 
             <Region HBox.hgrow="ALWAYS" />
             <VBox.margin>
                 <Insets top="15.0" />
             </VBox.margin>
         </HBox>
-        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+        <HBox onMouseClicked="#handleLogout" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="LogoutLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/logout.png" />
@@ -67,7 +67,7 @@
                 <Insets top="15.0" />
             </VBox.margin>
         </HBox>
-        <HBox prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+        <HBox onMouseClicked="#showBidHistory" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="HistoryLogo" fitHeight="47.0" fitWidth="49.0" pickOnBounds="true" preserveRatio="true">
                 <Image url="@../image/History.png" />
@@ -84,7 +84,12 @@
 
     <AnchorPane fx:id="contentArea" HBox.hgrow="ALWAYS">
         <VBox styleClass="content-card" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
-        </VBox>
+         <children>
+            <StackPane prefHeight="562.0" prefWidth="464.0">
+               <children>
+                  <VBox prefHeight="200.0" prefWidth="100.0" />
+               </children></StackPane>
+         </children></VBox>
     </AnchorPane>
 
 </HBox>

@@ -48,6 +48,7 @@ public class ProfileContentController {
         nameLabel.setText(nameField.getText());
         passLabel.setText(passField.getText());
         desLabel.setText(desField.getText());
+        locationLabel.setText(locationField.getText());
         // (Chỗ này bạn có thể viết thêm code để lưu vào Database)
 
         // 2. Quay lại chế độ xem (Giống hệt lúc bấm Cancel)
@@ -75,5 +76,10 @@ public class ProfileContentController {
         desLabel.setManaged(!mode);
         desField.setVisible(mode);
         desField.setManaged(mode);
+
+        locationLabel.setVisible(!mode);
+        locationLabel.setManaged(!mode);
+        locationField.setVisible(mode);
+        locationField.setManaged(mode);
     }
 }

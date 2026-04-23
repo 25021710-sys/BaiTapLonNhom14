@@ -35,7 +35,7 @@ public class LoginController {
             User user = userDAO.login(email, pass);
             if (user != null) {
                 System.out.println("Đăng nhập thành công: " + user.getUsername());
-                goToDashBoard(event);
+                goToUserProfile(event);
 
             } else {
                 showError("Sai mật khẩu hoặc email");

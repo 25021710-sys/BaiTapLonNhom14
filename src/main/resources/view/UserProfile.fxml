@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<HBox alignment="CENTER_LEFT" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
+<HBox alignment="CENTER_LEFT" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
 
     <VBox alignment="TOP_CENTER" maxHeight="-Infinity" prefHeight="439.0" prefWidth="212.0" styleClass="sidebar">
         <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 10;">
@@ -54,19 +60,6 @@
                 <Insets top="15.0" />
             </VBox.margin>
         </HBox>
-        <HBox onMouseClicked="#handleLogout" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
-            <Region HBox.hgrow="ALWAYS" />
-            <ImageView fx:id="LogoutLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
-                <Image url="@../image/logout.png" />
-            </ImageView>
-
-            <Label prefHeight="35.0" prefWidth="58.0" text="Log out" />
-
-            <Region HBox.hgrow="ALWAYS" />
-            <VBox.margin>
-                <Insets top="15.0" />
-            </VBox.margin>
-        </HBox>
         <HBox onMouseClicked="#showBidHistory" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
             <Region HBox.hgrow="ALWAYS" />
             <ImageView fx:id="HistoryLogo" fitHeight="47.0" fitWidth="49.0" pickOnBounds="true" preserveRatio="true">
@@ -74,6 +67,20 @@
             </ImageView>
 
             <Label prefHeight="42.0" prefWidth="72.0" text="Bid History" />
+
+            <Region HBox.hgrow="ALWAYS" />
+            <VBox.margin>
+                <Insets top="15.0" />
+            </VBox.margin>
+        </HBox>
+      <Separator prefWidth="200.0" />
+        <HBox onMouseClicked="#handleLogout" prefHeight="50.0" prefWidth="150.0" styleClass="menu-item">
+            <Region HBox.hgrow="ALWAYS" />
+            <ImageView fx:id="LogoutLogo" fitHeight="35.0" fitWidth="35.0" pickOnBounds="true" preserveRatio="true">
+                <Image url="@../image/logout.png" />
+            </ImageView>
+
+            <Label prefHeight="35.0" prefWidth="58.0" text="Log out" />
 
             <Region HBox.hgrow="ALWAYS" />
             <VBox.margin>
