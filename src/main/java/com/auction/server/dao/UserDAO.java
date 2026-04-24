@@ -77,7 +77,8 @@ public class UserDAO {
                             rs.getDouble("balance"),
                             rs.getString("role"),
                             rs.getBoolean("active"),
-                            rs.getTimestamp("created_at").toLocalDateTime());// lấy từ DB)
+                            rs.getTimestamp("created_at").toLocalDateTime(),// lấy từ DB)
+                            rs.getString("salt"));
                 }
             }
         } catch (Exception e) {
