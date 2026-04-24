@@ -39,8 +39,6 @@ public class UserDAO {
                 ResultSet keys = insertPs.getGeneratedKeys();
                 if (keys.next()) {
                     int id = keys.getInt(1);
-                    
-
                     return new User(
                             id,
                             username,
@@ -49,7 +47,8 @@ public class UserDAO {
                             0.0,
                             "USER",
                             true,
-                            java.time.LocalDateTime.now()
+                            java.time.LocalDateTime.now(),
+                            salt
                     );
                 }
             }
