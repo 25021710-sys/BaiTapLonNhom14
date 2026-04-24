@@ -30,6 +30,10 @@ public class ProfileContentController {
             editButton.setText("Save Changes");
             cancelButton.setVisible(true);
             cancelButton.setManaged(true);
+            nameField.setText(nameLabel.getText());
+            locationField.setText(locationLabel.getText());
+            passField.setText(passLabel.getText());
+            desField.setText(desLabel.getText());
         } else {
             // --- ĐANG LÀ SAVE: LƯU VÀ ĐÓNG FORM ---
             handleSave();

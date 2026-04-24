@@ -39,6 +39,7 @@ public class UserDAO {
                 ResultSet keys = insertPs.getGeneratedKeys();
                 if (keys.next()) {
                     int id = keys.getInt(1);
+                    
 
                     return new User(
                             id,
