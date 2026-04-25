@@ -11,11 +11,11 @@ public class MainApp extends Application {
     public void start(Stage stage) throws Exception {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/LoginView.fxml")
+                getClass().getResource("/view/DashBoardView.fxml")
         );
 
         Scene scene = new Scene(loader.load());
-        String css = getClass().getResource("/style/style.css").toExternalForm();
+        String css = getClass().getResource("/style/DashBoardstyle.css").toExternalForm();
         scene.getStylesheets().add(css);
 
         stage.setScene(scene);

@@ -37,7 +37,7 @@ public class DashBoardController {
         try {
             if (pnlItems != null) {
                 pnlItems.getChildren().clear();
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 5; i++) {
                     FXMLLoader loader = new FXMLLoader();
                     loader.setLocation(getClass().getResource("/view/ProductCard.fxml"));
                     VBox card = loader.load();

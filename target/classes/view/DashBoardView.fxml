@@ -14,7 +14,7 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" stylesheets="@../style/DashBoardStyle.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.DashBoardController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="760.0" prefWidth="1359.0" stylesheets="@../style/DashBoardStyle.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.DashBoardController">
    <left>
       <VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="137.0" spacing="20.0" stylesheets="@../style/DashBoardStyle.css" BorderPane.alignment="CENTER">
          <children>
@@ -44,8 +44,8 @@
                         <FontAwesomeIcon fill="WHITE" glyphName="SEARCH" />
                      </children>
                   </HBox>
-                  <HBox fx:id="hboxUserActions" prefHeight="33.0" prefWidth="131.0" HBox.hgrow="ALWAYS" />
-                  <HBox prefHeight="100.0" prefWidth="200.0">
+                  <HBox fx:id="hboxUserActions" prefHeight="36.0" prefWidth="110.0" HBox.hgrow="ALWAYS" />
+                  <HBox prefHeight="36.0" prefWidth="206.0">
                      <children>
                         <Button mnemonicParsing="false" prefHeight="33.0" prefWidth="38.0" style="-fx-background-radius: 5; -fx-background-color: #142932;">
                            <HBox.margin>
@@ -58,10 +58,7 @@
                         <HBox fx:id="userProfileGroup" alignment="CENTER_RIGHT" prefHeight="33.0" prefWidth="134.0">
                            <children>
                               <Circle fx:id="profileCircle" fill="#1f93ff" radius="18.0" stroke="WHITE" strokeType="INSIDE" strokeWidth="2.0" />
-                              <Label prefHeight="34.0" prefWidth="76.0" text="Label">
-                                 <padding>
-                                    <Insets left="5.0" />
-                                 </padding>
+                              <Label prefHeight="34.0" prefWidth="76.0" text="Duy Anh">
                                  <HBox.margin>
                                     <Insets left="5.0" right="10.0" />
                                  </HBox.margin>
@@ -81,13 +78,15 @@
                <children>
                   <AnchorPane prefHeight="122.0" prefWidth="122.0" />
                   <AnchorPane prefHeight="122.0" prefWidth="122.0" />
-                  <AnchorPane opacity="0.97" prefHeight="122.0" prefWidth="122.0" />
-                  <AnchorPane prefHeight="122.0" prefWidth="122.0" />
+                  <AnchorPane prefHeight="122.0" prefWidth="122.0">
+                     <children>
+                        <AnchorPane layoutX="-60.0" layoutY="-8.0" opacity="0.97" prefHeight="122.0" prefWidth="122.0" />
+                     </children></AnchorPane>
                </children>
             </HBox>
-            <ScrollPane prefHeight="200.0" prefWidth="200.0">
+            <ScrollPane fitToWidth="true" prefHeight="472.0" prefWidth="966.0">
                <content>
-                  <FlowPane prefHeight="200.0" prefWidth="200.0" />
+                  <FlowPane fx:id="pnlItems" hgap="10.0" vgap="10.0" />
                </content>
             </ScrollPane>
          </children>
