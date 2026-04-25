@@ -5,6 +5,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.util.TimeZone;
+
 public class MainApp extends Application {
 
     @Override
@@ -24,6 +26,7 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         launch(args);
     }
 }

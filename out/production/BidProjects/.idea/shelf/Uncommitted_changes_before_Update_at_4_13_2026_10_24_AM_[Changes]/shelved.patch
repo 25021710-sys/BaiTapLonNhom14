@@ -1,0 +1,18 @@
+Index: User/src/User.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>abstract class User{\r\n    protected String userId;\r\n    protected String username;\r\n    protected String passwordHash;\r\n    protected String fullName;\r\n    protected String email;\r\n\r\n    public User(String username, String passwordHash, String email, String fullName, UserRole userRole) {\r\n    }\r\n\r\n    public void setUserId(String userId){this.userId = userId;}\r\n    public void setUsername(String username){this.username = username;}\r\n    public void setPasswordHash(String passwordHash){this.passwordHash = passwordHash;}\r\n    public void setFullName(String fullName){this.fullName = fullName;}\r\n    public void setEmail(String email){this.email = email;}\r\n\r\n    public String getUserId() { return userId; }\r\n    public String getUsername() { return username; }\r\n    public String getPasswordHash() { return passwordHash; }\r\n    public String getFullName() { return fullName; }\r\n    public String getEmail() { return email; }\r\n\r\n    public abstract boolean canBid();\r\n    public abstract boolean canSell();\r\n    public abstract boolean manageSystem();\r\n\r\n    @Override\r\n    public String toString(){\r\n        return getUsername() + \"(\" + getUserId() + \" , \" + \")\";\r\n    }\r\n}\r\n
+===================================================================
+diff --git a/User/src/User.java b/User/src/User.java
+--- a/User/src/User.java	(revision 33d2490a83d5fe00216f4e8690fecba903ad1b47)
++++ b/User/src/User.java	(date 1775410708943)
+@@ -8,6 +8,9 @@
+     public User(String username, String passwordHash, String email, String fullName, UserRole userRole) {
+     }
+ 
++    public User() {
++    }
++
+     public void setUserId(String userId){this.userId = userId;}
+     public void setUsername(String username){this.username = username;}
+     public void setPasswordHash(String passwordHash){this.passwordHash = passwordHash;}
