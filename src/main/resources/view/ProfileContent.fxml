@@ -13,18 +13,19 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="30" styleClass="profile-content" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.ProfileContentController">
+<VBox VBox.vgrow="ALWAYS" spacing="30" styleClass="profile-content" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.ProfileContentController">
     <padding>
         <Insets bottom="30" left="30" right="30" top="30" />
     </padding>
     <Label style="-fx-font-size: 20px; -fx-font-weight: bold;" text="User Profile" GridPane.rowIndex="1" />
-    <GridPane hgap="70.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="20.0">
+    <GridPane hgap="70.0" vgap="20.0"
+              maxWidth="Infinity">
         <columnConstraints>
+            <!-- Cột label (bên trái) -->
+            <ColumnConstraints minWidth="120.0" prefWidth="150.0" />
 
-            <ColumnConstraints minWidth="120.0" />
-
-            <ColumnConstraints hgrow="ALWAYS" />
-
+            <!-- Cột content (bên phải) -->
+            <ColumnConstraints hgrow="ALWAYS" maxWidth="Infinity" />
         </columnConstraints>
         <rowConstraints>
             <RowConstraints />
@@ -53,31 +54,32 @@
         <Separator prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="1" />
         <Separator prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="3" />
         <Separator prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="5" />
-        <StackPane alignment="CENTER_LEFT" prefHeight="57.0" prefWidth="250.0" GridPane.columnIndex="1">
-           <children>
-               <Label fx:id="nameLabel" text="Label" />
-               <TextField fx:id="nameField" prefWidth="250.0" visible="false" />
-           </children>
+
+        <StackPane alignment="CENTER_LEFT" prefHeight="57.0" maxWidth="Infinity" GridPane.columnIndex="1">
+            <Label fx:id="nameLabel" text="Label"/>
+            <TextField fx:id="nameField" maxWidth="Infinity" visible="false"/>
         </StackPane>
+
         <Separator prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="8" />
-        <StackPane alignment="CENTER_LEFT" prefHeight="150.0" prefWidth="250.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
-           <children>
-               <Label fx:id="locationLabel" text="Label" />
-               <TextField fx:id="locationField" visible="false" />
-           </children>
+
+        <StackPane alignment="CENTER_LEFT" prefHeight="150.0" maxWidth="Infinity" GridPane.columnIndex="1"
+                   GridPane.rowIndex="4">
+            <Label fx:id="locationLabel" text="Label"/>
+            <TextField fx:id="locationField" maxWidth="Infinity" visible="false"/>
         </StackPane>
-        <StackPane alignment="CENTER_LEFT" prefHeight="150.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="6">
-           <children>
-               <Label fx:id="desLabel" text="Label" />
-               <TextField fx:id="desField" visible="false" />
-           </children>
+
+        <StackPane alignment="CENTER_LEFT" prefHeight="150.0" maxWidth="Infinity" GridPane.columnIndex="1"
+                   GridPane.rowIndex="6">
+            <Label fx:id="desLabel" text="Label"/>
+            <TextField fx:id="desField" maxWidth="Infinity" visible="false"/>
         </StackPane>
-        <StackPane alignment="CENTER_LEFT" prefHeight="19.0" prefWidth="250.0" GridPane.columnIndex="1" GridPane.rowIndex="9">
-           <children>
-               <Label fx:id="passLabel" text="Label" />
-               <PasswordField fx:id="passField" visible="false" />
-           </children>
+
+        <StackPane alignment="CENTER_LEFT" prefHeight="19.0" maxWidth="Infinity" GridPane.columnIndex="1"
+                   GridPane.rowIndex="9">
+            <Label fx:id="passLabel" text="Label"/>
+            <PasswordField fx:id="passField" maxWidth="Infinity" visible="false"/>
         </StackPane>
+
     </GridPane>
     <HBox prefHeight="100.0" prefWidth="200.0" spacing="20">
         <Button fx:id="editButton" onAction="#handleEdit" prefHeight="26.0" prefWidth="86.0" text="Edit">

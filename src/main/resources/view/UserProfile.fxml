@@ -88,8 +88,14 @@
     </VBox>
 
     <AnchorPane fx:id="contentArea" HBox.hgrow="ALWAYS">
-        <VBox styleClass="content-card" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-            <StackPane VBox.vgrow="ALWAYS">
+        <VBox styleClass="content-card"
+              maxWidth="Infinity"
+               maxHeight="Infinity"
+              AnchorPane.topAnchor="0.0"
+              AnchorPane.bottomAnchor="0.0"
+              AnchorPane.leftAnchor="0.0"
+              AnchorPane.rightAnchor="0.0">
+            <StackPane VBox.vgrow="ALWAYS" maxHeight="Infinity" maxWidth="Infinity">
             </StackPane>
         </VBox>
     </AnchorPane>
