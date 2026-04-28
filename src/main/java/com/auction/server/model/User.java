@@ -108,6 +108,6 @@ public class User extends Entity {
                 " | Role: " + role +
                 " | Balance: " + balance +
                 " | Status: " + status);
-    }
+    }   
 
 }
