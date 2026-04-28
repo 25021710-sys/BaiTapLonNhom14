@@ -29,7 +29,7 @@ public class UserDAO {
             insertPs.setString(1, username);
             insertPs.setString(2, hash);
             insertPs.setString(3, email);
-            insertPs.setDouble(4, 0.0);
+            insertPs.setDouble(4, 0);
             insertPs.setString(5, "USER");
             insertPs.setBoolean(6, true);
             insertPs.setString(7, salt);
