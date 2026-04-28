@@ -1,13 +1,14 @@
 package com.auction.server.model;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public class User extends Entity {
     private String username;
     private String passwordHash;
     private String email;
-    private double balance;      // Dùng khi người này mua (Bidder)
-    private String role;         // Phân quyền chính: ADMIN, USER
+    private BigDecimal balance;      // Dùng khi người này mua (Bidder)
+    private UserRole role;         // Phân quyền chính: ADMIN, USER
     private boolean active;
     private String salt;
     private String description;
@@ -44,6 +45,15 @@ public class User extends Entity {
         this.description = description;
         this.location = location;
     }
+    public boolean canBid(){
+        return this.role == UserRole.BIDDER;
+    }
+    public boolean canSell(){
+        return this.role == UserRole.SELLER;
+    }
+    public boolean canManageSystem(){
+        return this.role == UserRole.ADMIN;
+    }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
@@ -54,41 +64,50 @@ public class User extends Entity {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public double getBalance() { return balance; }
-    public void setBalance(double balance) { this.balance = balance; }
+    public BigDecimal getBalance() { return balance; }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public UserRole getRole() { return role; }
+    public void setRole(UserRole role) { this.role = role; }
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 
     public UserStatus getStatus() { return status; }
-    public void setStatus(UserStatus status) { this.status = status; }
-
-    public String getDescription() { return description;}
-    public void setDes(String description) { this.description = description;}
-
-    // Logic nghiệp vụ bổ sung
-    public void deposit(double amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Lỗi: Số tiền nạp phải lớn hơn 0!");
+    public void setStatus(UserStatus status) {
+        if (status == UserStatus.SELLING && this.role != UserRole.SELLER) {
+            throw new IllegalStateException("Chỉ SELLER mới có thể ở trạng thái SELLING");
         }
-        this.balance += amount;
+        if (status == UserStatus.BIDDING && this.role != UserRole.BIDDER) {
+            throw new IllegalStateException("Chỉ BIDDER mới có thể ở trạng thái BIDDING");
+        }
+        this.status = status;
     }
 
-    public void withdraw(double amount) {
-        if (amount <= 0) {
+    // Logic nghiệp vụ bổ sung
+    public void deposit(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Lỗi: Số tiền nạp phải lớn hơn 0!");
+        }
+        this.balance = this.balance.add(amount);
+    }
+
+    public void withdraw(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Lỗi: Số tiền rút phải lớn hơn 0!");
         }
-        if (this.balance < amount) {
+        if (this.balance.compareTo(amount) < 0) {
             throw new IllegalStateException("Lỗi: Số dư không đủ! (Bạn đang có: " + this.balance + ")");
         }
-        this.balance -= amount;
+        this.balance = this.balance.subtract(amount);
     }
 
     @Override
     public void printInfo() {
-        System.out.println("User: " + username + " | Balance: " + balance);
+        System.out.println("User: " + username +
+                " | Role: " + role +
+                " | Balance: " + balance +
+                " | Status: " + status);
     }
+
 }

@@ -1,26 +1,47 @@
 
 package com.auction.server.model;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class AutoBidConfig extends Entity {
+public class AutoBidConfig implements Serializable,Comparable<AutoBidConfig> {
     private int auctionId;
     private int bidderId;
-    private double maxBid;
-    private double increment;
+    private String bidderUsername;
+    private BigDecimal maxBid;
+    private BigDecimal increment;
+    private LocalDateTime registeredAt;
+    private boolean active;
 
     // 1. Hàm khởi tạo trống
     public AutoBidConfig() {
-        super();
+        this.registeredAt = LocalDateTime.now();
+        this.active = true;
     }
 
     // 2. Hàm khởi tạo đầy đủ tham số
-    public AutoBidConfig(int id, LocalDateTime createdAt, int auctionId, int bidderId, double maxBid, double increment) {
-        super(id, createdAt);
-        this.auctionId = auctionId;
+    public AutoBidConfig(int bidderId, String bidderUsername,int auctionId, BigDecimal maxBid, BigDecimal increment) {
         this.bidderId = bidderId;
+        this.bidderUsername=bidderUsername;
+        this.auctionId=auctionId;
         this.maxBid = maxBid;
         this.increment = increment;
+        this.registeredAt = LocalDateTime.now();
+        this.active = true;
+    }
+    public int compareTo(AutoBidConfig other) {
+        int cmp = other.maxBid.compareTo(this.maxBid);
+        return cmp != 0 ? cmp : this.registeredAt.compareTo(other.registeredAt);
+    }
+
+    public BigDecimal calculateNextBid(BigDecimal currentPrice) {
+        BigDecimal nextBid = currentPrice.add(this.increment);
+        if (nextBid.compareTo(this.maxBid) > 0) {
+            return this.maxBid.compareTo(currentPrice) > 0 ? this.maxBid : null;
+        } else {
+            return nextBid;
+        }
     }
 
     public int getAuctionId() { return auctionId; }
@@ -29,13 +50,12 @@ public class AutoBidConfig extends Entity {
     public int getBidderId() { return bidderId; }
     public void setBidderId(int bidderId) { this.bidderId = bidderId; }
 
-    public double getMaxBid() { return maxBid; }
-    public void setMaxBid(double maxBid) { this.maxBid = maxBid; }
+    public BigDecimal getMaxBid() { return maxBid; }
+    public void setMaxBid(BigDecimal maxBid) { this.maxBid = maxBid; }
 
-    public double getIncrement() { return increment; }
-    public void setIncrement(double increment) { this.increment = increment; }
+    public BigDecimal getIncrement() { return increment; }
+    public void setIncrement(BigDecimal increment) { this.increment = increment; }
 
-    @Override
     public void printInfo() {
         System.out.println("[AUTO-BID] Người dùng ID: " + bidderId
                 + " | Tự động đặt giá cho Phiên: " + auctionId
