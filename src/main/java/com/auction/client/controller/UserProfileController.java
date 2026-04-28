@@ -38,6 +38,10 @@ public class UserProfileController {
             // 2. Xóa nội dung hiện tại và thêm nội dung mới vào
             contentArea.getChildren().clear();
             contentArea.getChildren().add(node);
+            AnchorPane.setTopAnchor(node, 0.0);
+            AnchorPane.setBottomAnchor(node, 0.0);
+            AnchorPane.setLeftAnchor(node, 0.0);
+            AnchorPane.setRightAnchor(node, 0.0);
 
         } catch (IOException e) {
             e.printStackTrace();
