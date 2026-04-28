@@ -11,23 +11,21 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<HBox alignment="CENTER_LEFT" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
-
-    <VBox alignment="TOP_CENTER" maxHeight="-Infinity" prefHeight="439.0" prefWidth="212.0" styleClass="sidebar">
+<HBox alignment="CENTER_LEFT" maxHeight="Infinity" maxWidth="Infinity" minHeight="600.0" minWidth="706.0" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
+    <VBox maxWidth="250" minWidth="200" prefWidth="220" styleClass="sidebar">
         <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 10;">
-            <children>
-                <ImageView fx:id="userAvatar" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" styleClass="avatar">
-                    <Image url="@../image/Avatar.jpeg" />
-                </ImageView>
-
-                <VBox alignment="CENTER_LEFT" spacing="2.0">
-                    <Label fx:id="sideBarName" style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Nguyễn Văn An" />
-                    <Label fx:id="sideBarEmail" style="-fx-text-fill: #636e72; -fx-font-size: 11px;" text="an.nguyen@gmail.com" />
-                </VBox>
-            </children>
             <VBox.margin>
-                <Insets bottom="10.0" left="10.0" right="10.0" top="20.0" />
+                <Insets bottom="10.0" left="10.0" right="10.0" top="20.0"/>
             </VBox.margin>
+            <ImageView fx:id="userAvatar" fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" styleClass="avatar">
+                <Image url="@../image/Avatar.jpeg"/>
+            </ImageView>
+
+            <VBox alignment="CENTER_LEFT" spacing="2.0">
+                <Label fx:id="sideBarName" style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Nguyễn Văn An"/>
+                <Label fx:id="sideBarEmail" style="-fx-text-fill: #636e72; -fx-font-size: 11px;"
+                       text="an.nguyen@gmail.com"/>
+            </VBox>
         </HBox>
       <Separator prefWidth="200.0">
          <VBox.margin>
@@ -90,13 +88,10 @@
     </VBox>
 
     <AnchorPane fx:id="contentArea" HBox.hgrow="ALWAYS">
-        <VBox styleClass="content-card" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
-         <children>
-            <StackPane prefHeight="562.0" prefWidth="464.0">
-               <children>
-                  <VBox prefHeight="200.0" prefWidth="100.0" />
-               </children></StackPane>
-         </children></VBox>
+        <VBox styleClass="content-card" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <StackPane VBox.vgrow="ALWAYS">
+            </StackPane>
+        </VBox>
     </AnchorPane>
 
 </HBox>

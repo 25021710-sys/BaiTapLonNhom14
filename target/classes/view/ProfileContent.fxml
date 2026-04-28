@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="580.0" prefWidth="500.0" spacing="30" styleClass="profile-content" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.ProfileContentController">
+<VBox spacing="30" styleClass="profile-content" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.ProfileContentController">
     <padding>
         <Insets bottom="30" left="30" right="30" top="30" />
     </padding>
     <Label style="-fx-font-size: 20px; -fx-font-weight: bold;" text="User Profile" GridPane.rowIndex="1" />
-    <GridPane hgap="70.0" vgap="20.0">
+    <GridPane hgap="70.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="20.0">
         <columnConstraints>
 
             <ColumnConstraints minWidth="120.0" />

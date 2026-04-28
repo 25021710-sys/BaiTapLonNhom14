@@ -62,3 +62,8 @@
     -fx-border-width: 0;
     -fx-pref-width: 200;
 }
+
+.main-content {
+    -fx-background-color: #39efc5; /* Màu sáng hơn một chút để tạo chiều sâu */
+    -fx-background-radius: 30 0 0 30; /* Bo góc trái để tạo cảm giác mượt mà khi khớp với sidebar */
+}
