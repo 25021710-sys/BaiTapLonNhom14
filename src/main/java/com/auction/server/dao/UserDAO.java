@@ -24,7 +24,7 @@ public class UserDAO {
             }
             String salt = PasswordUtil.generationSalt();
             String hash = PasswordUtil.hash(password, salt);
-            String insertSql = "INSERT INTO users (username, password_hash, email, balance, role, active, salt, des, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertSql = "INSERT INTO users (username, password_hash, email, balance, role, active, salt, description, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement insertPs = connection.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS);
             insertPs.setString(1, username);
             insertPs.setString(2, hash);
@@ -33,8 +33,8 @@ public class UserDAO {
             insertPs.setString(5, "USER");
             insertPs.setBoolean(6, true);
             insertPs.setString(7, salt);
-            insertPs.setString(8, "");
-            insertPs.setString(9, "");
+            insertPs.setString(8, "description");
+            insertPs.setString(9, "location");
 
 
             int affectedRows = insertPs.executeUpdate();
@@ -84,7 +84,7 @@ public class UserDAO {
                             rs.getBoolean("active"),
                             rs.getTimestamp("created_at").toLocalDateTime(),// lấy từ DB)
                             rs.getString("salt"),
-                            rs.getString("des"),
+                            rs.getString("description"),
                             rs.getString("location"));
                 }
             }

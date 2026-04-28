@@ -10,7 +10,7 @@ public class User extends Entity {
     private String role;         // Phân quyền chính: ADMIN, USER
     private boolean active;
     private String salt;
-    private String des;
+    private String description;
     private String location;
 
     // Các trạng thái hoạt động thực tế của User
@@ -28,11 +28,11 @@ public class User extends Entity {
         this.active = true;
         this.balance = 0.0;
         this.role = "USER"; // Mặc định mọi người đều là USER thường
-        this.des = "";
+        this.description = "";
         this.location = "";
     }
 
-    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt, String salt, String des, String location) {
+    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt, String salt, String description, String location) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
@@ -41,7 +41,7 @@ public class User extends Entity {
         this.role = role;
         this.active = active;
         this.salt = salt;
-        this.des = des;
+        this.description = description;
         this.location = location;
     }
 
@@ -65,6 +65,9 @@ public class User extends Entity {
 
     public UserStatus getStatus() { return status; }
     public void setStatus(UserStatus status) { this.status = status; }
+
+    public String getDescription() { return description;}
+    public void setDes(String description) { this.description = description;}
 
     // Logic nghiệp vụ bổ sung
     public void deposit(double amount) {
