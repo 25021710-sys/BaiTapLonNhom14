@@ -26,6 +26,7 @@ public class UserProfileController {
     @FXML private ImageView userLogo;
     @FXML private ImageView BalanceLogo;
     @FXML private ImageView LogoutLogo;
+    @FXML private ImageView HomeLogo;
     @FXML private AnchorPane contentArea;
     @FXML private ImageView sideBarAvatar;
 
@@ -65,6 +66,23 @@ public class UserProfileController {
     public void handleLogout(javafx.scene.input.MouseEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource())
+                    .getScene().getWindow();
+
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void returnDashBoard(javafx.scene.input.MouseEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DashboardView.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) ((Node) event.getSource())

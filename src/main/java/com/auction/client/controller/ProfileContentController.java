@@ -1,5 +1,7 @@
 package com.auction.client.controller;
 
+import com.auction.server.model.User;
+import com.auction.session.Session;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -7,6 +9,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 public class ProfileContentController {
+    @FXML private Label displayEmail;
     @FXML private Button cancelButton;
     @FXML private Button editButton;
 
@@ -85,5 +88,13 @@ public class ProfileContentController {
         locationLabel.setManaged(!mode);
         locationField.setVisible(mode);
         locationField.setManaged(mode);
+    }
+    @Override
+    public void initialize() {
+        User user = Session.getCurrentUser();
+
+        nameLabel.setText(user.getUsername());
+        displayEmail.setText(user.getEmail());
+        desLabel.setText(user.getDescription());
     }
 }
