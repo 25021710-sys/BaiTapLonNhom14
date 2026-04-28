@@ -56,10 +56,12 @@ public class AutoBidConfig implements Serializable,Comparable<AutoBidConfig> {
     public BigDecimal getIncrement() { return increment; }
     public void setIncrement(BigDecimal increment) { this.increment = increment; }
 
+    public LocalDateTime getRegisteredAt() { return registeredAt; }
     public void printInfo() {
         System.out.println("[AUTO-BID] Người dùng ID: " + bidderId
                 + " | Tự động đặt giá cho Phiên: " + auctionId
                 + " | Giới hạn tối đa: " + maxBid
                 + " | Bước giá: " + increment);
     }
+
 }
