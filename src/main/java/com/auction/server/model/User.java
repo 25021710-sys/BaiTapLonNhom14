@@ -27,13 +27,13 @@ public class User extends Entity {
     public User() {
         super();
         this.active = true;
-        this.balance = 0;
+        this.balance = BigDecimal.valueOf(0);
         this.role = UserRole.USER; // Mặc định mọi người đều là USER thường
         this.description = "";
         this.location = "";
     }
 
-    public User(int id, String username, String passwordHash, String email, BigDecimal balance, String role, boolean active, LocalDateTime createdAt, String salt, String description, String location) {
+    public User(int id, String username, String passwordHash, String email, BigDecimal balance, UserRole role, boolean active, LocalDateTime createdAt, String salt, String description, String location) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
