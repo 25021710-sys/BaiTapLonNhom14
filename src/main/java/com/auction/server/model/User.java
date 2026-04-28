@@ -10,6 +10,8 @@ public class User extends Entity {
     private String role;         // Phân quyền chính: ADMIN, USER
     private boolean active;
     private String salt;
+    private String des;
+    private String location;
 
     // Các trạng thái hoạt động thực tế của User
     public enum UserStatus { IDLE, BIDDING, SELLING }
@@ -26,9 +28,11 @@ public class User extends Entity {
         this.active = true;
         this.balance = 0.0;
         this.role = "USER"; // Mặc định mọi người đều là USER thường
+        this.des = "";
+        this.location = "";
     }
 
-    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt, String salt) {
+    public User(int id, String username, String passwordHash, String email, double balance, String role, boolean active, LocalDateTime createdAt, String salt, String des, String location) {
         super(id, createdAt);
         this.username = username;
         this.passwordHash = passwordHash;
@@ -37,6 +41,8 @@ public class User extends Entity {
         this.role = role;
         this.active = active;
         this.salt = salt;
+        this.des = des;
+        this.location = location;
     }
 
     public String getUsername() { return username; }
