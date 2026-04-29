@@ -38,7 +38,10 @@
             <TextField fx:id="withdrawField"/>
         </TextFlow>
     </StackPane>
-    <Button text="Confirm" fx:id="ConfirmButton" onMouseClicked="#handleConfirm" visible="false"/>
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Button text="Confirm" fx:id="ConfirmButton" onMouseClicked="#handleConfirm" visible="false"/>
+        <Label fx:id="errorLabel" visible="false" managed="false"/>
+    </HBox>
     <!-- History -->
     <Label text="Deposit History" styleClass="section-title"/>
 

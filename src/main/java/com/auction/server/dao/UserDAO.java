@@ -95,4 +95,15 @@ public class UserDAO {
         }
         return null;
     }
+    public void updateBalance(int userId, BigDecimal newBalance) throws SQLException {
+        String sql = "UPDATE users SET balance = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setBigDecimal(1, newBalance);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        }
+    }
 }

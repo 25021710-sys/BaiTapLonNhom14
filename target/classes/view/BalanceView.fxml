@@ -6,6 +6,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.text.TextFlow?>
+<?import javafx.scene.text.Text?>
 <VBox spacing="30" styleClass="balance-root" stylesheets="@../style/style.css" fx:controller="com.auction.client.controller.BalanceController"
       xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1">
@@ -23,10 +25,23 @@
 
     <!-- Buttons -->
     <HBox spacing="20">
-        <Button text="Deposit" styleClass="btn-deposit"/>
-        <Button text="Withdraw" styleClass="btn-withdraw"/>
+        <Button onMouseClicked="#deposit" text="Deposit" styleClass="btn-deposit"/>
+        <Button onMouseClicked="#withdraw" text="Withdraw" styleClass="btn-withdraw"/>
     </HBox>
-
+    <StackPane>
+        <TextFlow textAlignment="CENTER" fx:id="depositFlow" visible="false">
+            <Text text="Enter the amount to deposit:  " />
+            <TextField fx:id="depositField"/>
+        </TextFlow>
+        <TextFlow textAlignment="CENTER" fx:id="withdrawFlow" visible="false">
+            <Text text="Enter the amount to withdraw:  " />
+            <TextField fx:id="withdrawField"/>
+        </TextFlow>
+    </StackPane>
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Button text="Confirm" fx:id="ConfirmButton" onMouseClicked="#handleConfirm" visible="false"/>
+        <Label fx:id="errorLabel" visible="false" managed="false"/>
+    </HBox>
     <!-- History -->
     <Label text="Deposit History" styleClass="section-title"/>
 
