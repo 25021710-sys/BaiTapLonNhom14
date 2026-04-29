@@ -89,7 +89,7 @@ public class BalanceController {
             ConfirmButton.setVisible(false);
 
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // ❗ lỗi từ deposit/withdraw
+            // lỗi từ deposit/withdraw
             returnError(e.getMessage());
         } catch (Exception e) {
             returnError("Nhập sai định dạng!");
