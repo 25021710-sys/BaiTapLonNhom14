@@ -43,7 +43,7 @@ public class BidDAO {
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, config.getAuctionId());
             ps.setInt(2, config.getBidderId());
-            ps.setDouble(3, config.getMaxBid().doubleValue());   // nếu bạn dùng BigDecimal thì convert sang double
+            ps.setDouble(3, config.getMaxBid().doubleValue());
             ps.setDouble(4, config.getIncrement().doubleValue());
             ps.setTimestamp(5, Timestamp.valueOf(config.getRegisteredAt()));
             ps.executeUpdate();
