@@ -24,7 +24,7 @@ public class BidDAO {
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, bid.getAuctionId());
             ps.setInt(2, bid.getBidderId());
-            ps.setDouble(3, bid.getAmount());
+            ps.setBigDecimal(3, bid.getAmount());
             ps.setBoolean(4, bid.isAutoBid());
             ps.setTimestamp(5, Timestamp.valueOf(bid.getCreatedAt()));
             ps.executeUpdate();

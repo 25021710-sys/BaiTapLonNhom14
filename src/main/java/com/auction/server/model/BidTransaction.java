@@ -1,11 +1,12 @@
 package com.auction.server.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class BidTransaction extends Entity {
     private int auctionId;
     private int bidderId;
-    private double amount;
+    private BigDecimal amount;
     private boolean isAutoBid;
 
     // 1. Hàm khởi tạo trống
@@ -15,7 +16,7 @@ public class BidTransaction extends Entity {
     }
 
     // 2. Hàm khởi tạo đầy đủ
-    public BidTransaction(int id, LocalDateTime createdAt, int auctionId, int bidderId, double amount, boolean isAutoBid) {
+    public BidTransaction(int id, LocalDateTime createdAt, int auctionId, int bidderId, BigDecimal amount, boolean isAutoBid) {
         super(id, createdAt);
         this.auctionId = auctionId;
         this.bidderId = bidderId;
@@ -29,8 +30,8 @@ public class BidTransaction extends Entity {
     public int getBidderId() { return bidderId; }
     public void setBidderId(int bidderId) { this.bidderId = bidderId; }
 
-    public double getAmount() { return amount; }
-    public void setAmount(double amount) { this.amount = amount; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
 
     public boolean isAutoBid() { return isAutoBid; }
     public void setAutoBid(boolean autoBid) { this.isAutoBid = autoBid; }
