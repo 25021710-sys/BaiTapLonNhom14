@@ -16,7 +16,8 @@ public class BalanceController {
 
     @FXML private TextField depositField;
     @FXML private TextField withdrawField;
-    @FXML private Button ConfirmButton;
+    @FXML private Button confirmButton;
+    @FXML private Button cancelButton;
     @FXML private TextFlow depositFlow;
     @FXML private TextFlow withdrawFlow;
     @FXML private Label balanceLabel;
@@ -44,7 +45,8 @@ public class BalanceController {
     public void deposit() {
         depositFlow.setVisible(true);
         withdrawFlow.setVisible(false);
-        ConfirmButton.setVisible(true);
+        confirmButton.setVisible(true);
+        cancelButton.setVisible(true);
         isDeposit = true;
     }
 
@@ -52,7 +54,8 @@ public class BalanceController {
     public void withdraw() {
         depositFlow.setVisible(false);
         withdrawFlow.setVisible(true);
-        ConfirmButton.setVisible(true);
+        confirmButton.setVisible(true);
+        cancelButton.setVisible(true);
         isDeposit = false;
     }
     @FXML
@@ -86,7 +89,8 @@ public class BalanceController {
             withdrawField.clear();
             depositFlow.setVisible(false);
             withdrawFlow.setVisible(false);
-            ConfirmButton.setVisible(false);
+            confirmButton.setVisible(false);
+            cancelButton.setVisible(false);
 
         } catch (IllegalArgumentException | IllegalStateException e) {
             // lỗi từ deposit/withdraw
@@ -94,6 +98,23 @@ public class BalanceController {
         } catch (Exception e) {
             returnError("Nhập sai định dạng!");
         }
+    }
+    @FXML
+    public void handleCancel() {
+        // reset input
+        depositField.clear();
+        withdrawField.clear();
+
+        // ẩn form
+        depositFlow.setVisible(false);
+        withdrawFlow.setVisible(false);
+
+        // ẩn buttons
+        confirmButton.setVisible(false);
+        cancelButton.setVisible(false);
+
+        // reset error
+        hideError();
     }
     public void returnError(String message){
         errorLabel.setText(message);

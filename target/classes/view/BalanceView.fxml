@@ -39,7 +39,8 @@
         </TextFlow>
     </StackPane>
     <HBox spacing="15" alignment="CENTER_LEFT">
-        <Button text="Confirm" fx:id="ConfirmButton" onMouseClicked="#handleConfirm" visible="false"/>
+        <Button text="Confirm" fx:id="confirmButton" onMouseClicked="#handleConfirm" visible="false"/>
+        <Button text="Cancel" fx:id="cancelButton" onMouseClicked="#handleCancel" visible="false"/>
         <Label fx:id="errorLabel" visible="false" managed="false"/>
     </HBox>
     <!-- History -->
