@@ -1,6 +1,7 @@
 package com.auction.client.controller;
 import com.auction.server.dao.UserDAO;
 import com.auction.server.model.User;
+import com.auction.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -23,18 +24,25 @@ public class LoginController {
         String email = emailField.getText().trim();
         String pass = passwordField.getText().trim();
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+
         // Validation
         if (email.isEmpty() || pass.isEmpty()) {
             showError("Vui lòng nhập đầy đủ thông tin");
             return;
-        } else if (!email.matches(emailRegex)){
+        } else if (!email.matches(emailRegex)) {
             showError("Định dạng Email không hợp lệ (ví dụ: abc@gmail.com)");
             return;
         } else {
             UserDAO userDAO = new UserDAO();
             User user = userDAO.login(email, pass);
+
             if (user != null) {
                 System.out.println("Đăng nhập thành công: " + user.getUsername());
+
+                // 🔥 THÊM DÒNG NÀY
+                Session.setCurrentUser(user);
+
+                // 👉 giữ nguyên code cũ
                 goToUserProfile(event);
 
             } else {

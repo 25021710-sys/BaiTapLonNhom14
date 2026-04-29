@@ -1,8 +1,10 @@
 package com.auction.server.dao;
 import com.auction.server.model.User;
 import com.auction.server.config.DatabaseConnection;
+import com.auction.server.model.UserRole;
 import com.auction.server.util.PasswordUtil;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,17 +26,17 @@ public class UserDAO {
             }
             String salt = PasswordUtil.generationSalt();
             String hash = PasswordUtil.hash(password, salt);
-            String insertSql = "INSERT INTO users (username, password_hash, email, balance, role, active, salt, des, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertSql = "INSERT INTO users (username, password_hash, email, balance, role, active, salt, description, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement insertPs = connection.prepareStatement(insertSql, PreparedStatement.RETURN_GENERATED_KEYS);
             insertPs.setString(1, username);
             insertPs.setString(2, hash);
             insertPs.setString(3, email);
-            insertPs.setDouble(4, 0.0);
-            insertPs.setString(5, "USER");
+            insertPs.setBigDecimal(4, BigDecimal.valueOf(0));
+            insertPs.setString(5, UserRole.USER.name());
             insertPs.setBoolean(6, true);
             insertPs.setString(7, salt);
-            insertPs.setString(8, "");
-            insertPs.setString(9, "");
+            insertPs.setString(8, "description");
+            insertPs.setString(9, "location");
 
 
             int affectedRows = insertPs.executeUpdate();
@@ -47,8 +49,8 @@ public class UserDAO {
                             username,
                             hash,
                             email,
-                            0.0,
-                            "USER",
+                            BigDecimal.valueOf(0),
+                            UserRole.USER,
                             true,
                             java.time.LocalDateTime.now(),
                             salt,
@@ -79,12 +81,12 @@ public class UserDAO {
                             rs.getString("username"),
                             storedHash,
                             rs.getString("email"),
-                            rs.getDouble("balance"),
-                            rs.getString("role"),
+                            rs.getBigDecimal("balance"),
+                            UserRole.valueOf(rs.getString("role")),
                             rs.getBoolean("active"),
-                            rs.getTimestamp("created_at").toLocalDateTime(),// lấy từ DB)
+                            rs.getTimestamp("created_at").toLocalDateTime(), // lấy từ DB)
                             rs.getString("salt"),
-                            rs.getString("des"),
+                            rs.getString("description"),
                             rs.getString("location"));
                 }
             }

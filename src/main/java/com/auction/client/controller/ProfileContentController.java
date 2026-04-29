@@ -89,12 +89,10 @@ public class ProfileContentController {
         locationField.setVisible(mode);
         locationField.setManaged(mode);
     }
-    @Override
     public void initialize() {
         User user = Session.getCurrentUser();
-
+        passField.setText("");
         nameLabel.setText(user.getUsername());
         displayEmail.setText(user.getEmail());
-        desLabel.setText(user.getDescription());
     }
 }

@@ -5,8 +5,12 @@ public class Electronics extends Item {
     private String model;
     private int warrantyMonths;
 
-    public Electronics(String name,double startingPrice,String sellerId,String brand,String model,int warrantyMonths ) {
-        super(name,startingPrice,sellerId,ItemCategory.ELECTRONICS);
+    public Electronics() {
+        super();
+    }
+
+    public Electronics(String name, String description, double startingPrice,String sellerId,String brand,String model,int warrantyMonths ) {
+        super(name,description, startingPrice,sellerId,ItemCategory.ELECTRONICS);
         this.brand=brand;
         this.model=model;
         this.warrantyMonths=warrantyMonths;

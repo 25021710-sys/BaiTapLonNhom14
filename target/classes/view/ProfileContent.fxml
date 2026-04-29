@@ -64,19 +64,19 @@
 
         <StackPane alignment="CENTER_LEFT" prefHeight="150.0" maxWidth="Infinity" GridPane.columnIndex="1"
                    GridPane.rowIndex="4">
-            <Label fx:id="locationLabel" text="Label"/>
+            <Label fx:id="locationLabel" text="tap edit to enter location"/>
             <TextField fx:id="locationField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
         <StackPane alignment="CENTER_LEFT" prefHeight="150.0" maxWidth="Infinity" GridPane.columnIndex="1"
                    GridPane.rowIndex="6">
-            <Label fx:id="desLabel" text="Label"/>
+            <Label fx:id="desLabel" text="tap edit to enter description"/>
             <TextField fx:id="desField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
         <StackPane alignment="CENTER_LEFT" prefHeight="19.0" maxWidth="Infinity" GridPane.columnIndex="1"
                    GridPane.rowIndex="9">
-            <Label fx:id="passLabel" text="Label"/>
+            <Label fx:id="passLabel" text="password"/>
             <PasswordField fx:id="passField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
