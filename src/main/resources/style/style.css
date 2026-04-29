@@ -82,3 +82,60 @@
     -fx-background-radius: 15;
     -fx-padding: 20;
 }
+/* Root */
+.balance-root {
+    -fx-padding: 25;
+}
+
+/* Title */
+.title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+/* Section title */
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* Sub text */
+.sub-text {
+    -fx-text-fill: gray;
+}
+
+/* Card */
+.balance-card {
+    -fx-background-color: white;
+    -fx-background-radius: 15;
+    -fx-padding: 30;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10,0,0,4);
+}
+
+/* Balance number */
+.balance-amount {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00b894;
+}
+
+/* Buttons */
+.btn-deposit {
+    -fx-background-color: #00b894;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+}
+
+.btn-withdraw {
+    -fx-background-color: #d63031;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+}
+
+.btn-deposit:hover {
+    -fx-background-color: #00a383;
+}
+
+.btn-withdraw:hover {
+    -fx-background-color: #c0392b;
+}

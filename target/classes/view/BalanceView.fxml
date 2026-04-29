@@ -6,6 +6,45 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="500.0" prefWidth="500.0" spacing="30" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.BalanceController">
+<?import javafx.scene.text.TextFlow?>
+<?import javafx.scene.text.Text?>
+<VBox spacing="30" styleClass="balance-root" stylesheets="@../style/style.css" fx:controller="com.auction.client.controller.BalanceController"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1">
 
+    <!-- Title -->
+    <Label text="Current Balance" styleClass="title" />
+
+    <!-- Card -->
+    <StackPane styleClass="balance-card">
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="Your Balance" styleClass="sub-text"/>
+            <Label fx:id="balanceLabel" text="0 VND" styleClass="balance-amount"/>
+        </VBox>
+    </StackPane>
+
+    <!-- Buttons -->
+    <HBox spacing="20">
+        <Button onMouseClicked="#deposit" text="Deposit" styleClass="btn-deposit"/>
+        <Button onMouseClicked="#withdraw" text="Withdraw" styleClass="btn-withdraw"/>
+    </HBox>
+    <StackPane>
+        <TextFlow textAlignment="CENTER" fx:id="depositFlow" visible="false">
+            <Text text="Enter the amount to deposit:  " />
+            <TextField fx:id="depositField"/>
+        </TextFlow>
+        <TextFlow textAlignment="CENTER" fx:id="withdrawFlow" visible="false">
+            <Text text="Enter the amount to withdraw:  " />
+            <TextField fx:id="withdrawField"/>
+        </TextFlow>
+    </StackPane>
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Button text="Confirm" fx:id="confirmButton" onMouseClicked="#handleConfirm" visible="false"/>
+        <Button text="Cancel" fx:id="cancelButton" onMouseClicked="#handleCancel" visible="false"/>
+        <Label fx:id="errorLabel" visible="false" managed="false"/>
+    </HBox>
+    <!-- History -->
+    <Label text="Deposit History" styleClass="section-title"/>
+
+    <TableView VBox.vgrow="ALWAYS"/>
 </VBox>
