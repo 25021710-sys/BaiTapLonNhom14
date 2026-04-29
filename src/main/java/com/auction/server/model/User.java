@@ -73,6 +73,12 @@ public class User extends Entity {
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
     public UserStatus getStatus() { return status; }
     public void setStatus(UserStatus status) {
         if (status == UserStatus.SELLING && this.role != UserRole.SELLER) {

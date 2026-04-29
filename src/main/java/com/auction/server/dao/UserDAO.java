@@ -106,4 +106,42 @@ public class UserDAO {
             ps.executeUpdate();
         }
     }
+    public void updateProfile(User user) throws SQLException {
+        String sql = "UPDATE users SET username = ?, description = ?, location = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getDescription());
+            ps.setString(3, user.getLocation());
+            ps.setInt(4, user.getId());
+
+            int rows = ps.executeUpdate();
+
+            if (rows == 0) {
+                throw new SQLException("Không tìm thấy user để update!");
+            }
+        }
+    }
+    public void updatePassword(int userId, String newPassword) throws SQLException {
+        String salt = PasswordUtil.generationSalt();
+        String hash = PasswordUtil.hash(newPassword, salt);
+
+        String sql = "UPDATE users SET password_hash = ?, salt = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, hash);
+            ps.setString(2, salt);
+            ps.setInt(3, userId);
+
+            int rows = ps.executeUpdate();
+
+            if (rows == 0) {
+                throw new SQLException("Không tìm thấy user để update password!");
+            }
+        }
+    }
 }

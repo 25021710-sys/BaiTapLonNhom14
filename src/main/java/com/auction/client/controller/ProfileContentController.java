@@ -1,5 +1,6 @@
 package com.auction.client.controller;
 
+import com.auction.server.dao.UserDAO;
 import com.auction.server.model.User;
 import com.auction.session.Session;
 import javafx.fxml.FXML;
@@ -33,10 +34,12 @@ public class ProfileContentController {
             editButton.setText("Save Changes");
             cancelButton.setVisible(true);
             cancelButton.setManaged(true);
-            nameField.setText(nameLabel.getText());
-            locationField.setText(locationLabel.getText());
-            passField.setText(passLabel.getText());
-            desField.setText(desLabel.getText());
+
+            User user = Session.getCurrentUser();
+            nameField.setText(user.getUsername());
+            locationField.setText(user.getLocation());
+            desField.setText(user.getDescription());
+            passField.setText(""); // luôn rỗng
         } else {
             // --- ĐANG LÀ SAVE: LƯU VÀ ĐÓNG FORM ---
             handleSave();
@@ -51,22 +54,40 @@ public class ProfileContentController {
     }
     @FXML
     private void handleSave(){
-        // 1. Lấy dữ liệu từ TextField cập nhật ngược lại cho Label
-        nameLabel.setText(nameField.getText());
-        passLabel.setText(passField.getText());
-        desLabel.setText(desField.getText());
-        locationLabel.setText(locationField.getText());
-        // (Chỗ này bạn có thể viết thêm code để lưu vào Database)
+        User user = Session.getCurrentUser();
+        UserDAO userDAO = new UserDAO();
+        try {
+            // 🔥 update object trước
+            user.setUsername(nameField.getText());
+            user.setDescription(desField.getText());
+            user.setLocation(locationField.getText());
 
-        // 2. Quay lại chế độ xem (Giống hệt lúc bấm Cancel)
+            // 🔥 lưu DB (profile)
+            userDAO.updateProfile(user);
+
+            // 🔥 nếu có nhập password thì mới update
+            if (!passField.getText().isEmpty()) {
+                userDAO.updatePassword(user.getId(), passField.getText());
+            }
+
+            // 🔥 update UI sau khi DB OK
+            nameLabel.setText(user.getUsername());
+            desLabel.setText(user.getDescription());
+            locationLabel.setText(user.getLocation());
+            passLabel.setText("********");
+
+            System.out.println("Đã lưu DB thành công!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Lỗi khi lưu DB");
+            return;
+        }
+
         showEditMode(false);
-
-        // 3. Đổi tên nút về lại ban đầu
         editButton.setText("Edit");
         cancelButton.setVisible(false);
         cancelButton.setManaged(false);
-
-        System.out.println("Đã lưu thành công!");
     }
     public void showEditMode(boolean mode) {
         nameLabel.setVisible(!mode);
@@ -91,8 +112,18 @@ public class ProfileContentController {
     }
     public void initialize() {
         User user = Session.getCurrentUser();
-        passField.setText("");
+        cancelButton.setVisible(false);
+        cancelButton.setManaged(false);
+
+        if (user == null) return;
+
+        // 🔥 load từ DB (qua Session)
         nameLabel.setText(user.getUsername());
         displayEmail.setText(user.getEmail());
+        desLabel.setText(user.getDescription());
+        locationLabel.setText(user.getLocation());
+        passLabel.setText("********");
+
+        passField.setText("");
     }
 }
