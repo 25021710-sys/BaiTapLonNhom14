@@ -6,8 +6,12 @@ public class Vehicle extends Item {
     private int year;            // Năm sản xuất
     private int mileage;         // Số km đã đi
 
-    public Vehicle(String name,double startingPrice,String sellerId,String make,String vehicleModel,int year,int mileage) {
-        super(name,startingPrice,sellerId,ItemCategory.VEHICLE);
+    public Vehicle() {
+        super();
+    }
+
+    public Vehicle(String name, String description, double startingPrice,String sellerId,String make,String vehicleModel,int year,int mileage) {
+        super(name, description, startingPrice,sellerId,ItemCategory.VEHICLE);
         this.make=make;
         this.vehicleModel=vehicleModel;
         this.year=year;
