@@ -1,8 +1,10 @@
 package com.auction.server.service;
 
 import com.auction.common.dto.UserDTO;
+import com.auction.common.request.BalanceRequest;
 import com.auction.common.request.RegisterRequest;
 import com.auction.common.request.UpdateProfileRequest;
+import com.auction.common.response.BalanceResponse;
 import com.auction.common.response.RegisterResponse;
 import com.auction.common.response.UpdateProfileResponse;
 import com.auction.server.dao.UserDAO;
@@ -70,6 +72,39 @@ public class AuthService {
         UserDTO dto = mapToDTO(user);
 
         return new UpdateProfileResponse(true, "Cập nhật thành công", dto);
+    }
+    public BalanceResponse handleBalance(BalanceRequest req) {
+        try {
+            User user = userDAO.findById(req.getUserId());
+
+            if (user == null) {
+                return new BalanceResponse(false, "User không tồn tại", null);
+            }
+
+            if (req.getType().equals("DEPOSIT")) {
+                user.deposit(req.getAmount());
+            } else {
+                user.withdraw(req.getAmount());
+            }
+
+            userDAO.updateBalance(user.getId(), user.getBalance());
+
+            // 🔥 map sang UserDTO
+            UserDTO dto = new UserDTO(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getBalance(),
+                    user.getRole().name(),
+                    user.getLocation(),
+                    user.getDescription()
+            );
+
+            return new BalanceResponse(true, "Thành công", dto);
+
+        } catch (Exception e) {
+            return new BalanceResponse(false, e.getMessage(), null);
+        }
     }
 
     private UserDTO mapToDTO(User user) {
