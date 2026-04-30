@@ -2,7 +2,9 @@ package com.auction.server.service;
 
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.RegisterRequest;
+import com.auction.common.request.UpdateProfileRequest;
 import com.auction.common.response.RegisterResponse;
+import com.auction.common.response.UpdateProfileResponse;
 import com.auction.server.dao.UserDAO;
 import com.auction.server.model.User;
 import com.auction.common.request.LoginRequest;
@@ -46,6 +48,28 @@ public class AuthService {
         UserDTO dto = mapToDTO(user);
 
         return new RegisterResponse(true, "Đăng ký thành công", dto);
+    }
+    public UpdateProfileResponse updateProfile(UpdateProfileRequest req) throws SQLException {
+
+        User user = userDAO.findById(req.getUserId());
+
+        if (user == null) {
+            return new UpdateProfileResponse(false, "User không tồn tại", null);
+        }
+
+        user.setUsername(req.getUsername());
+        user.setDescription(req.getDescription());
+        user.setLocation(req.getLocation());
+
+        userDAO.updateProfile(user);
+
+        if (req.getPassword() != null && !req.getPassword().isEmpty()) {
+            userDAO.updatePassword(user.getId(), req.getPassword());
+        }
+
+        UserDTO dto = mapToDTO(user);
+
+        return new UpdateProfileResponse(true, "Cập nhật thành công", dto);
     }
 
     private UserDTO mapToDTO(User user) {
