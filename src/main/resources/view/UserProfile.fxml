@@ -16,8 +16,8 @@
             </ImageView>
 
             <VBox alignment="CENTER_LEFT" spacing="2.0">
-                <Label fx:id="sideBarName" style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Nguyễn Văn An" />
-                <Label fx:id="sideBarEmail" style="-fx-text-fill: #636e72; -fx-font-size: 11px;" text="an.nguyen@gmail.com" />
+                <Label fx:id="sideBarName" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <Label fx:id="sideBarEmail" style="-fx-text-fill: #636e72; -fx-font-size: 11px;"/>
             </VBox>
         </HBox>
       <Separator prefWidth="200.0">

@@ -15,6 +15,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import com.auction.session.Session;
+import com.auction.common.dto.UserDTO;
 
 import java.io.IOException;
 
@@ -65,6 +67,8 @@ public class UserProfileController {
     @FXML
     public void handleLogout(javafx.scene.input.MouseEvent event) {
         try {
+            Session.clear();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
             Parent root = loader.load();
 
@@ -72,6 +76,7 @@ public class UserProfileController {
                     .getScene().getWindow();
 
             stage.setScene(new Scene(root));
+            stage.setTitle("Login"); // optional
             stage.show();
 
         } catch (Exception e) {
@@ -93,6 +98,18 @@ public class UserProfileController {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    @FXML
+    public void initialize() {
+        UserDTO user = Session.getCurrentUser();
+
+        if (user != null) {
+            sideBarName.setText(user.getUsername());
+            sideBarEmail.setText(user.getEmail());
+        } else {
+            sideBarName.setText("Guest");
+            sideBarEmail.setText("");
         }
     }
 }
