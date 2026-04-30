@@ -1,7 +1,7 @@
 package com.auction.server.dao;
 
 import com.auction.server.config.DatabaseConnection;
-import com.auction.server.model.Auction;
+import com.auction.common.model.Auction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

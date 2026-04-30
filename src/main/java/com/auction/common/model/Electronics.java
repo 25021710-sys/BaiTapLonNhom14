@@ -1,4 +1,4 @@
-package com.auction.server.model;
+package com.auction.common.model;
 
 public class Electronics extends Item {
     private String brand;

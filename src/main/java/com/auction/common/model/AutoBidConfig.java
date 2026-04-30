@@ -1,5 +1,5 @@
 
-package com.auction.server.model;
+package com.auction.common.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

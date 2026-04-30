@@ -1,7 +1,7 @@
 package com.auction.server.dao;
 
 import com.auction.server.config.DatabaseConnection;
-import com.auction.server.model.*;
+import com.auction.common.model.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
