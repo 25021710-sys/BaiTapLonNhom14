@@ -1,4 +1,4 @@
-package com.auction.common.model;
+package com.auction.server.model;
 
 public class Vehicle extends Item {
     private String make;         // Hãng xe (Toyota, Ford)

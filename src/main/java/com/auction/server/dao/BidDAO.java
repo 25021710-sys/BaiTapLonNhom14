@@ -1,7 +1,7 @@
 package com.auction.server.dao;
 import com.auction.server.config.DatabaseConnection;
-import com.auction.common.model.AutoBidConfig;
-import com.auction.common.model.BidTransaction;
+import com.auction.server.model.AutoBidConfig;
+import com.auction.server.model.BidTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.sql.Connection;

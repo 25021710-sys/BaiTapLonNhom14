@@ -1,6 +1,6 @@
 package com.auction.session;
 
-import com.auction.common.model.User;
+import com.auction.server.model.User;
 
 public class Session {
     private static User currentUser;

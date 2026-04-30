@@ -1,7 +1,7 @@
 package com.auction.server.dao;
-import com.auction.common.model.User;
+import com.auction.server.model.User;
 import com.auction.server.config.DatabaseConnection;
-import com.auction.common.model.UserRole;
+import com.auction.server.model.UserRole;
 import com.auction.server.util.PasswordUtil;
 
 import java.math.BigDecimal;

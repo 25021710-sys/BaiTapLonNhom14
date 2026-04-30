@@ -1,4 +1,4 @@
-package com.auction.common.model;
+package com.auction.server.model;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;

@@ -1,6 +1,6 @@
 package com.auction.server.dao;
 
-import com.auction.common.model.User;
+import com.auction.server.model.User;
 
 public class TextConnection {
     public static void main(String[] args) {

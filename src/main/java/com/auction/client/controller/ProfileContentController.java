@@ -1,7 +1,7 @@
 package com.auction.client.controller;
 
 import com.auction.server.dao.UserDAO;
-import com.auction.common.model.User;
+import com.auction.server.model.User;
 import com.auction.session.Session;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
