@@ -31,7 +31,7 @@ public class ProfileContentController {
     @FXML private TextField locationField;
 
     @FXML
-    private void handleEdit() throws SQLException {
+    private void handleEdit(){
         if (editButton.getText().equals("Edit")) {
             // --- ĐANG LÀ EDIT: MỞ FORM CHO SỬA ---
             showEditMode(true);
@@ -57,43 +57,49 @@ public class ProfileContentController {
         cancelButton.setManaged(false);
     }
     @FXML
-    private void handleSave() throws SQLException {
-        UserDTO user = Session.getCurrentUser();
+    private void handleSave() {
+        try {
+            UserDTO user = Session.getCurrentUser();
 
-        AuthService authService = new AuthService();
+            AuthService authService = new AuthService();
 
-        UpdateProfileRequest request = new UpdateProfileRequest(
-                user.getId(),
-                nameField.getText(),
-                desField.getText(),
-                locationField.getText(),
-                passField.getText()
-        );
+            UpdateProfileRequest request = new UpdateProfileRequest(
+                    user.getId(),
+                    nameField.getText(),
+                    desField.getText(),
+                    locationField.getText(),
+                    passField.getText()
+            );
 
-        UpdateProfileResponse response = authService.updateProfile(request);
+            UpdateProfileResponse response = authService.updateProfile(request);
 
-        if (!response.isSuccess()) {
-            System.out.println(response.getMessage());
-            return;
+            if (!response.isSuccess()) {
+                System.out.println(response.getMessage());
+                return;
+            }
+
+            // 🔥 update lại session bằng DTO mới
+            Session.setCurrentUser(response.getUser());
+
+            UserDTO updatedUser = response.getUser();
+
+            // update UI
+            nameLabel.setText(updatedUser.getUsername());
+            desLabel.setText(updatedUser.getDescription());
+            locationLabel.setText(updatedUser.getLocation());
+            passLabel.setText("********");
+
+            System.out.println("Update thành công!");
+
+            showEditMode(false);
+            editButton.setText("Edit");
+            cancelButton.setVisible(false);
+            cancelButton.setManaged(false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Lỗi khi update profile!");
         }
-
-        // 🔥 update lại session bằng DTO mới
-        Session.setCurrentUser(response.getUser());
-
-        UserDTO updatedUser = response.getUser();
-
-        // update UI
-        nameLabel.setText(updatedUser.getUsername());
-        desLabel.setText(updatedUser.getDescription());
-        locationLabel.setText(updatedUser.getLocation());
-        passLabel.setText("********");
-
-        System.out.println("Update thành công!");
-
-        showEditMode(false);
-        editButton.setText("Edit");
-        cancelButton.setVisible(false);
-        cancelButton.setManaged(false);
     }
     public void showEditMode(boolean mode) {
         nameLabel.setVisible(!mode);
