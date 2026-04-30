@@ -8,6 +8,8 @@ public class LoginResponse implements Serializable {
     private String message;
     private UserDTO user;
 
+    public LoginResponse() {}
+
     public LoginResponse(boolean success, String message, UserDTO user) {
         this.success = success;
         this.message = message;
@@ -17,4 +19,8 @@ public class LoginResponse implements Serializable {
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
     public UserDTO getUser() { return user; }
+
+    public void setSuccess(boolean success) { this.success = success; }
+    public void setMessage(String message) { this.message = message; }
+    public void setUser(UserDTO user) { this.user = user; }
 }

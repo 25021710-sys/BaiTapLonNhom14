@@ -1,13 +1,17 @@
 package com.auction.server.service;
 
 import com.auction.common.dto.UserDTO;
+import com.auction.server.dao.UserDAO;
 import com.auction.server.model.User;
 import com.auction.common.request.LoginRequest;
 import com.auction.common.response.LoginResponse;
 
-public class AuthService {
+import java.sql.SQLException;
 
-    public LoginResponse login(LoginRequest req) {
+public class AuthService {
+    private UserDAO userDAO;
+
+    public LoginResponse login(LoginRequest req) throws SQLException {
         User user = userDAO.login(req.getEmail(), req.getPassword());
 
         if (user == null) {
