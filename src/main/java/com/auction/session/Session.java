@@ -1,15 +1,20 @@
 package com.auction.session;
 
-import com.auction.server.model.User;
+import com.auction.common.dto.UserDTO;
 
 public class Session {
-    private static User currentUser;
+    private static UserDTO currentUser;
 
-    public static void setCurrentUser(User user) {
+    public static void setCurrentUser(UserDTO user) {
         currentUser = user;
     }
 
-    public static User getCurrentUser() {
+    public static UserDTO getCurrentUser() {
         return currentUser;
+    }
+
+    // (optional) logout
+    public static void clear() {
+        currentUser = null;
     }
 }
