@@ -1,6 +1,6 @@
 package com.auction.server.service;
 
-import com.auction.common.model.AutoBidConfig;
+import com.auction.server.model.AutoBidConfig;
 import com.auction.server.dao.BidDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
