@@ -43,7 +43,7 @@
         <Label style="-fx-text-fill: #636e72;" text="Name" GridPane.rowIndex="0" />
 
         <Label style="-fx-text-fill: #636e72;" text="Email account" GridPane.rowIndex="2" />
-        <Label fx:id="displayEmail" text="an.nguyen@gmail.com" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+        <Label fx:id="displayEmail" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
         <Label style="-fx-text-fill: #636e72;" text="Location" GridPane.rowIndex="4" />
 
@@ -56,7 +56,7 @@
         <Separator prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="5" />
 
         <StackPane alignment="CENTER_LEFT" prefHeight="57.0" maxWidth="Infinity" GridPane.columnIndex="1">
-            <Label fx:id="nameLabel" text="Label"/>
+            <Label fx:id="nameLabel"/>
             <TextField fx:id="nameField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
@@ -64,19 +64,19 @@
 
         <StackPane alignment="CENTER_LEFT" prefHeight="150.0" maxWidth="Infinity" GridPane.columnIndex="1"
                    GridPane.rowIndex="4">
-            <Label fx:id="locationLabel" text="tap edit to enter location"/>
+            <Label fx:id="locationLabel"/>
             <TextField fx:id="locationField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
         <StackPane alignment="CENTER_LEFT" prefHeight="150.0" maxWidth="Infinity" GridPane.columnIndex="1"
                    GridPane.rowIndex="6">
-            <Label fx:id="desLabel" text="tap edit to enter description"/>
+            <Label fx:id="desLabel"/>
             <TextField fx:id="desField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
         <StackPane alignment="CENTER_LEFT" prefHeight="19.0" maxWidth="Infinity" GridPane.columnIndex="1"
                    GridPane.rowIndex="9">
-            <Label fx:id="passLabel" text="password"/>
+            <Label fx:id="passLabel" text="********"/>
             <PasswordField fx:id="passField" maxWidth="Infinity" visible="false"/>
         </StackPane>
 
