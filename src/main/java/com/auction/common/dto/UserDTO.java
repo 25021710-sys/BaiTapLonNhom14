@@ -9,13 +9,21 @@ public class UserDTO implements Serializable {
     private String email;
     private BigDecimal balance;
     private String role;
+    private String location;
+    private String description;
 
-    public UserDTO(int id, String username, String email, BigDecimal balance, String role) {
+    public UserDTO() {}
+
+    public UserDTO(int id, String username, String email,
+                   BigDecimal balance, String role,
+                   String location, String description) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.balance = balance;
         this.role = role;
+        this.location = location;
+        this.description = description;
     }
 
     public int getId() { return id; }
@@ -23,4 +31,11 @@ public class UserDTO implements Serializable {
     public String getEmail() { return email; }
     public BigDecimal getBalance() { return balance; }
     public String getRole() { return role; }
+    public String getLocation() { return location; }
+    public String getDescription() { return description; }
+
+    // 👉 thêm setter để update session dễ hơn
+    public void setUsername(String username) { this.username = username; }
+    public void setLocation(String location) { this.location = location; }
+    public void setDescription(String description) { this.description = description; }
 }

@@ -1,13 +1,17 @@
 package com.auction.client.controller;
 
-import com.auction.server.dao.UserDAO;
-import com.auction.server.model.User;
+import com.auction.common.dto.UserDTO;
+import com.auction.common.request.UpdateProfileRequest;
+import com.auction.common.response.UpdateProfileResponse;
+import com.auction.server.service.AuthService;
 import com.auction.session.Session;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+
+import java.sql.SQLException;
 
 public class ProfileContentController {
     @FXML private Label displayEmail;
@@ -27,7 +31,7 @@ public class ProfileContentController {
     @FXML private TextField locationField;
 
     @FXML
-    private void handleEdit() {
+    private void handleEdit() throws SQLException {
         if (editButton.getText().equals("Edit")) {
             // --- ĐANG LÀ EDIT: MỞ FORM CHO SỬA ---
             showEditMode(true);
@@ -35,11 +39,11 @@ public class ProfileContentController {
             cancelButton.setVisible(true);
             cancelButton.setManaged(true);
 
-            User user = Session.getCurrentUser();
+            UserDTO user = Session.getCurrentUser();
+
             nameField.setText(user.getUsername());
             locationField.setText(user.getLocation());
             desField.setText(user.getDescription());
-            passField.setText(""); // luôn rỗng
         } else {
             // --- ĐANG LÀ SAVE: LƯU VÀ ĐÓNG FORM ---
             handleSave();
@@ -53,36 +57,38 @@ public class ProfileContentController {
         cancelButton.setManaged(false);
     }
     @FXML
-    private void handleSave(){
-        User user = Session.getCurrentUser();
-        UserDAO userDAO = new UserDAO();
-        try {
-            // 🔥 update object trước
-            user.setUsername(nameField.getText());
-            user.setDescription(desField.getText());
-            user.setLocation(locationField.getText());
+    private void handleSave() throws SQLException {
+        UserDTO user = Session.getCurrentUser();
 
-            // 🔥 lưu DB (profile)
-            userDAO.updateProfile(user);
+        AuthService authService = new AuthService();
 
-            // 🔥 nếu có nhập password thì mới update
-            if (!passField.getText().isEmpty()) {
-                userDAO.updatePassword(user.getId(), passField.getText());
-            }
+        UpdateProfileRequest request = new UpdateProfileRequest(
+                user.getId(),
+                nameField.getText(),
+                desField.getText(),
+                locationField.getText(),
+                passField.getText()
+        );
 
-            // 🔥 update UI sau khi DB OK
-            nameLabel.setText(user.getUsername());
-            desLabel.setText(user.getDescription());
-            locationLabel.setText(user.getLocation());
-            passLabel.setText("********");
+        UpdateProfileResponse response = authService.updateProfile(request);
 
-            System.out.println("Đã lưu DB thành công!");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Lỗi khi lưu DB");
+        if (!response.isSuccess()) {
+            System.out.println(response.getMessage());
             return;
         }
+
+        // 🔥 update lại session bằng DTO mới
+        Session.setCurrentUser(response.getUser());
+
+        UserDTO updatedUser = response.getUser();
+
+        // update UI
+        nameLabel.setText(updatedUser.getUsername());
+        desLabel.setText(updatedUser.getDescription());
+        locationLabel.setText(updatedUser.getLocation());
+        passLabel.setText("********");
+
+        System.out.println("Update thành công!");
 
         showEditMode(false);
         editButton.setText("Edit");
@@ -111,13 +117,13 @@ public class ProfileContentController {
         locationField.setManaged(mode);
     }
     public void initialize() {
-        User user = Session.getCurrentUser();
+        UserDTO user = Session.getCurrentUser();
+
         cancelButton.setVisible(false);
         cancelButton.setManaged(false);
 
         if (user == null) return;
 
-        // 🔥 load từ DB (qua Session)
         nameLabel.setText(user.getUsername());
         displayEmail.setText(user.getEmail());
         desLabel.setText(user.getDescription());
