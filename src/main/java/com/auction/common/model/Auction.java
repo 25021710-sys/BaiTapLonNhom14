@@ -2,6 +2,8 @@ package com.auction.common.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Auction extends Entity {
     private int id; // PK, auto increment
@@ -13,10 +15,14 @@ public class Auction extends Entity {
     private BigDecimal startingPrice;
     private BigDecimal currentPrice;
     private BigDecimal reservePrice;
+    private BigDecimal minBidIncrement;
     private double currentHighestBid;
     private AuctionStatus status; // OPEN, RUNNING, FINISHED, CANCELLED
     private int extensionCount;
     private LocalDateTime createdAt;
+    private int totalBids;
+    private List<BidTransaction> bidHistory;
+
 
     // 1. Hàm khởi tạo trống
     public Auction() {
@@ -38,8 +44,21 @@ public class Auction extends Entity {
         this.currentHighestBid = currentHighestBid;
         this.status = AuctionStatus.OPEN;
         this.extensionCount = extensionCount;
-    }
 
+    }
+    public Auction(int itemId, int sellerId, BigDecimal startingPrice, LocalDateTime startTime, LocalDateTime endTime) {
+        this.itemId = itemId;
+        this.sellerId = sellerId;
+        this.startingPrice = startingPrice;
+        this.currentPrice = startingPrice;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.status = AuctionStatus.OPEN;
+        this.bidHistory = new ArrayList();
+        this.totalBids = 0;
+        this.extensionCount = 0;
+        this.minBidIncrement = new BigDecimal("1000");
+    }
     public int getItemId() { return itemId; }
     public void setItemId(int itemId) { this.itemId = itemId; }
 
