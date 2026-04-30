@@ -1,4 +1,4 @@
-package com.auction.server.dto;
+package com.auction.common.dto;
 
 public class BidRequest {
     private String auctionId;
