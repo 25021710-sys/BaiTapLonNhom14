@@ -1,5 +1,7 @@
 package com.auction.server.model;
 
+import java.math.BigDecimal;
+
 public class Vehicle extends Item {
     private String make;         // Hãng xe (Toyota, Ford)
     private String vehicleModel; // Dòng xe (Camry, Ranger)
@@ -10,7 +12,7 @@ public class Vehicle extends Item {
         super();
     }
 
-    public Vehicle(String name, String description, double startingPrice,String sellerId,String make,String vehicleModel,int year,int mileage) {
+    public Vehicle(String name, String description, BigDecimal startingPrice, String sellerId, String make, String vehicleModel, int year, int mileage) {
         super(name, description, startingPrice,sellerId,ItemCategory.VEHICLE);
         this.make=make;
         this.vehicleModel=vehicleModel;

@@ -42,4 +42,6 @@ public class UserDTO implements Serializable {
     public void setUsername(String username) { this.username = username; }
     public void setLocation(String location) { this.location = location; }
     public void setDescription(String description) { this.description = description; }
+
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
 }

@@ -1,8 +1,7 @@
 package com.auction.client.controller;
 
-import com.auction.server.dao.UserDAO;
+import com.auction.common.dto.UserDTO;
 import com.auction.session.Session;
-import com.auction.server.model.User;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,7 +23,7 @@ public class BalanceController {
     @FXML private Label errorLabel;
 
     private boolean isDeposit = true;
-    private User user;
+    private UserDTO user;
 
     @FXML
     public void initialize() {
@@ -37,7 +36,7 @@ public class BalanceController {
         updateBalanceUI();
     }
     private void updateBalanceUI() {
-        User user = Session.getCurrentUser(); // lấy từ Session
+        UserDTO user = Session.getCurrentUser(); // lấy từ Session
         NumberFormat nf = NumberFormat.getInstance(Locale.of("vi", "VN"));
         balanceLabel.setText(nf.format(user.getBalance()) + " VND");
     }
@@ -63,28 +62,40 @@ public class BalanceController {
         try {
             hideError();
 
-            User user = Session.getCurrentUser();
-            BigDecimal amount;
+            // 1. Lấy user hiện tại từ Session (kiểu UserDTO)
+            user = Session.getCurrentUser();
+            if (user == null) return;
 
+            // 2. Lấy số tiền người dùng nhập vào
+            BigDecimal amount = new BigDecimal(isDeposit ? depositField.getText() : withdrawField.getText());
+
+            // 3. Lấy số dư hiện tại từ UserDTO
+            BigDecimal currentBalance = user.getBalance();
+            BigDecimal newBalance;
+
+            // 4. Tính toán số dư mới bằng BigDecimal
             if (isDeposit) {
-                amount = new BigDecimal(depositField.getText());
-                user.deposit(amount); // ✅ dùng method trong User
+                // newBalance = currentBalance + amount
+                newBalance = currentBalance.add(amount);
             } else {
-                amount = new BigDecimal(withdrawField.getText());
-                user.withdraw(amount); // ✅ dùng method trong User
+                // Kiểm tra nếu rút quá số dư
+                if (currentBalance.compareTo(amount) < 0) {
+                    returnError("Số dư không đủ để thực hiện rút tiền!");
+                    return;
+                }
+                // newBalance = currentBalance - amount
+                newBalance = currentBalance.subtract(amount);
             }
 
-            // 👉 lấy balance mới
-            BigDecimal newBalance = user.getBalance();
+            // 5. Gửi yêu cầu cập nhật lên Server qua Socket (Thay thế cho UserDAO)
+            // Lưu ý: Theo kiến trúc Client-Server, bạn gửi BalanceRequest chứa newBalance
+            // Ví dụ: ClientNetwork.getInstance().send(new BalanceRequest(user.getId(), amount, isDeposit));
 
-            // 👉 update DB
-            UserDAO dao = new UserDAO();
-            dao.updateBalance(user.getId(), newBalance);
-
-            // 👉 update UI
+            /* ĐOẠN NÀY SAU KHI SERVER PHẢN HỒI THÀNH CÔNG */
+            // Cập nhật lại UI sau khi tính toán xong
             updateBalanceUI();
 
-            // 👉 reset UI
+            // Reset giao diện
             depositField.clear();
             withdrawField.clear();
             depositFlow.setVisible(false);
@@ -92,11 +103,10 @@ public class BalanceController {
             confirmButton.setVisible(false);
             cancelButton.setVisible(false);
 
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // lỗi từ deposit/withdraw
-            returnError(e.getMessage());
+        } catch (NumberFormatException e) {
+            returnError("Vui lòng nhập đúng số tiền (Ví dụ: 100000)!");
         } catch (Exception e) {
-            returnError("Nhập sai định dạng!");
+            returnError("Đã xảy ra lỗi: " + e.getMessage());
         }
     }
     @FXML
