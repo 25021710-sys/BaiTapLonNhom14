@@ -23,7 +23,7 @@ public class ItemDAO {
 
             pstmt.setString(1, item.getName());
             pstmt.setString(2, item.getDescription());
-            pstmt.setDouble(3, item.getStartingPrice());
+            pstmt.setBigDecimal(3, item.getStartingPrice());
             pstmt.setString(4, item.getSellerId());
             // Chuyển Enum (ví dụ: ELECTRONICS) thành dạng chữ "ELECTRONICS" để lưu vào DB
             pstmt.setString(5, item.getCategory().name());
@@ -76,7 +76,7 @@ public class ItemDAO {
                 item.setId(rs.getInt("id"));
                 item.setName(rs.getString("name"));
                 item.setDescription(rs.getString("description"));
-                item.setStartingPrice(rs.getDouble("starting_price"));
+                item.setStartingPrice(rs.getBigDecimal("starting_price"));
                 item.setSellerId(rs.getString("seller_id"));
                 // Ép kiểu chữ (String) trong DB về lại kiểu Enum ItemCategory trong Java
                 if (categoryStr != null) {
@@ -103,7 +103,7 @@ public class ItemDAO {
 
             pstmt.setString(1, item.getName());
             pstmt.setString(2, item.getDescription());
-            pstmt.setDouble(3, item.getStartingPrice());
+            pstmt.setBigDecimal(3, item.getStartingPrice());
             pstmt.setString(4, item.getCategory().name());
             pstmt.setInt(5, item.getId());
 

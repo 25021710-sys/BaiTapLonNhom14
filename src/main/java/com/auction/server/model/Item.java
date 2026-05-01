@@ -1,15 +1,17 @@
 package com.auction.server.model;
 
+import java.math.BigDecimal;
+
 public abstract class Item extends Entity {
     protected String name;
     protected String description;
-    protected double startingPrice;
+    protected BigDecimal startingPrice;
     protected String sellerId;
     protected ItemCategory category;
 
     public Item() {  super(); }
 
-    public Item(String name, String description, double startingPrice,String sellerId, ItemCategory category){
+    public Item(String name, String description, BigDecimal startingPrice,String sellerId, ItemCategory category){
         super();
         this.name=name;
         this.description = description;
@@ -22,8 +24,8 @@ public abstract class Item extends Entity {
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public double getStartingPrice() { return startingPrice; }
-    public void setStartingPrice(double startingPrice) { this.startingPrice = startingPrice; }
+    public BigDecimal getStartingPrice() { return startingPrice; }
+    public void setStartingPrice(BigDecimal startingPrice) { this.startingPrice = startingPrice; }
     public String getSellerId() { return sellerId; }
     public void setSellerId(String sellerId) { this.sellerId = sellerId; }
     public ItemCategory getCategory() { return category; }
