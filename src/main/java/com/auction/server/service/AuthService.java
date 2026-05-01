@@ -16,6 +16,9 @@ import java.sql.SQLException;
 
 public class AuthService {
     private UserDAO userDAO;
+    public AuthService() {
+        this.userDAO = new UserDAO();
+    }
 
     public LoginResponse login(LoginRequest req) throws SQLException {
         User user = userDAO.login(req.getEmail(), req.getPassword());

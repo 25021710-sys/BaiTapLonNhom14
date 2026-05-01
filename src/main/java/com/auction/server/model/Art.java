@@ -1,5 +1,7 @@
 package com.auction.server.model;
 
+import java.math.BigDecimal;
+
 public class Art extends Item {
     private String artist;
     private int yearCreated;
@@ -9,7 +11,7 @@ public class Art extends Item {
         super();
     }
 
-    public Art(String name,String description, double startingPrice,String sellerId,String artist,int yearCreated, String medium) {
+    public Art(String name, String description, BigDecimal startingPrice, String sellerId, String artist, int yearCreated, String medium) {
         super(name, description, startingPrice,sellerId,ItemCategory.ART);
         this.artist=artist;
         this.yearCreated=yearCreated;

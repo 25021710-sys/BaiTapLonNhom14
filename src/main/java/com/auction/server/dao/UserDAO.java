@@ -143,4 +143,30 @@ public class UserDAO {
             }
         }
     }
+    public User findById(int userId) throws SQLException {
+        String sql = "SELECT * FROM users WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new User(
+                    rs.getInt("id"),
+                    rs.getString("username"),
+                    rs.getString("password_hash"),
+                    rs.getString("email"),
+                    rs.getBigDecimal("balance"),
+                    UserRole.valueOf(rs.getString("role")),
+                    rs.getBoolean("active"),
+                    rs.getTimestamp("created_at").toLocalDateTime(),
+                    rs.getString("salt"),
+                    rs.getString("description"),
+                    rs.getString("location")
+                );
+            }
+        }
+        return null; // Không tìm thấy user
+    }
 }
