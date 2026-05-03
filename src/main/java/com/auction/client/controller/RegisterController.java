@@ -2,8 +2,6 @@ package com.auction.client.controller;
 
 import com.auction.common.request.RegisterRequest;
 import com.auction.common.response.RegisterResponse;
-import com.auction.server.dao.UserDAO;
-import com.auction.server.model.User;
 import com.auction.server.service.AuthService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
