@@ -30,8 +30,7 @@ public class SocketServer {
     private volatile boolean running = false;
 
     // Thread pool giới hạn số client đồng thời
-    private final ExecutorService threadPool =
-            Executors.newFixedThreadPool(MAX_CLIENTS);
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
 
     // ── Constructor ───────────────────────────────────────────
 

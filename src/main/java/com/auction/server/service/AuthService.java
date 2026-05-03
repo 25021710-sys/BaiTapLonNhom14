@@ -7,7 +7,7 @@ import com.auction.common.request.UpdateProfileRequest;
 import com.auction.common.response.BalanceResponse;
 import com.auction.common.response.RegisterResponse;
 import com.auction.common.response.UpdateProfileResponse;
-import com.auction.server.dao.UserDao;
+import com.auction.server.dao.UserDAO;
 import com.auction.server.model.User;
 import com.auction.common.request.LoginRequest;
 import com.auction.common.response.LoginResponse;
@@ -15,9 +15,9 @@ import com.auction.common.response.LoginResponse;
 import java.sql.SQLException;
 
 public class AuthService {
-    private UserDao userDAO;
+    private UserDAO userDAO;
     public AuthService() {
-        this.userDAO = new UserDao();
+        this.userDAO = new UserDAO();
     }
 
     public LoginResponse login(LoginRequest req) throws SQLException {
