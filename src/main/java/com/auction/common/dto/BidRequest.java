@@ -1,6 +1,8 @@
 package com.auction.common.dto;
 
-public class BidRequest {
+import java.io.Serializable; // Nhớ import cái này
+
+public class BidRequest implements Serializable {
     private String auctionId;
     private double amount;
     public BidRequest(String auctionId,double amount){
