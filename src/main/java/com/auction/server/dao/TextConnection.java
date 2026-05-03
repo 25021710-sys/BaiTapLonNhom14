@@ -5,7 +5,7 @@ import com.auction.server.model.User;
 public class TextConnection {
     public static void main(String[] args) {
         try {
-            UserDAO userDAO = new UserDAO();
+            UserDao userDAO = new UserDao();
             // Thử đăng ký một user thật sự
             User newUser = userDAO.register("test_user", "123456", "test@gmail.com");
 

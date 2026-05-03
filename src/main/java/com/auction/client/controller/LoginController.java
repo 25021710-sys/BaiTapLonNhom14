@@ -1,58 +1,59 @@
 package com.auction.client.controller;
+
+import com.auction.client.network.SocketClient;
+import com.auction.common.dto.UserDTO;
 import com.auction.common.request.LoginRequest;
 import com.auction.common.response.LoginResponse;
-import com.auction.common.dto.UserDTO;
-import com.auction.server.service.AuthService;
 import com.auction.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.*;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
+/**
+ * LoginController - xử lý giao diện đăng nhập.
+ * Giao tiếp với server qua SocketClient (không gọi trực tiếp AuthService nữa).
+ */
 public class LoginController {
+
+    @FXML private TextField     emailField;
+    @FXML private PasswordField passwordField;
+    @FXML private Label         errorLabel;
+
     @FXML
-    private TextField emailField;
-    @FXML
-    private PasswordField passwordField;
-    @FXML
-    private Label errorLabel;
-    @FXML
-    public void handleLogin(ActionEvent event) throws SQLException {
+    public void handleLogin(ActionEvent event) {
         String email = emailField.getText().trim();
-        String pass = passwordField.getText().trim();
+        String pass  = passwordField.getText().trim();
 
-        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-
-        // Validation
+        // --- Validation phía client ---
         if (email.isEmpty() || pass.isEmpty()) {
             showError("Vui lòng nhập đầy đủ thông tin");
             return;
         }
-
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
         if (!email.matches(emailRegex)) {
             showError("Định dạng Email không hợp lệ");
             return;
         }
 
-        // 🔥 DÙNG SERVICE
-        AuthService authService = new AuthService();
-
-        LoginRequest request = new LoginRequest(email, pass);
-        LoginResponse response = authService.login(request);
+        // --- Gửi yêu cầu đến server qua socket ---
+        LoginRequest  request  = new LoginRequest(email, pass);
+        LoginResponse response = SocketClient.getInstance().login(request);
 
         if (response.isSuccess()) {
             UserDTO user = response.getUser();
-
             System.out.println("Đăng nhập thành công: " + user.getUsername());
 
-            // lưu session bằng DTO (không dùng entity nữa)
+            // Lưu vào Session (DTO, không phải Entity)
             Session.setCurrentUser(user);
-
             goToUserProfile(event);
 
         } else {
@@ -60,60 +61,39 @@ public class LoginController {
             passwordField.setStyle("-fx-border-color: red;");
         }
     }
+
     @FXML
     public void goToRegister(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/RegisterView.fxml")
-            );
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            stage.setScene(new Scene(root));
-            stage.setTitle("Sign Up");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        navigate(event, "/view/RegisterView.fxml", "Sign Up");
     }
+
     @FXML
     public void goToDashBoard(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/DashBoardView.fxml")
-            );
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            stage.setScene(new Scene(root));
-            stage.setTitle("Go to DashBoard");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        navigate(event, "/view/DashBoardView.fxml", "Dashboard");
     }
+
     @FXML
     public void goToUserProfile(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/UserProfile.fxml")
-            );
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            stage.setScene(new Scene(root));
-            stage.setTitle("Go to UserProfile");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        navigate(event, "/view/UserProfile.fxml", "Hồ sơ cá nhân");
     }
+
+    // ── Helper ────────────────────────────────────────────────
+
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
         emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+    }
+
+    private void navigate(ActionEvent event, String fxmlPath, String title) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle(title);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

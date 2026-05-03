@@ -49,7 +49,6 @@ public class ItemDAO {
         return false; // Lưu thất bại
     }
 
-
     // Lấy toàn bộ dánh sách item ra xem
     public List<Item> getAllItems() {
         List<Item> itemList = new ArrayList<>();
@@ -92,7 +91,6 @@ public class ItemDAO {
         return itemList;
     }
 
-
     // Sửa thông tin của item
     public boolean updateItem(Item item) {
         // Cập nhật tên, mô tả, giá... dựa vào cái ID của sản phẩm đó
@@ -116,7 +114,6 @@ public class ItemDAO {
         }
         return false;
     }
-
 
     // Xóa item
     public boolean deleteItem(int itemId) {
