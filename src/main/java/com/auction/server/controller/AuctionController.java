@@ -14,10 +14,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class AuctionController {
-    public void processRequest(String action, ObjectInputStream in, ObjectOutputStream out) {
-
-    }
-
     private final AuctionDAO auctionDAO = new AuctionDAO();
     private final BidDAO bidDAO = new BidDAO();
     private final AutoBidEngine autoBidEngine = new AutoBidEngine(bidDAO);
