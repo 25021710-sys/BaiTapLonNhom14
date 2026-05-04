@@ -6,90 +6,145 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="220.0" spacing="10.0" style="-fx-background-color: #142932; -fx-background-radius: 15;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <HBox prefHeight="27.0" prefWidth="220.0">
-         <children>
-            <VBox prefHeight="46.0" prefWidth="220.0">
-               <children>
-                  <Label styleClass="label-value" stylesheets="@../style/ProductCards.css" text="Thịnh Văn Đức" />
-                  <Label styleClass="label-title" stylesheets="@../style/ProductCards.css" text="#1001" />
-               </children>
-               <padding>
-                  <Insets left="10.0" top="5.0" />
-               </padding>
-            </VBox>
-            <AnchorPane prefHeight="200.0" prefWidth="200.0">
-               <children>
-                  <Button mnemonicParsing="false" prefWidth="23.0" style="-fx-background-color: transparent;" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
-                     <graphic>
-                        <FontAwesomeIcon fill="WHITE" glyphName="ELLIPSIS_V" size="18" />
-                     </graphic>
-                     <font>
-                        <Font size="8.0" />
-                     </font>
-                  </Button>
-               </children>
-            </AnchorPane>
-         </children>
-      </HBox>
-      <StackPane prefHeight="152.0" prefWidth="220.0">
-         <children>
-            <ImageView fitHeight="145.0" fitWidth="124.0" nodeOrientation="INHERIT" pickOnBounds="true">
-               <image>
-                  <Image url="@../../../../../../Downloads/649847717_1442835513953362_1296784192571173731_n.jpg" />
-               </image>
-            </ImageView>
-         </children>
-      </StackPane>
-      <HBox alignment="CENTER_LEFT" maxWidth="-Infinity" prefHeight="34.0" prefWidth="176.0" styleClass="time-bar" stylesheets="@../style/ProductCards.css" VBox.vgrow="NEVER">
-         <children>
-            <FontAwesomeIcon fill="WHITE" glyphName="CLOCK_ALT" size="17" />
-            <Label prefHeight="34.0" prefWidth="155.0" text=" Kết thúc trong 10 giờ" textFill="WHITE">
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Label>
-         </children>
-      </HBox>
-      <HBox prefHeight="85.0" prefWidth="220.0" spacing="10.0">
-         <children>
-            <VBox alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="62.0" prefWidth="220.0" spacing="10.0" HBox.hgrow="ALWAYS">
-               <children>
-                  <Label styleClass="label-title" stylesheets="@../style/ProductCards.css" text="Giá khởi điểm" />
-                  <Label styleClass="label-value" stylesheets="@../style/ProductCards.css" text="15.000 VNĐ" />
-               </children>
-               <padding>
-                  <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
-               </padding>
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets>
-            </VBox>
-            <VBox alignment="CENTER" layoutX="10.0" layoutY="10.0" maxWidth="1.7976931348623157E308" prefHeight="62.0" prefWidth="220.0" spacing="10.0" HBox.hgrow="ALWAYS">
-               <children>
-                  <Label styleClass="label-title" stylesheets="@../style/ProductCards.css" text="Giá hiện tại" />
-                  <Label styleClass="label-value" stylesheets="@../style/ProductCards.css" text="150.000 VNĐ" />
-               </children>
-               <padding>
-                  <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
-               </padding>
-            </VBox>
-         </children>
-      </HBox>
-      <VBox alignment="TOP_CENTER" prefHeight="62.0" prefWidth="220.0">
-         <children>
-            <Button mnemonicParsing="false" prefHeight="32.0" prefWidth="174.0" style="-fx-background-color: #2980B9; -fx-text-fill: white; -fx-background-radius: 5; -fx-font-weight: bold;" text="Tham gia đấu giá">
-               <font>
-                  <Font size="16.0" />
-               </font></Button>
-         </children>
+<VBox prefHeight="260.0" prefWidth="200.0"
+      spacing="8.0"
+      style="-fx-background-color: #142932; -fx-background-radius: 15;"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1">
+
+   <!-- HEADER -->
+   <HBox alignment="TOP_LEFT" spacing="6.0">
+      <VBox spacing="1.0" HBox.hgrow="ALWAYS">
+         <Label text="Thịnh Văn Đức"
+                styleClass="label-value"
+                stylesheets="@../style/ProductCards.css"/>
+
+         <Label text="#1001"
+                styleClass="label-title"
+                stylesheets="@../style/ProductCards.css"/>
       </VBox>
-   </children>
+
+      <Button mnemonicParsing="false"
+              style="-fx-background-color: transparent;"
+              prefWidth="22.0"
+              prefHeight="22.0">
+         <graphic>
+            <FontAwesomeIcon fill="WHITE" glyphName="ELLIPSIS_V" size="14"/>
+         </graphic>
+      </Button>
+
+      <HBox.margin>
+         <Insets top="4.0" right="4.0"/>
+      </HBox.margin>
+   </HBox>
+
+   <!-- IMAGE -->
+   <StackPane prefHeight="95.0"
+              style="-fx-background-color: #0f2026; -fx-background-radius: 12;">
+      <children>
+         <Label text="No Image"
+                textFill="#95A5A6"
+                style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+      </children>
+
+      <VBox.margin>
+         <Insets left="6.0" right="6.0"/>
+      </VBox.margin>
+   </StackPane>
+
+   <!-- TIME BAR -->
+   <HBox alignment="CENTER_LEFT"
+         spacing="5.0"
+         styleClass="time-bar"
+         stylesheets="@../style/ProductCards.css"
+         style="-fx-background-radius: 10;">
+      <children>
+         <FontAwesomeIcon fill="WHITE" glyphName="CLOCK_ALT" size="12"/>
+
+         <Label text="Kết thúc trong 10 giờ"
+                textFill="WHITE">
+            <font>
+               <Font size="11.0"/>
+            </font>
+         </Label>
+      </children>
+
+      <padding>
+         <Insets top="4.0" bottom="4.0" left="8.0" right="8.0"/>
+      </padding>
+
+      <VBox.margin>
+         <Insets left="6.0" right="6.0"/>
+      </VBox.margin>
+   </HBox>
+
+   <!-- PRICE INFO -->
+   <HBox spacing="6.0">
+      <VBox alignment="CENTER"
+            spacing="3.0"
+            style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 10;"
+            HBox.hgrow="ALWAYS">
+         <children>
+            <Label text="Khởi điểm"
+                   styleClass="label-title"
+                   stylesheets="@../style/ProductCards.css"/>
+
+            <Label text="15.000"
+                   styleClass="label-value"
+                   stylesheets="@../style/ProductCards.css"/>
+         </children>
+
+         <padding>
+            <Insets top="6.0" bottom="6.0"/>
+         </padding>
+      </VBox>
+
+      <VBox alignment="CENTER"
+            spacing="3.0"
+            style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 10;"
+            HBox.hgrow="ALWAYS">
+         <children>
+            <Label text="Hiện tại"
+                   styleClass="label-title"
+                   stylesheets="@../style/ProductCards.css"/>
+
+            <Label text="150.000"
+                   styleClass="label-value"
+                   stylesheets="@../style/ProductCards.css"/>
+         </children>
+
+         <padding>
+            <Insets top="6.0" bottom="6.0"/>
+         </padding>
+      </VBox>
+
+      <VBox.margin>
+         <Insets left="6.0" right="6.0"/>
+      </VBox.margin>
+   </HBox>
+
+   <!-- BUTTON -->
+   <Button mnemonicParsing="false"
+           prefHeight="28.0"
+           maxWidth="1.7976931348623157E308"
+           style="-fx-background-color: #2980B9; -fx-text-fill: white; -fx-background-radius: 10; -fx-font-weight: bold;"
+           text="Tham gia">
+      <font>
+         <Font size="12.0"/>
+      </font>
+
+      <VBox.margin>
+         <Insets left="6.0" right="6.0" bottom="8.0"/>
+      </VBox.margin>
+   </Button>
+
+   <padding>
+      <Insets top="8.0" left="8.0" right="8.0" bottom="8.0"/>
+   </padding>
+
 </VBox>

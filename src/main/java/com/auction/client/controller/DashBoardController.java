@@ -1,13 +1,22 @@
 package com.auction.client.controller;
 
-import javafx.event.ActionEvent; // Sửa import này
+import com.auction.session.Session;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
+
 import java.io.IOException;
 
 public class DashBoardController {
@@ -16,12 +25,69 @@ public class DashBoardController {
     private Circle profileCircle;
 
     @FXML
-    private FlowPane pnlItems;
+    private Label lblUsername;
+
+    @FXML
+    private Button btnProfile;
+
+    @FXML
+    private ScrollPane spBidsJoined;
+
+    @FXML
+    private ScrollPane spFeaturedProducts;
+
+    @FXML
+    private ScrollPane spFavoriteProducts;
+
+    @FXML
+    private HBox pnlBidsJoined;
+
+    @FXML
+    private HBox pnlFeaturedProducts;
+
+    @FXML
+    private HBox pnlFavoriteProducts;
+
+    // Buttons section 1
+    @FXML
+    private Button btnLeftBids;
+
+    @FXML
+    private Button btnRightBids;
+
+    // Buttons section 2
+    @FXML
+    private Button btnLeftFeatured;
+
+    @FXML
+    private Button btnRightFeatured;
+
+    // Buttons section 3
+    @FXML
+    private Button btnLeftFavorite;
+
+    @FXML
+    private Button btnRightFavorite;
 
     @FXML
     public void initialize() {
+        loadProfileImage();
+        renderCards();
+
+        // set username từ Session
+        if (Session.getCurrentUser() != null) {
+            lblUsername.setText(Session.getCurrentUser().getUsername());
+        } else {
+            lblUsername.setText("Guest");
+        }
+
+        setupArrowButtons(spBidsJoined, btnLeftBids, btnRightBids);
+        setupArrowButtons(spFeaturedProducts, btnLeftFeatured, btnRightFeatured);
+        setupArrowButtons(spFavoriteProducts, btnLeftFavorite, btnRightFavorite);
+    }
+
+    private void loadProfileImage() {
         try {
-            // 1. Tải ảnh từ resources (Đảm bảo file DSC00245.JPG đã nằm trong folder resources/image)
             Image img = new Image(getClass().getResourceAsStream("/image/DSC00245.JPG"));
             if (img != null) {
                 profileCircle.setFill(new ImagePattern(img));
@@ -29,23 +95,61 @@ public class DashBoardController {
         } catch (Exception e) {
             System.err.println("Không tìm thấy ảnh profile, sử dụng màu mặc định.");
         }
-
-        renderCards();
     }
 
     public void renderCards() {
         try {
-            if (pnlItems != null) {
-                pnlItems.getChildren().clear();
-                for (int i = 0; i < 5; i++) {
-                    FXMLLoader loader = new FXMLLoader();
-                    loader.setLocation(getClass().getResource("/view/ProductCard.fxml"));
-                    VBox card = loader.load();
-                    pnlItems.getChildren().add(card);
-                }
-            }
+            renderSection(pnlBidsJoined, 10);
+            renderSection(pnlFeaturedProducts, 10);
+            renderSection(pnlFavoriteProducts, 10);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void renderSection(HBox panel, int count) throws IOException {
+        if (panel == null) {
+            System.err.println("Panel is null, kiểm tra fx:id trong FXML!");
+            return;
+        }
+
+        panel.getChildren().clear();
+
+        for (int i = 0; i < count; i++) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ProductCard.fxml"));
+            VBox card = loader.load();
+            panel.getChildren().add(card);
+        }
+    }
+
+    private void setupArrowButtons(ScrollPane sp, Button leftBtn, Button rightBtn) {
+        if (sp == null) return;
+
+        double step = 0.25;
+
+        if (leftBtn != null) {
+            leftBtn.setOnAction(e -> sp.setHvalue(Math.max(0, sp.getHvalue() - step)));
+        }
+
+        if (rightBtn != null) {
+            rightBtn.setOnAction(e -> sp.setHvalue(Math.min(1, sp.getHvalue() + step)));
+        }
+    }
+
+    // bấm avatar + tên => sang profile
+    @FXML
+    private void handleGoToProfile(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/UserProfile.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Hồ sơ cá nhân");
+            stage.show();
+
         } catch (IOException e) {
-            System.err.println("Lỗi nạp ProductCard: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

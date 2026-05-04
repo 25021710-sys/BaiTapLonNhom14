@@ -6,90 +6,280 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="760.0" prefWidth="1359.0" stylesheets="@../style/DashBoardStyle.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.DashBoardController">
+<BorderPane maxHeight="-Infinity"
+            maxWidth="-Infinity"
+            minHeight="-Infinity"
+            minWidth="-Infinity"
+            prefHeight="760.0"
+            prefWidth="1359.0"
+            stylesheets="@../style/DashBoardStyle.css"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.auction.client.controller.DashBoardController">
+
+   <!-- LEFT MENU -->
    <left>
-      <VBox alignment="TOP_CENTER" prefHeight="760.0" prefWidth="189.0" spacing="20.0" stylesheets="@../style/DashBoardStyle.css" BorderPane.alignment="CENTER">
+      <VBox alignment="TOP_CENTER"
+            prefHeight="760.0"
+            prefWidth="189.0"
+            spacing="20.0"
+            stylesheets="@../style/DashBoardStyle.css"
+            BorderPane.alignment="CENTER">
+
          <children>
             <Label text="AUCTION ONLINE">
                <padding>
-                  <Insets top="20.0" />
+                  <Insets top="20.0"/>
                </padding>
                <font>
-                  <Font size="16.0" />
-               </font></Label>
-            <Button fx:id="btnAuctionList" mnemonicParsing="false" onAction="#handleAuctionList" prefHeight="26.0" prefWidth="118.0" styleClass="menu-button" text="Danh sách đấu giá" />
-            <Button fx:id="btnMyProducts" mnemonicParsing="false" styleClass="menu-button" stylesheets="@../style/DashBoardStyle.css" text="Sản phẩm của tôi" />
-            <Button mnemonicParsing="false" prefWidth="118.0" styleClass="menu-button" stylesheets="@../style/DashBoardStyle.css" text="Hỏi đáp????" />
-            <Button mnemonicParsing="false" styleClass="menu-button" stylesheets="@../style/DashBoardStyle.css" text="Cài đặt" />
-            <Button mnemonicParsing="false" styleClass="menu-button" stylesheets="@../style/DashBoardStyle.css" text="Tạo phiên đấu giá" />
+                  <Font size="16.0"/>
+               </font>
+            </Label>
+
+            <Button fx:id="btnAuctionList"
+                    mnemonicParsing="false"
+                    onAction="#handleAuctionList"
+                    prefHeight="26.0"
+                    prefWidth="118.0"
+                    styleClass="menu-button"
+                    text="Danh sách đấu giá"/>
+
+            <Button fx:id="btnMyProducts"
+                    mnemonicParsing="false"
+                    styleClass="menu-button"
+                    stylesheets="@../style/DashBoardStyle.css"
+                    text="Sản phẩm của tôi"/>
+
+            <Button mnemonicParsing="false"
+                    prefWidth="118.0"
+                    styleClass="menu-button"
+                    stylesheets="@../style/DashBoardStyle.css"
+                    text="Hỏi đáp????"/>
+
+            <Button mnemonicParsing="false"
+                    styleClass="menu-button"
+                    stylesheets="@../style/DashBoardStyle.css"
+                    text="Cài đặt"/>
+
+            <Button mnemonicParsing="false"
+                    styleClass="menu-button"
+                    stylesheets="@../style/DashBoardStyle.css"
+                    text="Tạo phiên đấu giá"/>
          </children>
       </VBox>
    </left>
+
+   <!-- CENTER CONTENT -->
    <center>
-      <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
-         <children>
-            <HBox prefHeight="48.0" prefWidth="462.0">
-               <children>
-                  <HBox fx:id="searchContainer" alignment="CENTER_LEFT" prefHeight="33.0" prefWidth="184.0" styleClass="search-container" HBox.hgrow="ALWAYS">
-                     <children>
-                        <TextField prefHeight="26.0" prefWidth="202.0" styleClass="search-field" text="Search for ..." />
-                        <FontAwesomeIcon fill="WHITE" glyphName="SEARCH" />
-                     </children>
-                  </HBox>
-                  <HBox fx:id="hboxUserActions" prefHeight="36.0" prefWidth="110.0" HBox.hgrow="ALWAYS" />
-                  <HBox prefHeight="36.0" prefWidth="206.0">
-                     <children>
-                        <Button mnemonicParsing="false" prefHeight="33.0" prefWidth="38.0" style="-fx-background-radius: 5; -fx-background-color: #142932;">
-                           <HBox.margin>
-                              <Insets right="10.0" />
-                           </HBox.margin>
-                           <graphic>
-                              <FontAwesomeIcon fill="WHITE" glyphName="BELL_O" size="18" text="" />
-                           </graphic>
-                        </Button>
-                        <HBox fx:id="userProfileGroup" alignment="CENTER_RIGHT" prefHeight="33.0" prefWidth="134.0">
-                           <children>
-                              <Circle fx:id="profileCircle" fill="#1f93ff" radius="18.0" stroke="WHITE" strokeType="INSIDE" strokeWidth="2.0" />
-                              <Label prefHeight="34.0" prefWidth="76.0" text="Duy Anh">
-                                 <HBox.margin>
-                                    <Insets left="5.0" right="10.0" />
-                                 </HBox.margin>
-                              </Label>
-                           </children>
-                        </HBox>
-                     </children>
-                  </HBox>
-               </children>
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets>
-               <padding>
-                  <Insets left="10.0" top="15.0" />
-               </padding></HBox>
-            <HBox prefHeight="133.0" prefWidth="462.0">
-               <children>
-                  <AnchorPane prefHeight="122.0" prefWidth="122.0" />
-                  <AnchorPane prefHeight="122.0" prefWidth="122.0" />
-                  <AnchorPane prefHeight="122.0" prefWidth="122.0">
-                     <children>
-                        <AnchorPane layoutX="-60.0" layoutY="-8.0" opacity="0.97" prefHeight="122.0" prefWidth="122.0" />
-                     </children></AnchorPane>
-               </children>
-            </HBox>
-            <ScrollPane fitToWidth="true" prefHeight="472.0" prefWidth="966.0">
-               <content>
-                  <FlowPane fx:id="pnlItems" hgap="10.0" vgap="10.0" />
-               </content>
-            </ScrollPane>
-         </children>
+      <VBox prefHeight="760.0" prefWidth="1170.0" BorderPane.alignment="CENTER">
+
+         <!-- TOP BAR -->
+         <HBox prefHeight="55.0" prefWidth="1170.0">
+            <children>
+
+               <!-- SEARCH BAR -->
+               <HBox fx:id="searchContainer"
+                     alignment="CENTER_LEFT"
+                     prefHeight="33.0"
+                     prefWidth="450.0"
+                     spacing="10.0"
+                     styleClass="search-container">
+
+                  <children>
+                     <TextField fx:id="txtSearch"
+                                promptText="Search for ..."
+                                prefHeight="28.0"
+                                styleClass="search-field"
+                                HBox.hgrow="ALWAYS"/>
+
+                     <FontAwesomeIcon fill="WHITE" glyphName="SEARCH"/>
+                  </children>
+               </HBox>
+
+               <!-- SPACER -->
+               <HBox HBox.hgrow="ALWAYS"/>
+
+               <!-- USER ACTIONS -->
+               <HBox alignment="CENTER_RIGHT" prefHeight="36.0" prefWidth="250.0">
+                  <children>
+                     <Button mnemonicParsing="false"
+                             prefHeight="33.0"
+                             prefWidth="38.0"
+                             style="-fx-background-radius: 5; -fx-background-color: #142932;">
+                        <HBox.margin>
+                           <Insets right="10.0"/>
+                        </HBox.margin>
+                        <graphic>
+                           <FontAwesomeIcon fill="WHITE" glyphName="BELL_O" size="18"/>
+                        </graphic>
+                     </Button>
+
+                     <Button fx:id="btnProfile"
+                             mnemonicParsing="false"
+                             onAction="#handleGoToProfile"
+                             style="-fx-background-color: transparent; -fx-cursor: hand;"
+                             prefHeight="33.0">
+
+                        <graphic>
+                           <HBox alignment="CENTER_RIGHT" spacing="8.0">
+                              <children>
+                                 <Circle fx:id="profileCircle"
+                                         fill="#1f93ff"
+                                         radius="18.0"
+                                         stroke="WHITE"
+                                         strokeType="INSIDE"
+                                         strokeWidth="2.0"/>
+
+                                 <Label fx:id="lblUsername"
+                                        text="User"
+                                        style="-fx-text-fill: black; -fx-font-size: 14px;"/>
+                              </children>
+                           </HBox>
+                        </graphic>
+                     </Button>
+                  </children>
+               </HBox>
+
+            </children>
+
+            <padding>
+               <Insets left="15.0" right="15.0" top="15.0" bottom="10.0"/>
+            </padding>
+         </HBox>
+
+         <!-- MAIN SCROLL -->
+         <ScrollPane fx:id="mainScrollPane"
+                     fitToWidth="true"
+                     VBox.vgrow="ALWAYS"
+                     hbarPolicy="NEVER"
+                     vbarPolicy="ALWAYS"
+                     style="-fx-background-color: transparent;">
+
+            <content>
+               <VBox spacing="25.0" style="-fx-padding: 20;">
+
+                  <!-- SECTION 1 -->
+                  <VBox spacing="10.0">
+
+                     <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <Label text="Những bid bạn đang tham gia"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+                        <HBox HBox.hgrow="ALWAYS"/>
+
+                        <Button fx:id="btnLeftBids"
+                                text="◀"
+                                style="-fx-background-color: transparent; -fx-font-size: 16px;"/>
+
+                        <Button fx:id="btnRightBids"
+                                text="▶"
+                                style="-fx-background-color: transparent; -fx-font-size: 16px;"/>
+                     </HBox>
+
+                     <ScrollPane fx:id="spBidsJoined"
+                                 fitToHeight="true"
+                                 fitToWidth="false"
+                                 hbarPolicy="NEVER"
+                                 vbarPolicy="NEVER"
+                                 pannable="true"
+                                 prefHeight="300.0"
+                                 prefViewportHeight="280.0"
+                                 style="-fx-background-color: transparent;">
+
+                        <content>
+                           <HBox fx:id="pnlBidsJoined"
+                                 spacing="15.0"
+                                 alignment="CENTER_LEFT"
+                                 style="-fx-padding: 10;"/>
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
+                  <!-- SECTION 2 -->
+                  <VBox spacing="10.0">
+
+                     <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <Label text="Sản phẩm nổi bật"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+                        <HBox HBox.hgrow="ALWAYS"/>
+
+                        <Button fx:id="btnLeftFeatured"
+                                text="◀"
+                                style="-fx-background-color: transparent; -fx-font-size: 16px;"/>
+
+                        <Button fx:id="btnRightFeatured"
+                                text="▶"
+                                style="-fx-background-color: transparent; -fx-font-size: 16px;"/>
+                     </HBox>
+
+                     <ScrollPane fx:id="spFeaturedProducts"
+                                 fitToHeight="true"
+                                 fitToWidth="false"
+                                 hbarPolicy="NEVER"
+                                 vbarPolicy="NEVER"
+                                 pannable="true"
+                                 prefHeight="300.0"
+                                 prefViewportHeight="280.0"
+                                 style="-fx-background-color: transparent;">
+
+                        <content>
+                           <HBox fx:id="pnlFeaturedProducts"
+                                 spacing="15.0"
+                                 alignment="CENTER_LEFT"
+                                 style="-fx-padding: 10;"/>
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
+                  <!-- SECTION 3 -->
+                  <VBox spacing="10.0">
+
+                     <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <Label text="Những sản phẩm bạn quan tâm"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+                        <HBox HBox.hgrow="ALWAYS"/>
+
+                        <Button fx:id="btnLeftFavorite"
+                                text="◀"
+                                style="-fx-background-color: transparent; -fx-font-size: 16px;"/>
+
+                        <Button fx:id="btnRightFavorite"
+                                text="▶"
+                                style="-fx-background-color: transparent; -fx-font-size: 16px;"/>
+                     </HBox>
+
+                     <ScrollPane fx:id="spFavoriteProducts"
+                                 fitToHeight="true"
+                                 fitToWidth="false"
+                                 hbarPolicy="NEVER"
+                                 vbarPolicy="NEVER"
+                                 pannable="true"
+                                 prefHeight="300.0"
+                                 prefViewportHeight="280.0"
+                                 style="-fx-background-color: transparent;">
+
+                        <content>
+                           <HBox fx:id="pnlFavoriteProducts"
+                                 spacing="15.0"
+                                 alignment="CENTER_LEFT"
+                                 style="-fx-padding: 10;"/>
+                        </content>
+                     </ScrollPane>
+                  </VBox>
+
+               </VBox>
+            </content>
+         </ScrollPane>
+
       </VBox>
    </center>
+
 </BorderPane>

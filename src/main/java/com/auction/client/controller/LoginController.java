@@ -54,7 +54,7 @@ public class LoginController {
 
             // Lưu vào Session (DTO, không phải Entity)
             Session.setCurrentUser(user);
-            goToUserProfile(event);
+            goToDashBoard(event);
 
         } else {
             showError(response.getMessage());
