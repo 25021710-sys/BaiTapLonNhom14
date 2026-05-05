@@ -11,6 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
@@ -68,6 +69,9 @@ public class DashBoardController {
 
     @FXML
     private Button btnRightFavorite;
+
+    @FXML
+    private BorderPane rootPane;
 
     @FXML
     public void initialize() {
@@ -147,6 +151,23 @@ public class DashBoardController {
             stage.setScene(new Scene(root));
             stage.setTitle("Hồ sơ cá nhân");
             stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void handleCreateAuctionView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/view/CreateAuctionView.fxml")
+            );
+
+            Parent view = loader.load();
+
+            // chỉ thay CENTER, giữ menu + topbar
+            rootPane.setCenter(view);
 
         } catch (IOException e) {
             e.printStackTrace();

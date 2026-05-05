@@ -12,7 +12,8 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity"
+<BorderPane fx:id="rootPane"
+            maxHeight="-Infinity"
             maxWidth="-Infinity"
             minHeight="-Infinity"
             minWidth="-Infinity"
@@ -66,6 +67,7 @@
                     text="Cài đặt"/>
 
             <Button mnemonicParsing="false"
+                    onAction="#handleCreateAuctionView"
                     styleClass="menu-button"
                     stylesheets="@../style/DashBoardStyle.css"
                     text="Tạo phiên đấu giá"/>
