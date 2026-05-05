@@ -25,7 +25,7 @@ public class MainApp extends Application {
         }
 
         // 2. Load màn hình đăng nhập
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/CreateAuctionView.fxml"));
         Parent root = loader.load();
 
         primaryStage.setTitle("Hệ thống đấu giá");

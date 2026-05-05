@@ -11,7 +11,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<VBox alignment="CENTER_LEFT" prefHeight="570.0" prefWidth="578.0" spacing="12" style="-fx-background-color: ALICEBLUE;" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.LoginController">
+<VBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: ALICEBLUE;" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.LoginController">
     <padding>
         <Insets bottom="20" left="20" right="20" top="20" />
     </padding>

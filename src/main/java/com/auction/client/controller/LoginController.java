@@ -28,6 +28,9 @@ public class LoginController {
     @FXML private PasswordField passwordField;
     @FXML private Label         errorLabel;
 
+    private static final double APP_WIDTH = 1200;
+    private static final double APP_HEIGHT = 750;
+
     @FXML
     public void handleLogin(ActionEvent event) {
         String email = emailField.getText().trim();
@@ -89,9 +92,18 @@ public class LoginController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
+
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
+
+            Scene scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+
+            stage.setScene(scene);
             stage.setTitle(title);
+
+            stage.setWidth(APP_WIDTH);
+            stage.setHeight(APP_HEIGHT);
+            stage.centerOnScreen();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
