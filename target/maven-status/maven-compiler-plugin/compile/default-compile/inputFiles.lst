@@ -2,6 +2,7 @@ C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\s
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\server\model\BidTransaction.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\client\controller\CreateAuctionController.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\common\response\UpdateProfileResponse.java
+C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\client\controller\AuctionRoomController.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\client\controller\LoginController.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\server\service\AuctionService.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\server\util\PasswordUtil.java
