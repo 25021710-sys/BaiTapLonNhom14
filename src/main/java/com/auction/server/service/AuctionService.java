@@ -1,8 +1,13 @@
 package com.auction.server.service;
 
+import com.auction.common.request.BidRequest;
+import com.auction.common.response.BidResponse;
 import com.auction.server.model.Auction;
+import com.auction.server.model.User;
+import com.auction.server.model.BidTransaction;
 import com.auction.server.dao.AuctionDAO;
 import com.auction.server.dao.BidDAO;
+import com.auction.server.dao.UserDAO;
 import com.auction.server.exception.AuctionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +19,18 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class AuctionService {
     private static final Logger log = LoggerFactory.getLogger(AuctionService.class);
+
     private final AuctionDAO auctionDAO;
     private final BidDAO bidDAO;
     private final AutoBidEngine autoBidEngine;
+    // UserDAO kiểm tra số dư tkhoan
+    private final UserDAO userDAO = new UserDAO();
 
     private final ConcurrentHashMap<Integer, ReentrantLock> auctionLocks
             = new ConcurrentHashMap<Integer, ReentrantLock>();
-
     private final ConcurrentHashMap<Integer, Auction> auctionCache
             = new ConcurrentHashMap<Integer, Auction>();
+
     public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO,
                           AutoBidEngine autoBidEngine) {
         this.auctionDAO = auctionDAO;
@@ -49,5 +57,8 @@ public class AuctionService {
         return auction;
     }
 
+    public BidResponse placeBid(BidRequest request) { // chưa xong
+        return new BidResponse(true, "ok", BigDecimal.ZERO);
+    }
 
 }
