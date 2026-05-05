@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane fitToWidth="true"
+            fitToHeight="true"
+            prefViewportWidth="900"
+            prefViewportHeight="650"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background-color: transparent;"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.auction.client.controller.CreateAuctionController">
+
+    <content>
+        <VBox spacing="15.0"
+              maxWidth="900"
+              style="-fx-padding: 25; -fx-background-color: #f5f7fa;">
+
+            <!-- TITLE -->
+            <Label text="Tạo phiên đấu giá"
+                   style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+            <!-- NAME -->
+            <VBox spacing="5">
+                <Label text="Tên sản phẩm"/>
+                <TextField fx:id="txtName" promptText="Nhập tên sản phẩm"/>
+            </VBox>
+
+            <!-- CATEGORY -->
+            <VBox spacing="5">
+                <Label text="Danh mục"/>
+                <ComboBox fx:id="cbCategory"
+                          promptText="Chọn danh mục"
+                          onAction="#handleCategoryChange"/>
+            </VBox>
+
+            <!-- DYNAMIC FIELDS (UNDER CATEGORY) -->
+            <VBox fx:id="dynamicFields"
+                  spacing="10"
+                  style="-fx-background-color: white; -fx-padding: 12; -fx-border-color: #ddd; -fx-border-radius: 5;">
+
+                <!-- ART -->
+                <VBox fx:id="artFields" spacing="6" visible="false" managed="false">
+                    <Label text="Tác giả"/>
+                    <TextField fx:id="txtArtist" promptText="Nhập tác giả"/>
+
+                    <Label text="Năm ra đời"/>
+                    <TextField fx:id="txtArtYear" promptText="Ví dụ: 1999"/>
+
+                    <Label text="Chất liệu"/>
+                    <TextField fx:id="txtMaterial" promptText="Ví dụ: Sơn dầu, Gỗ..."/>
+                </VBox>
+
+                <!-- ELECTRONICS -->
+                <VBox fx:id="electronicFields" spacing="6" visible="false" managed="false">
+                    <Label text="Brand"/>
+                    <TextField fx:id="txtBrand" promptText="Ví dụ: Apple, Samsung"/>
+
+                    <Label text="Model"/>
+                    <TextField fx:id="txtModel" promptText="Ví dụ: iPhone 15 Pro"/>
+
+                    <Label text="Warranty (months)"/>
+                    <TextField fx:id="txtWarranty" promptText="Ví dụ: 12"/>
+                </VBox>
+
+                <!-- VEHICLES -->
+                <VBox fx:id="vehicleFields" spacing="6" visible="false" managed="false">
+                    <Label text="Hãng xe"/>
+                    <TextField fx:id="txtCarBrand" promptText="Ví dụ: Honda, Toyota"/>
+
+                    <Label text="Dòng xe"/>
+                    <TextField fx:id="txtCarModel" promptText="Ví dụ: Civic, Vios"/>
+
+                    <Label text="Năm sản xuất"/>
+                    <TextField fx:id="txtYear" promptText="Ví dụ: 2020"/>
+
+                    <Label text="Số km đã đi"/>
+                    <TextField fx:id="txtMileage" promptText="Ví dụ: 50000"/>
+                </VBox>
+
+            </VBox>
+
+            <!-- DESCRIPTION -->
+            <VBox spacing="5">
+                <Label text="Mô tả"/>
+                <TextArea fx:id="txtDescription"
+                          prefRowCount="4"
+                          wrapText="true"
+                          promptText="Mô tả chi tiết sản phẩm"/>
+            </VBox>
+
+            <!-- START PRICE -->
+            <VBox spacing="5">
+                <Label text="Giá khởi điểm"/>
+                <TextField fx:id="txtStartPrice" promptText="Ví dụ: 1000000"/>
+            </VBox>
+
+            <!-- START TIME -->
+            <VBox spacing="5">
+                <Label text="Thời điểm bắt đầu"/>
+
+                <HBox spacing="10">
+                    <DatePicker fx:id="dpStartDate"/>
+
+                    <ComboBox fx:id="cbStartHour" prefWidth="70" promptText="Giờ"/>
+                    <ComboBox fx:id="cbStartMinute" prefWidth="70" promptText="Phút"/>
+                </HBox>
+            </VBox>
+
+            <!-- END TIME -->
+            <VBox spacing="5">
+                <Label text="Thời điểm kết thúc"/>
+
+                <HBox spacing="10">
+                    <DatePicker fx:id="dpEndDate"/>
+
+                    <ComboBox fx:id="cbEndHour" prefWidth="70" promptText="Giờ"/>
+                    <ComboBox fx:id="cbEndMinute" prefWidth="70" promptText="Phút"/>
+                </HBox>
+            </VBox>
+
+            <!-- UPLOAD IMAGES -->
+            <VBox spacing="8">
+                <Label text="Ảnh sản phẩm"/>
+
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Button text="Chọn ảnh"
+                            onAction="#handleChooseImages"
+                            style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+
+                    <Button text="Xóa ảnh đã chọn"
+                            onAction="#handleRemoveSelectedImage"
+                            style="-fx-background-color: #e74c3c; -fx-text-fill: white;"/>
+                </HBox>
+
+                <HBox spacing="15">
+
+                    <ListView fx:id="lvImages"
+                              prefHeight="90"
+                              prefWidth="300"/>
+
+                    <ImageView fx:id="imgPreview"
+                               fitWidth="90"
+                               fitHeight="70"
+                               preserveRatio="true"
+                               style="-fx-border-color: #ccc; -fx-background-color: white;"/>
+                </HBox>
+            </VBox>
+
+            <!-- ERROR LABEL -->
+            <Label fx:id="lblError"
+                   visible="false"
+                   style="-fx-text-fill: red; -fx-font-weight: bold;"/>
+
+            <!-- CREATE BUTTON -->
+            <Button text="Tạo phiên đấu giá"
+                    onAction="#handleCreateAuction"
+                    style="-fx-background-color: #1f93ff; -fx-text-fill: white;"
+                    prefHeight="40"/>
+
+        </VBox>
+    </content>
+</ScrollPane>
