@@ -73,14 +73,13 @@ public class AuctionService {
 
         try {
             // TÌM KIẾM DỮ LIỆU (Ưu tiên lấy từ Cache, không có mới gọi Database)
-            Auction auction = auctionCache.get(auctionId);
-            if (auction == null) {
-                auction = auctionDAO.findById(auctionId);
-                if (auction == null) {
-                    return new BidResponse(false, "Phiên đấu giá không tồn tại!", BigDecimal.ZERO);
-                }
-                auctionCache.put(auctionId, auction); // Nạp lại vào Cache
+            Auction auction;
+            try {
+                auction = getAuction(auctionId);
+            } catch (AuctionException e) {
+                return new BidResponse(false, "Phiên đấu giá không tồn tại!", BigDecimal.ZERO);
             }
+
             BigDecimal currentPrice = auction.getCurrentPrice();
 
             // KIỂM TRA THỜI GIAN
