@@ -1,3 +1,4 @@
+com/auction/client/controller/AdminRoomManagementController.class
 com/auction/common/dto/AdminAuctionRequestDTO.class
 com/auction/common/request/RejectAuctionRequest.class
 com/auction/common/request/ApproveAuctionRequest.class

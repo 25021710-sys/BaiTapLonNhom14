@@ -38,6 +38,7 @@
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/service/AuctionManager.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/network/SocketServer.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/dao/ItemDAO.java
+/Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/client/controller/AdminRoomManagementController.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/dao/BidDAO.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/response/ItemListResponse.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/response/RegisterResponse.java
