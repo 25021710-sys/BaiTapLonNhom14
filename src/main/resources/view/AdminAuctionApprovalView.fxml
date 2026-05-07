@@ -40,7 +40,7 @@
     <!-- ================= CENTER ================= -->
     <center>
 
-        <SplitPane dividerPositions="0.65">
+        <SplitPane dividerPositions="0.63">
 
             <!-- ================= LEFT SIDE ================= -->
             <VBox spacing="15.0"
@@ -68,7 +68,7 @@
 
                         <TableColumn fx:id="colSeller"
                                      text="Người bán"
-                                     prefWidth="160"/>
+                                     prefWidth="140"/>
 
                         <TableColumn fx:id="colStartTime"
                                      text="Ngày mở"
