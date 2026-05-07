@@ -1,4 +1,3 @@
-
 package com.auction.server.model;
 
 import java.io.Serializable;

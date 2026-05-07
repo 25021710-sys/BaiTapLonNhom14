@@ -153,17 +153,17 @@ public class UserDAO {
 
             if (rs.next()) {
                 return new User(
-                    rs.getInt("id"),
-                    rs.getString("username"),
-                    rs.getString("password_hash"),
-                    rs.getString("email"),
-                    rs.getBigDecimal("balance"),
-                    UserRole.valueOf(rs.getString("role")),
-                    rs.getBoolean("active"),
-                    rs.getTimestamp("created_at").toLocalDateTime(),
-                    rs.getString("salt"),
-                    rs.getString("description"),
-                    rs.getString("location")
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("password_hash"),
+                        rs.getString("email"),
+                        rs.getBigDecimal("balance"),
+                        UserRole.valueOf(rs.getString("role")),
+                        rs.getBoolean("active"),
+                        rs.getTimestamp("created_at").toLocalDateTime(),
+                        rs.getString("salt"),
+                        rs.getString("description"),
+                        rs.getString("location")
                 );
             }
         }

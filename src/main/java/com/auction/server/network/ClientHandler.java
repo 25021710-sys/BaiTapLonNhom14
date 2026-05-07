@@ -79,7 +79,18 @@ public class ClientHandler implements Runnable {
             closeConnections();
         }
     }
-
+    /**
+     * Push notification realtime đến client này (được gọi từ AuctionManager).
+     * Synchronized để tránh conflict với luồng đọc/ghi khác.
+     */
+    public synchronized void sendNotification(String jsonPayload) throws Exception {
+        if (out != null && !socket.isClosed()) {
+            // Dùng "PUSH_NOTIFICATION" làm signal để client phân biệt
+            out.writeObject("PUSH_NOTIFICATION");
+            out.writeObject(jsonPayload);
+            out.flush();
+        }
+    }
     private void closeConnections() {
         try { if (in     != null) in.close();                         } catch (Exception ignored) {}
         try { if (out    != null) out.close();                        } catch (Exception ignored) {}
