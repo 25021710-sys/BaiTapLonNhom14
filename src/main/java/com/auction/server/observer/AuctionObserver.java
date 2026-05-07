@@ -1,5 +1,7 @@
 package com.auction.server.observer;
 
+import com.auction.common.dto.AuctionUpdateDTO;
+
 public interface AuctionObserver {
-    void onAuction();
+    void onAuctionUpdate(AuctionUpdateDTO update);
 }
