@@ -11,12 +11,11 @@ import java.util.ResourceBundle;
 
 public class AdminRoomManagementController implements Initializable {
 
-    public Label lblSystemStatus;
     // ===== UI =====
     @FXML private TableView<?> roomTable;
 
     @FXML private TextField searchField;
-    @FXML private Label statusLabel;
+    @FXML private Label lblSystemStatus;
 
     // Detail panel
     @FXML private Label lblRoomId;
@@ -49,7 +48,7 @@ public class AdminRoomManagementController implements Initializable {
         System.out.println("Loading rooms from server...");
 
         // TODO: gọi API / Socket
-        statusLabel.setText("System ONLINE - Rooms loaded");
+        lblSystemStatus.setText("System ONLINE - Rooms loaded");
     }
 
     // =========================

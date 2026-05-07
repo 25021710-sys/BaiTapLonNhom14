@@ -76,7 +76,7 @@
 
                 </VBox>
 
-                <TitledPane text="Live Bid Activity" expanded="true">
+                <TitledPane text="Live Bid Activity">
                     <TextArea fx:id="logArea"
                               editable="false"
                               wrapText="true"
