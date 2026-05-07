@@ -66,17 +66,33 @@ public class UserProfileController {
 
     @FXML
     public void handleLogout(javafx.scene.input.MouseEvent event) {
+
         try {
+
             Session.clear();
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/LoginView.fxml")
+            );
+
             Parent root = loader.load();
 
             Stage stage = (Stage) ((Node) event.getSource())
-                    .getScene().getWindow();
+                    .getScene()
+                    .getWindow();
 
-            stage.setScene(new Scene(root));
-            stage.setTitle("Login"); // optional
+            // Giữ nguyên kích thước hiện tại
+            double width = stage.getWidth();
+            double height = stage.getHeight();
+
+            Scene scene = new Scene(root, width, height);
+
+            stage.setScene(scene);
+
+            stage.setTitle("Login");
+
+            stage.centerOnScreen();
+
             stage.show();
 
         } catch (Exception e) {
@@ -86,14 +102,26 @@ public class UserProfileController {
 
     @FXML
     public void returnDashBoard(javafx.scene.input.MouseEvent event) {
+
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DashboardView.fxml"));
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/DashboardView.fxml")
+            );
+
             Parent root = loader.load();
 
             Stage stage = (Stage) ((Node) event.getSource())
-                    .getScene().getWindow();
+                    .getScene()
+                    .getWindow();
 
-            stage.setScene(new Scene(root));
+            // Giữ nguyên kích thước hiện tại
+            double width = stage.getWidth();
+            double height = stage.getHeight();
+
+            Scene scene = new Scene(root, width, height);
+
+            stage.setScene(scene);
             stage.show();
 
         } catch (Exception e) {
