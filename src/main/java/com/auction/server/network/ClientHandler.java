@@ -1,8 +1,10 @@
 package com.auction.server.network;
 
+import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.server.controller.AuctionController;
 import com.auction.server.controller.ItemController;
 import com.auction.server.controller.UserController;
+import com.auction.server.observer.AuctionObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +23,7 @@ import java.net.Socket;
  *   4. Chuyển đến controller tương ứng để xử lý tiếp
  *   5. Controller đọc request object từ stream và ghi response object trở lại
  */
-public class ClientHandler implements Runnable {
+public class ClientHandler implements Runnable, AuctionObserver {
 
     private static final Logger log = LoggerFactory.getLogger(ClientHandler.class);
 
@@ -89,6 +91,25 @@ public class ClientHandler implements Runnable {
             out.writeObject("PUSH_NOTIFICATION");
             out.writeObject(jsonPayload);
             out.flush();
+        }
+    }
+    /**
+     * Observer callback: được gọi bởi AuctionManager khi có update.
+     * Push AuctionUpdateDTO về client qua socket.
+     * synchronized để tránh nhiều thread cùng ghi vào out stream.
+     */
+    @Override
+    public synchronized void onAuctionUpdate(AuctionUpdateDTO update) {
+        try {
+            if (out != null && !socket.isClosed()) {
+                // Gửi "push action" để client biết đây là push message
+                out.writeObject("AUCTION_PUSH_UPDATE");
+                out.writeObject(update);
+                out.flush();
+                out.reset(); // Tránh ObjectOutputStream cache cũ
+            }
+        } catch (Exception e) {
+            log.warn("Không thể push update đến client: {}", e.getMessage());
         }
     }
     private void closeConnections() {
