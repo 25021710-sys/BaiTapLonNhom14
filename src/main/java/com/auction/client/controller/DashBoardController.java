@@ -17,20 +17,27 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 
 public class DashBoardController {
+
+    @FXML
+    private Button btnHome;
+
+    @FXML
+    private Button btnJoinedAuction;
+
+    @FXML
+    private Button btnMyAuction;
+
+    @FXML
+    private Button btnCreateAuction;
 
     @FXML
     private Circle profileCircle;
 
     @FXML
     private Label lblUsername;
-
-    @FXML
-    private Button btnProfile;
 
     @FXML
     private ScrollPane spBidsJoined;
@@ -89,6 +96,8 @@ public class DashBoardController {
         setupArrowButtons(spBidsJoined, btnLeftBids, btnRightBids);
         setupArrowButtons(spFeaturedProducts, btnLeftFeatured, btnRightFeatured);
         setupArrowButtons(spFavoriteProducts, btnLeftFavorite, btnRightFavorite);
+
+        setActiveMenu(btnHome);
     }
 
     private void loadProfileImage() {
@@ -161,6 +170,9 @@ public class DashBoardController {
     @FXML
     public void handleCreateAuctionView() {
         try {
+
+            setActiveMenu(btnCreateAuction);
+
             FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/view/CreateAuctionView.fxml")
             );
@@ -175,9 +187,23 @@ public class DashBoardController {
         }
     }
 
+    private void setActiveMenu(Button activeButton) {
+
+        // remove active tất cả menu
+        btnHome.getStyleClass().remove("active-menu");
+        btnJoinedAuction.getStyleClass().remove("active-menu");
+        btnMyAuction.getStyleClass().remove("active-menu");
+        btnCreateAuction.getStyleClass().remove("active-menu");
+
+        // add active cho button hiện tại
+        activeButton.getStyleClass().add("active-menu");
+    }
+
     @FXML
     private void handleGoToDashboard() {
         try {
+            setActiveMenu(btnHome);
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DashBoardView.fxml"));
             Parent root = loader.load();
 

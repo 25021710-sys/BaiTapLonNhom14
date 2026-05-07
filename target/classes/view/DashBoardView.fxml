@@ -42,34 +42,30 @@
                </padding>
             </Button>
 
-            <Button fx:id="btnAuctionList"
+            <Button fx:id="btnHome"
                     mnemonicParsing="false"
-                    onAction="#handleAuctionList"
+                    onAction="#handleGoToDashboard"
                     prefHeight="35.0"
                     prefWidth="180.0"
                     styleClass="menu-button"
-                    text="Danh sách đấu giá"/>
+                    text="Trang chủ"/>
 
-            <Button fx:id="btnMyProducts"
+            <Button fx:id="btnJoinedAuction"
                     mnemonicParsing="false"
                     styleClass="menu-button"
                     prefHeight="35.0"
                     prefWidth="180.0"
-                    text="Sản phẩm của tôi"/>
+                    text="Phiên đấu giá đang tham gia"/>
 
-            <Button mnemonicParsing="false"
+            <Button fx:id="btnMyAuction"
+                    mnemonicParsing="false"
                     prefWidth="180.0"
                     prefHeight="35.0"
                     styleClass="menu-button"
-                    text="Hỏi đáp"/>
+                    text="Phiên đấu giá của tôi"/>
 
-            <Button mnemonicParsing="false"
-                    prefWidth="180.0"
-                    prefHeight="35.0"
-                    styleClass="menu-button"
-                    text="Cài đặt"/>
-
-            <Button mnemonicParsing="false"
+            <Button fx:id="btnCreateAuction"
+                    mnemonicParsing="false"
                     onAction="#handleCreateAuctionView"
                     prefWidth="180.0"
                     prefHeight="35.0"

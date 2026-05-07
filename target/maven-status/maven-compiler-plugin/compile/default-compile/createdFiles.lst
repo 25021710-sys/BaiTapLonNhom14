@@ -1,2 +1,4 @@
+com\auction\common\response\BidResponse.class
 com\auction\client\controller\CreateAuctionController.class
 com\auction\client\controller\AuctionRoomController.class
+com\auction\common\request\BidRequest.class
