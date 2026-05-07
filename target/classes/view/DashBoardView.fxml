@@ -76,8 +76,6 @@
          <VBox fx:id="adminSection"
                spacing="10"
                alignment="TOP_CENTER"
-               visible="false"
-               managed="false"
                styleClass="admin-section">
 
             <Separator prefWidth="180"/>

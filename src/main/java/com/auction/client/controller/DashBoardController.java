@@ -31,6 +31,15 @@ public class DashBoardController {
     private Button btnMyAuction;
 
     @FXML
+    private Button btnAuctionApproval;
+
+    @FXML
+    private Button btnManageUsers;
+
+    @FXML
+    private Button btnManageRooms;
+
+    @FXML
     private Button btnCreateAuction;
 
     @FXML
@@ -219,38 +228,68 @@ public class DashBoardController {
     }
 
     @FXML
-    void handleAuctionList(ActionEvent event) {
-        System.out.println("Đã bấm vào danh sách đấu giá!");
-    }
-
-    public void handleManageUsers(ActionEvent event) {
-    }
-
-    public void handleManageRooms(ActionEvent event) {
-    }
-
-    @FXML
     public void handleAuctionApproval(ActionEvent event) {
 
         try {
 
+            setActiveMenu(btnAuctionApproval);
+
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/AdminAuctionApprovalView.fxml")
+                    getClass().getResource(
+                            "/view/AdminAuctionApprovalView.fxml"
+                    )
             );
 
-            Parent root = loader.load();
+            Parent view = loader.load();
 
-            Stage stage = (Stage) ((Node) event.getSource())
-                    .getScene()
-                    .getWindow();
+            // chỉ đổi CENTER
+            rootPane.setCenter(view);
 
-            stage.setScene(new Scene(root));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-            stage.setTitle("Admin - Auction Approval");
+    @FXML
+    public void handleManageRooms(ActionEvent event) {
 
-            stage.show();
+        try {
 
-        } catch (Exception e) {
+            setActiveMenu(btnManageRooms);
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/view/AdminRoomManagementView.fxml"
+                    )
+            );
+
+            Parent view = loader.load();
+
+            rootPane.setCenter(view);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void handleManageUsers(ActionEvent event) {
+
+        try {
+
+            setActiveMenu(btnManageUsers);
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/view/AdminUserManagementView.fxml"
+                    )
+            );
+
+            Parent view = loader.load();
+
+            rootPane.setCenter(view);
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

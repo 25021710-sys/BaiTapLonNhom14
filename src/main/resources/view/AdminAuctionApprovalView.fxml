@@ -52,8 +52,7 @@
                               -fx-text-fill: #1f2d3d;" />
 
                 <TableView fx:id="tblAuctionRequests"
-                           VBox.vgrow="ALWAYS"
-                           style="-fx-background-radius: 12;">
+                           VBox.vgrow="ALWAYS">
 
                     <columns>
 

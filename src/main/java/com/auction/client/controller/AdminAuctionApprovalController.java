@@ -348,5 +348,14 @@ public class AdminAuctionApprovalController implements Initializable {
         alert.showAndWait();
 
     }
+    @FXML
+    public void initialize() {
+
+        // Tự resize cột cho vừa bảng
+        tblAuctionRequests.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
+        );
+
+    }
 
 }
