@@ -64,7 +64,7 @@
 
                         <TableColumn fx:id="colProductName"
                                      text="Tên sản phẩm"
-                                     prefWidth="260"/>
+                                     prefWidth="160"/>
 
                         <TableColumn fx:id="colSeller"
                                      text="Người bán"
