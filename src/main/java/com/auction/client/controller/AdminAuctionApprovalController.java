@@ -353,7 +353,7 @@ public class AdminAuctionApprovalController implements Initializable {
 
         // Tự resize cột cho vừa bảng
         tblAuctionRequests.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS
+                TableView.UNCONSTRAINED_RESIZE_POLICY
         );
 
     }

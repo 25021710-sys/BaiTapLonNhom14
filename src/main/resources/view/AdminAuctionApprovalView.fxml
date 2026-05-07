@@ -40,52 +40,58 @@
     <!-- ================= CENTER ================= -->
     <center>
 
-        <SplitPane dividerPositions="0.58">
+        <SplitPane dividerPositions="0.75">
 
             <!-- ================= LEFT SIDE ================= -->
             <VBox spacing="15.0"
+                  prefWidth="900.0"
+                  minWidth="700.0"
                   style="-fx-padding: 20;">
 
                 <Label text="Danh sách yêu cầu"
                        style="-fx-font-size: 18px;
-                              -fx-font-weight: bold;
-                              -fx-text-fill: #1f2d3d;" />
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #1f2d3d;" />
 
                 <TableView fx:id="tblAuctionRequests"
                            VBox.vgrow="ALWAYS">
-
                     <columns>
 
                         <TableColumn fx:id="colRequestId"
                                      text="ID"
-                                     prefWidth="70"/>
+                                     minWidth="80"
+                                     prefWidth="80"/>
 
                         <TableColumn fx:id="colProductName"
                                      text="Tên sản phẩm"
-                                     prefWidth="220"/>
+                                     minWidth="260"
+                                     prefWidth="260"/>
 
                         <TableColumn fx:id="colSeller"
                                      text="Người bán"
-                                     prefWidth="150"/>
+                                     minWidth="180"
+                                     prefWidth="180"/>
 
                         <TableColumn fx:id="colCategory"
                                      text="Danh mục"
-                                     prefWidth="120"/>
+                                     minWidth="160"
+                                     prefWidth="160"/>
 
                         <TableColumn fx:id="colStartPrice"
                                      text="Giá khởi điểm"
-                                     prefWidth="140"/>
+                                     minWidth="180"
+                                     prefWidth="180"/>
 
                         <TableColumn fx:id="colStatus"
                                      text="Trạng thái"
-                                     prefWidth="120"/>
+                                     minWidth="150"
+                                     prefWidth="150"/>
 
                     </columns>
 
                 </TableView>
 
             </VBox>
-
             <!-- ================= RIGHT SIDE ================= -->
             <ScrollPane fitToWidth="true"
                         style="-fx-background-color: transparent;
