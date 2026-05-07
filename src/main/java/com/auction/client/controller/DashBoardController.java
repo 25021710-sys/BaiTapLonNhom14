@@ -18,6 +18,7 @@ import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 
 public class DashBoardController {
@@ -175,7 +176,25 @@ public class DashBoardController {
     }
 
     @FXML
+    private void handleGoToDashboard() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DashBoardView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) rootPane.getScene().getWindow(); // rootPane là fx:id BorderPane của bạn
+            stage.setScene(new Scene(root));
+
+            stage.setTitle("Dashboard");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     void handleAuctionList(ActionEvent event) {
         System.out.println("Đã bấm vào danh sách đấu giá!");
     }
+
 }

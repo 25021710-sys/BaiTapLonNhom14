@@ -349,6 +349,15 @@ public class CreateAuctionController {
 
     // TODO: Send to server later
     // SocketClient.getInstance().createAuction(...)
+
+    // ======================
+    // POPUP MESSAGE
+    // ======================
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    alert.setTitle("Tạo phiên đấu giá");
+    alert.setHeaderText("Phiên đấu giá đã được gửi đi");
+    alert.setContentText("Thông tin phiên đấu giá sẽ được gửi đến admin.\nVui lòng chờ để được phê duyệt.");
+    alert.showAndWait();
   }
 
   // ======================
