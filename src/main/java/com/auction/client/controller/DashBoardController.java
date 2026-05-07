@@ -223,4 +223,12 @@ public class DashBoardController {
         System.out.println("Đã bấm vào danh sách đấu giá!");
     }
 
+    public void handleManageUsers(ActionEvent event) {
+    }
+
+    public void handleManageRooms(ActionEvent event) {
+    }
+
+    public void handleAuctionApproval(ActionEvent event) {
+    }
 }

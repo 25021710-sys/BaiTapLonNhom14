@@ -13,6 +13,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.layout.Region?>
 
+<?import javafx.scene.control.Separator?>
 <BorderPane fx:id="rootPane"
             maxWidth="Infinity"
             maxHeight="Infinity"
@@ -28,50 +29,87 @@
             spacing="20.0"
             style="-fx-background-color: #142932; -fx-padding: 20; -fx-border-color: #0e1d23; -fx-border-width: 0 1 0 0;"
             BorderPane.alignment="CENTER">
-         <children>
-            <Button text="AUCTION ONLINE"
-                    mnemonicParsing="false"
-                    onAction="#handleGoToDashboard"
-                    style="-fx-background-color: transparent;
-               -fx-text-fill: white;
-               -fx-font-weight: bold;
-               -fx-font-size: 18px;
-               -fx-cursor: hand;">
-               <padding>
-                  <Insets top="20.0" bottom="15.0"/>
-               </padding>
-            </Button>
 
-            <Button fx:id="btnHome"
-                    mnemonicParsing="false"
-                    onAction="#handleGoToDashboard"
-                    prefHeight="35.0"
-                    prefWidth="180.0"
-                    styleClass="menu-button"
-                    text="Trang chủ"/>
+         <Button text="AUCTION ONLINE"
+                 mnemonicParsing="false"
+                 onAction="#handleGoToDashboard"
+                 style="-fx-background-color: transparent;
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-font-size: 18px;
+            -fx-cursor: hand;">
+            <padding>
+               <Insets top="20.0" bottom="15.0"/>
+            </padding>
+         </Button>
 
-            <Button fx:id="btnJoinedAuction"
-                    mnemonicParsing="false"
-                    styleClass="menu-button"
-                    prefHeight="35.0"
-                    prefWidth="180.0"
-                    text="Phiên đấu giá đang tham gia"/>
+         <Button fx:id="btnHome"
+                 mnemonicParsing="false"
+                 onAction="#handleGoToDashboard"
+                 prefHeight="35.0"
+                 prefWidth="180.0"
+                 styleClass="menu-button"
+                 text="Trang chủ"/>
 
-            <Button fx:id="btnMyAuction"
-                    mnemonicParsing="false"
-                    prefWidth="180.0"
-                    prefHeight="35.0"
-                    styleClass="menu-button"
-                    text="Phiên đấu giá của tôi"/>
+         <Button fx:id="btnJoinedAuction"
+                 mnemonicParsing="false"
+                 styleClass="menu-button"
+                 prefHeight="35.0"
+                 prefWidth="180.0"
+                 text="Phiên đấu giá đang tham gia"/>
 
-            <Button fx:id="btnCreateAuction"
+         <Button fx:id="btnMyAuction"
+                 mnemonicParsing="false"
+                 prefWidth="180.0"
+                 prefHeight="35.0"
+                 styleClass="menu-button"
+                 text="Phiên đấu giá của tôi"/>
+
+         <Button fx:id="btnCreateAuction"
+                 mnemonicParsing="false"
+                 onAction="#handleCreateAuctionView"
+                 prefWidth="180.0"
+                 prefHeight="35.0"
+                 styleClass="menu-button"
+                 text="Tạo phiên đấu giá"/>
+         <!-- ADMIN SECTION -->
+         <VBox fx:id="adminSection"
+               spacing="10"
+               alignment="TOP_CENTER"
+               visible="false"
+               managed="false"
+               styleClass="admin-section">
+
+            <Separator prefWidth="180"/>
+
+            <Label text="ADMIN PANEL"
+                   styleClass="admin-title"/>
+
+            <Button fx:id="btnAuctionApproval"
                     mnemonicParsing="false"
-                    onAction="#handleCreateAuctionView"
                     prefWidth="180.0"
                     prefHeight="35.0"
+                    text="Duyệt phiên đấu giá"
                     styleClass="menu-button"
-                    text="Tạo phiên đấu giá"/>
-         </children>
+                    onAction="#handleAuctionApproval"/>
+
+            <Button fx:id="btnManageRooms"
+                    mnemonicParsing="false"
+                    prefWidth="180.0"
+                    prefHeight="35.0"
+                    text="Quản lý phòng đấu giá"
+                    styleClass="menu-button"
+                    onAction="#handleManageRooms"/>
+
+            <Button fx:id="btnManageUsers"
+                    mnemonicParsing="false"
+                    prefWidth="180.0"
+                    prefHeight="35.0"
+                    text="Quản lý người dùng"
+                    styleClass="menu-button"
+                    onAction="#handleManageUsers"/>
+
+         </VBox>
       </VBox>
    </left>
 
