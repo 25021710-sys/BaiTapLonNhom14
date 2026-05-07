@@ -41,8 +41,8 @@ public class MainApp extends Application {
         primaryStage.setTitle("Hệ thống đấu giá");
         primaryStage.setScene(scene);
 
-        // Không cho resize (nếu muốn)
-        // primaryStage.setResizable(false);
+        // Không cho resize
+        primaryStage.setResizable(false);
 
         // Hiển thị giữa màn hình
         primaryStage.centerOnScreen();
