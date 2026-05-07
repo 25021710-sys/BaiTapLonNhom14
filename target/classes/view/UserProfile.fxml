@@ -5,7 +5,16 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox alignment="CENTER_LEFT" maxHeight="Infinity" maxWidth="Infinity" minHeight="600.0" minWidth="706.0" prefHeight="600.0" prefWidth="706.0" styleClass="root" stylesheets="@../style/style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.client.controller.UserProfileController">
+<HBox alignment="CENTER_LEFT"
+      maxHeight="Infinity"
+      maxWidth="Infinity"
+      prefHeight="700.0"
+      prefWidth="1200.0"
+      styleClass="root"
+      stylesheets="@../style/style.css"
+      xmlns="http://javafx.com/javafx/17.0.12"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.auction.client.controller.UserProfileController">
     <VBox maxWidth="250" minWidth="200" prefWidth="220" styleClass="sidebar">
         <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 10;">
             <VBox.margin>

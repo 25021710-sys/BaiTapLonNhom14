@@ -14,8 +14,8 @@
 <?import javafx.scene.layout.Region?>
 
 <BorderPane fx:id="rootPane"
-            prefHeight="760.0"
-            prefWidth="1359.0"
+            maxWidth="Infinity"
+            maxHeight="Infinity"
             stylesheets="@../style/DashBoardStyle.css"
             style="-fx-background-color: #f4f6f9;"
             xmlns="http://javafx.com/javafx/25"
