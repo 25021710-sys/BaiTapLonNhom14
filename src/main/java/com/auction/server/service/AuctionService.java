@@ -3,6 +3,7 @@ package com.auction.server.service;
 import com.auction.common.request.BidRequest;
 import com.auction.common.response.BidResponse;
 import com.auction.server.model.Auction;
+import com.auction.server.model.AuctionStatus;
 import com.auction.server.model.User;
 import com.auction.server.model.BidTransaction;
 import com.auction.server.dao.AuctionDAO;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,6 +27,8 @@ public class AuctionService {
     private final AutoBidEngine autoBidEngine;
     // UserDAO kiểm tra số dư tkhoan
     private final UserDAO userDAO = new UserDAO();
+    private static final int ANTI_SNIPE_THRESHOLD_SECONDS = 30;
+    private static final int ANTI_SNIPE_EXTEND_SECONDS    = 60;
 
     private final ConcurrentHashMap<Integer, ReentrantLock> auctionLocks
             = new ConcurrentHashMap<Integer, ReentrantLock>();
@@ -131,6 +135,78 @@ public class AuctionService {
         } finally {
             // GIẢI PHÓNG KHÓA
             lock.unlock();
+        }
+    }
+    /**
+     * Lấy auction từ cache, nếu không có thì query DB.
+     */
+    public Auction getAuction(int auctionId) {
+        return auctionCache.computeIfAbsent(auctionId, id -> {
+            Auction a = auctionDAO.findById(id);
+            if (a == null) throw new AuctionException("NOT_FOUND", "Phiên đấu giá không tồn tại: " + id);
+            auctionLocks.computeIfAbsent(id, k -> new ReentrantLock(true));
+            return a;
+        });
+    }
+
+    /** Load tất cả phiên đang active vào cache khi server khởi động */
+    public void loadActiveAuctions() {
+        List<Auction> active = auctionDAO.findActiveAuctions();
+        for (Auction a : active) {
+            auctionCache.put(a.getId(), a);
+            auctionLocks.put(a.getId(), new ReentrantLock(true));
+            autoBidEngine.loadFromDb(a.getId());
+        }
+        log.info("Đã load {} phiên đấu giá vào cache", active.size());
+    }
+
+    /** Lấy danh sách phiên active (cho client Dashboard) */
+    public List<Auction> getActiveAuctions() {
+        return auctionDAO.findActiveAuctions();
+    }
+    /**
+     * Đặt giá tự động (được gọi từ AutoBidEngine bên trong lock).
+     * KHÔNG gọi autoBidEngine.triggerAutoBid() để tránh vòng lặp vô tận.
+     */
+    public BidTransaction placeAutoBid(int auctionId, int bidderId, BigDecimal amount) {
+        Auction auction = getAuction(auctionId);
+
+        BidTransaction bid = new BidTransaction();
+        bid.setAuctionId(auctionId);
+        bid.setBidderId(bidderId);
+        bid.setAmount(amount);
+        bid.setAutoBid(true);
+        bid.setCreatedAt(LocalDateTime.now());
+        bidDAO.saveBid(bid);
+
+        auctionDAO.updateBidPrice(auctionId, bidderId, amount);
+        auction.setCurrentPrice(amount);
+        auction.setHighestBidderId(bidderId);
+
+        checkAndExtend(auction);
+        log.info("Auto-bid: auctionId={} bidderId={} amount={}", auctionId, bidderId, amount);
+        return bid;
+    }
+    // ── CLOSE AUCTION ─────────────────────────────────────────────────────────
+
+    public void closeAuction(Auction auction) {
+        auction.setStatus(AuctionStatus.FINISHED);
+        auctionDAO.updateStatus(auction.getId(), AuctionStatus.FINISHED);
+        log.info("Phiên {} kết thúc. Người thắng: bidderId={}, giá={}",
+                auction.getId(), auction.getHighestBidderId(), auction.getCurrentPrice());
+    }
+    /**
+     * Anti-sniping: nếu thời gian còn lại < THRESHOLD thì gia hạn thêm.
+     * Phải được gọi BÊN TRONG lock.
+     */
+    private void checkAndExtend(Auction auction) {
+        long secondsLeft = java.time.Duration.between(LocalDateTime.now(), auction.getEndTime()).getSeconds();
+        if (secondsLeft > 0 && secondsLeft < ANTI_SNIPE_THRESHOLD_SECONDS) {
+            LocalDateTime newEnd = auction.getEndTime().plusSeconds(ANTI_SNIPE_EXTEND_SECONDS);
+            auction.setEndTime(newEnd);
+            auction.setExtensionCount(auction.getExtensionCount() + 1);
+            auctionDAO.extendEndTime(auction.getId(), newEnd);
+            log.info("Anti-snipe: auction {} gia hạn đến {}", auction.getId(), newEnd);
         }
     }
 }
