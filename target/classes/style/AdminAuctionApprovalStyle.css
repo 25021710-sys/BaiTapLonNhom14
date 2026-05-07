@@ -38,6 +38,15 @@
 }
 
 /* =========================================================
+   LEFT PANEL
+   ========================================================= */
+
+.left-panel {
+    -fx-padding: 20;
+    -fx-spacing: 15;
+}
+
+/* =========================================================
    TABLE SECTION
    ========================================================= */
 
@@ -64,14 +73,18 @@
     -fx-background-color: transparent;
 }
 
-.table-view .label {
-    -fx-text-fill: black;
+.table-view .column-header .label {
+    -fx-text-fill: white;   /* đổi thành trắng cho header */
     -fx-font-weight: bold;
 }
 
 .table-row-cell {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #f1f2f6 transparent;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: #f5f9ff;
 }
 
 .table-row-cell:selected {
@@ -85,6 +98,7 @@
 .detail-panel {
     -fx-background-color: white;
     -fx-padding: 20;
+    -fx-spacing: 18;
     -fx-border-color: #dfe6e9;
     -fx-border-width: 0 0 0 1;
 }
@@ -113,6 +127,7 @@
     -fx-background-radius: 12;
     -fx-border-radius: 12;
     -fx-border-color: #dfe6e9;
+    -fx-padding: 10;
 }
 
 /* =========================================================

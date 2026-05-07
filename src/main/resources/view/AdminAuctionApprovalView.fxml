@@ -7,29 +7,23 @@
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.auction.client.controller.AdminAuctionApprovalController"
-            stylesheets="@../style/DashBoardStyle.css"
-            style="-fx-background-color: #f4f6f9;">
+            stylesheets="@../style/AdminAuctionApprovalStyle.css">
 
     <!-- ================= TOP BAR ================= -->
     <top>
         <HBox alignment="CENTER_LEFT"
               spacing="15.0"
-              style="-fx-padding: 15 20;
-                     -fx-background-color: white;
-                     -fx-border-color: #e0e0e0;
-                     -fx-border-width: 0 0 1 0;">
+              styleClass="top-bar">
 
             <Label text="Duyệt yêu cầu tạo phiên đấu giá"
-                   style="-fx-font-size: 22px;
-                          -fx-font-weight: bold;
-                          -fx-text-fill: #1f2d3d;" />
+                   styleClass="page-title"/>
 
             <Region HBox.hgrow="ALWAYS"/>
 
             <TextField fx:id="txtSearch"
                        promptText="Tìm kiếm sản phẩm hoặc người bán..."
                        prefWidth="280.0"
-                       style="-fx-background-radius: 10;" />
+                       styleClass="search-field"/>
 
             <ComboBox fx:id="cbStatusFilter"
                       prefWidth="160.0"
@@ -47,9 +41,7 @@
                   style="-fx-padding: 20;">
 
                 <Label text="Danh sách yêu cầu"
-                       style="-fx-font-size: 18px;
-                              -fx-font-weight: bold;
-                              -fx-text-fill: #1f2d3d;" />
+                       styleClass="section-title"/>
 
                 <TableView fx:id="tblAuctionRequests"
                            VBox.vgrow="ALWAYS"
@@ -85,32 +77,24 @@
             </VBox>
 
             <!-- ================= RIGHT SIDE ================= -->
-            <ScrollPane fitToWidth="true"
-                        style="-fx-background-color: transparent;
-                               -fx-border-color: transparent;">
+            <ScrollPane fitToWidth="true">
 
                 <VBox spacing="18.0"
-                      style="-fx-padding: 20;
-                             -fx-background-color: white;">
+                      styleClass="detail-panel">
 
                     <!-- TITLE -->
                     <Label text="Chi tiết yêu cầu"
-                           style="-fx-font-size: 20px;
-                                  -fx-font-weight: bold;
-                                  -fx-text-fill: #1f2d3d;"/>
+                           styleClass="detail-title"/>
 
-                    <!-- PRODUCT IMAGE -->
+                    <!-- IMAGE -->
                     <VBox spacing="10.0">
 
                         <Label text="Ảnh sản phẩm"
-                               style="-fx-font-weight: bold;"/>
+                               styleClass="info-label"/>
 
                         <StackPane prefHeight="240"
                                    prefWidth="320"
-                                   style="-fx-background-color: #f2f4f7;
-                                          -fx-background-radius: 12;
-                                          -fx-border-color: #dfe6e9;
-                                          -fx-border-radius: 12;">
+                                   styleClass="image-preview">
 
                             <ImageView fx:id="imgProduct"
                                        fitWidth="300"
@@ -125,8 +109,7 @@
                     <VBox spacing="12.0">
 
                         <Label text="Thông tin sản phẩm"
-                               style="-fx-font-size: 16px;
-                                      -fx-font-weight: bold;"/>
+                               styleClass="section-title"/>
 
                         <GridPane hgap="15"
                                   vgap="12">
@@ -140,78 +123,85 @@
                             <Label text="Tên sản phẩm:"
                                    GridPane.rowIndex="0"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblProductName"
                                    text="---"
                                    GridPane.rowIndex="0"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                             <!-- SELLER -->
                             <Label text="Người bán:"
                                    GridPane.rowIndex="1"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblSeller"
                                    text="---"
                                    GridPane.rowIndex="1"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                             <!-- CATEGORY -->
                             <Label text="Danh mục:"
                                    GridPane.rowIndex="2"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblCategory"
                                    text="---"
                                    GridPane.rowIndex="2"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                             <!-- START PRICE -->
                             <Label text="Giá khởi điểm:"
                                    GridPane.rowIndex="3"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblStartPrice"
                                    text="---"
                                    GridPane.rowIndex="3"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                             <!-- START TIME -->
                             <Label text="Bắt đầu:"
                                    GridPane.rowIndex="4"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblStartTime"
                                    text="---"
                                    GridPane.rowIndex="4"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                             <!-- END TIME -->
                             <Label text="Kết thúc:"
                                    GridPane.rowIndex="5"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblEndTime"
                                    text="---"
                                    GridPane.rowIndex="5"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                             <!-- CREATED -->
                             <Label text="Ngày tạo:"
                                    GridPane.rowIndex="6"
                                    GridPane.columnIndex="0"
-                                   style="-fx-font-weight: bold;"/>
+                                   styleClass="info-label"/>
 
                             <Label fx:id="lblCreatedAt"
                                    text="---"
                                    GridPane.rowIndex="6"
-                                   GridPane.columnIndex="1"/>
+                                   GridPane.columnIndex="1"
+                                   styleClass="value-label"/>
 
                         </GridPane>
 
@@ -221,14 +211,12 @@
                     <VBox spacing="10.0">
 
                         <Label text="Mô tả sản phẩm"
-                               style="-fx-font-size: 16px;
-                                      -fx-font-weight: bold;"/>
+                               styleClass="section-title"/>
 
                         <TextArea fx:id="txtDescription"
                                   editable="false"
                                   wrapText="true"
-                                  prefHeight="180"
-                                  style="-fx-background-radius: 10;"/>
+                                  prefHeight="180"/>
 
                     </VBox>
 
@@ -236,8 +224,7 @@
                     <VBox spacing="10.0">
 
                         <Label text="Lý do từ chối (nếu có)"
-                               style="-fx-font-size: 16px;
-                                      -fx-font-weight: bold;"/>
+                               styleClass="section-title"/>
 
                         <TextArea fx:id="txtRejectReason"
                                   promptText="Nhập lý do từ chối..."
@@ -246,7 +233,7 @@
 
                     </VBox>
 
-                    <!-- ACTION BUTTONS -->
+                    <!-- BUTTONS -->
                     <HBox spacing="15.0"
                           alignment="CENTER_LEFT">
 
@@ -255,33 +242,21 @@
                                 prefWidth="140"
                                 prefHeight="40"
                                 onAction="#handleApprove"
-                                style="-fx-background-color: #2ecc71;
-                                       -fx-text-fill: white;
-                                       -fx-font-size: 14px;
-                                       -fx-font-weight: bold;
-                                       -fx-background-radius: 10;"/>
+                                styleClass="approve-button"/>
 
                         <Button fx:id="btnReject"
                                 text="Reject"
                                 prefWidth="140"
                                 prefHeight="40"
                                 onAction="#handleReject"
-                                style="-fx-background-color: #e74c3c;
-                                       -fx-text-fill: white;
-                                       -fx-font-size: 14px;
-                                       -fx-font-weight: bold;
-                                       -fx-background-radius: 10;"/>
+                                styleClass="reject-button"/>
 
                         <Button fx:id="btnRefresh"
                                 text="Refresh"
                                 prefWidth="120"
                                 prefHeight="40"
                                 onAction="#handleRefresh"
-                                style="-fx-background-color: #3498db;
-                                       -fx-text-fill: white;
-                                       -fx-font-size: 14px;
-                                       -fx-font-weight: bold;
-                                       -fx-background-radius: 10;"/>
+                                styleClass="refresh-button"/>
 
                     </HBox>
 
