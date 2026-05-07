@@ -1,0 +1,186 @@
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: #f4f6f9;
+}
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+
+.top-bar {
+    -fx-background-color: white;
+    -fx-padding: 15 20;
+    -fx-border-color: #dfe6e9;
+    -fx-border-width: 0 0 1 0;
+}
+
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2d3d;
+}
+
+/* =========================================================
+   SEARCH + FILTER
+   ========================================================= */
+
+.search-field {
+    -fx-background-color: #f2f4f7;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10;
+    -fx-border-color: #dfe6e9;
+}
+
+.combo-box {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+
+/* =========================================================
+   TABLE SECTION
+   ========================================================= */
+
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2d3d;
+}
+
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #dfe6e9;
+    -fx-padding: 5;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #142932;
+    -fx-background-radius: 10 10 0 0;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+.table-view .label {
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #f1f2f6 transparent;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #dfefff;
+}
+
+/* =========================================================
+   DETAIL PANEL
+   ========================================================= */
+
+.detail-panel {
+    -fx-background-color: white;
+    -fx-padding: 20;
+    -fx-border-color: #dfe6e9;
+    -fx-border-width: 0 0 0 1;
+}
+
+.detail-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2d3d;
+}
+
+.info-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d3436;
+}
+
+.value-label {
+    -fx-text-fill: #636e72;
+}
+
+/* =========================================================
+   IMAGE PREVIEW
+   ========================================================= */
+
+.image-preview {
+    -fx-background-color: #f2f4f7;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #dfe6e9;
+}
+
+/* =========================================================
+   TEXT AREA
+   ========================================================= */
+
+.text-area {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #dfe6e9;
+}
+
+.text-area .content {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.approve-button {
+    -fx-background-color: #2ecc71;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+
+.approve-button:hover {
+    -fx-background-color: #27ae60;
+}
+
+.reject-button {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+
+.reject-button:hover {
+    -fx-background-color: #c0392b;
+}
+
+.refresh-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+
+.refresh-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+/* =========================================================
+   SCROLL PANE
+   ========================================================= */
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
