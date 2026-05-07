@@ -88,7 +88,7 @@
 }
 
 .table-row-cell:selected {
-    -fx-background-color: #dfefff;
+    -fx-background-color: #4a90e2;
 }
 
 /* =========================================================
