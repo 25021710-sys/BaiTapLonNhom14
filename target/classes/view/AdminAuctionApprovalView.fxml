@@ -60,27 +60,23 @@
 
                         <TableColumn fx:id="colRequestId"
                                      text="ID"
-                                     prefWidth="120"/>
+                                     prefWidth="70"/>
 
                         <TableColumn fx:id="colProductName"
                                      text="Tên sản phẩm"
-                                     prefWidth="350"/>
+                                     prefWidth="260"/>
 
                         <TableColumn fx:id="colSeller"
                                      text="Người bán"
-                                     prefWidth="250"/>
+                                     prefWidth="160"/>
 
-                        <TableColumn fx:id="colCategory"
-                                     text="Danh mục"
-                                     prefWidth="220"/>
+                        <TableColumn fx:id="colStartTime"
+                                     text="Ngày mở"
+                                     prefWidth="100"/>
 
-                        <TableColumn fx:id="colStartPrice"
-                                     text="Giá khởi điểm"
-                                     prefWidth="220"/>
-
-                        <TableColumn fx:id="colStatus"
-                                     text="Trạng thái"
-                                     prefWidth="200"/>
+                        <TableColumn fx:id="colEndTime"
+                                     text="Kết thúc"
+                                     prefWidth="100"/>
 
                     </columns>
 
