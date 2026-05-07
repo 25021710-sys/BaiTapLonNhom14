@@ -86,7 +86,7 @@ public class Auction extends Entity {
     public BigDecimal getStartingPrice() {
         return startingPrice;
     }
-    public void setStartingPricePrice(BigDecimal startingPrice) {
+    public void setStartingPrice(BigDecimal startingPrice) {
         this.startingPrice = startingPrice;
     }
 
