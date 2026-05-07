@@ -1,5 +1,10 @@
 package com.auction.client.controller;
 
+import com.auction.common.dto.AdminAuctionRequestDTO;
+import com.auction.common.request.ApproveAuctionRequest;
+import com.auction.common.request.RejectAuctionRequest;
+
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -9,10 +14,17 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.net.URL;
-import java.util.Objects;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
 public class AdminAuctionApprovalController implements Initializable {
+
+    // =====================================================
+    // FORMATTER
+    // =====================================================
+
+    private final DateTimeFormatter formatter =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // =====================================================
     // SEARCH + FILTER
@@ -29,22 +41,22 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private TableView<Object> tblAuctionRequests;
+    private TableView<AdminAuctionRequestDTO> tblAuctionRequests;
 
     @FXML
-    private TableColumn<Object, String> colRequestId;
+    private TableColumn<AdminAuctionRequestDTO, String> colRequestId;
 
     @FXML
-    private TableColumn<Object, String> colProductName;
+    private TableColumn<AdminAuctionRequestDTO, String> colProductName;
 
     @FXML
-    private TableColumn<Object, String> colSeller;
+    private TableColumn<AdminAuctionRequestDTO, String> colSeller;
 
     @FXML
-    private TableColumn<Object, String> colStartTime;
+    private TableColumn<AdminAuctionRequestDTO, String> colStartTime;
 
     @FXML
-    private TableColumn<Object, String> colEndTime;
+    private TableColumn<AdminAuctionRequestDTO, String> colEndTime;
 
     // =====================================================
     // DETAIL PANEL
@@ -100,12 +112,53 @@ public class AdminAuctionApprovalController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-        initializeStatusFilter();
+        setupTableColumns();
 
-        loadPendingRequests();
+        initializeStatusFilter();
 
         setupTableSelection();
 
+        loadPendingRequests();
+
+        tblAuctionRequests.setColumnResizePolicy(
+                TableView.CONSTRAINED_RESIZE_POLICY
+        );
+    }
+
+    // =====================================================
+    // TABLE COLUMNS
+    // =====================================================
+
+    private void setupTableColumns() {
+
+        colRequestId.setCellValueFactory(data ->
+                new SimpleStringProperty(
+                        String.valueOf(data.getValue().getRequestId())
+                ));
+
+        colProductName.setCellValueFactory(data ->
+                new SimpleStringProperty(
+                        data.getValue().getItemName()
+                ));
+
+        colSeller.setCellValueFactory(data ->
+                new SimpleStringProperty(
+                        data.getValue().getSellerUsername()
+                ));
+
+        colStartTime.setCellValueFactory(data ->
+                new SimpleStringProperty(
+                        data.getValue()
+                                .getStartTime()
+                                .format(formatter)
+                ));
+
+        colEndTime.setCellValueFactory(data ->
+                new SimpleStringProperty(
+                        data.getValue()
+                                .getEndTime()
+                                .format(formatter)
+                ));
     }
 
     // =====================================================
@@ -114,14 +167,14 @@ public class AdminAuctionApprovalController implements Initializable {
 
     private void initializeStatusFilter() {
 
-        ObservableList<String> statuses = FXCollections.observableArrayList(
-                "ALL",
-                "PENDING",
-                "APPROVED",
-                "REJECTED"
+        cbStatusFilter.setItems(
+                FXCollections.observableArrayList(
+                        "ALL",
+                        "PENDING",
+                        "APPROVED",
+                        "REJECTED"
+                )
         );
-
-        cbStatusFilter.setItems(statuses);
 
         cbStatusFilter.setValue("PENDING");
     }
@@ -132,17 +185,54 @@ public class AdminAuctionApprovalController implements Initializable {
 
     private void loadPendingRequests() {
 
-        /*
-         TODO:
-         Load dữ liệu từ server/database
+        ObservableList<AdminAuctionRequestDTO> list =
+                FXCollections.observableArrayList();
 
-         Ví dụ:
-         List<AuctionRequest> requests =
-             auctionService.getPendingRequests();
+        // =================================================
+        // SAMPLE DATA
+        // =================================================
 
-         tblAuctionRequests.setItems(...);
-         */
+        AdminAuctionRequestDTO dto =
+                new AdminAuctionRequestDTO();
 
+        dto.setRequestId(1);
+
+        dto.setItemName("Laptop Gaming MSI");
+
+        dto.setSellerUsername("Thịnh Văn Đức");
+
+        dto.setItemCategory("Electronics");
+
+        dto.setItemDescription("""
+                Laptop RTX 4070
+                RAM 32GB
+                SSD 1TB
+                Tình trạng mới 95%
+                """);
+
+        dto.setApprovalStatus("PENDING");
+
+        dto.setImageUrl(
+                "https://picsum.photos/300"
+        );
+
+        dto.setStartTime(java.time.LocalDateTime.now());
+
+        dto.setEndTime(
+                java.time.LocalDateTime.now().plusDays(1)
+        );
+
+        dto.setCreatedAt(
+                java.time.LocalDateTime.now()
+        );
+
+        dto.setStartingPrice(
+                new java.math.BigDecimal("15000000")
+        );
+
+        list.add(dto);
+
+        tblAuctionRequests.setItems(list);
     }
 
     // =====================================================
@@ -153,11 +243,11 @@ public class AdminAuctionApprovalController implements Initializable {
 
         tblAuctionRequests.getSelectionModel()
                 .selectedItemProperty()
-                .addListener((obs, oldValue, newValue) -> {
+                .addListener((obs, oldValue, selectedItem) -> {
 
-                    if (newValue != null) {
+                    if (selectedItem != null) {
 
-                        showRequestDetails(newValue);
+                        showRequestDetails(selectedItem);
 
                     }
 
@@ -169,52 +259,53 @@ public class AdminAuctionApprovalController implements Initializable {
     // SHOW DETAILS
     // =====================================================
 
-    private void showRequestDetails(Object request) {
+    private void showRequestDetails(
+            AdminAuctionRequestDTO request
+    ) {
 
-        /*
-         TODO:
-         Cast request sang AuctionRequest
+        lblProductName.setText(
+                request.getItemName()
+        );
 
-         Sau đó set dữ liệu:
-         */
+        lblSeller.setText(
+                request.getSellerUsername()
+        );
 
-        lblProductName.setText("Laptop Gaming MSI");
+        lblCategory.setText(
+                request.getItemCategory()
+        );
 
-        lblSeller.setText("Thịnh Văn Đức");
+        lblStartPrice.setText(
+                request.getStartingPrice() + " VNĐ"
+        );
 
-        lblCategory.setText("Electronics");
+        lblStartTime.setText(
+                request.getStartTime().format(formatter)
+        );
 
-        lblStartPrice.setText("15.000.000 VNĐ");
+        lblEndTime.setText(
+                request.getEndTime().format(formatter)
+        );
 
-        lblStartTime.setText("07/05/2026 18:00");
+        lblCreatedAt.setText(
+                request.getCreatedAt().format(formatter)
+        );
 
-        lblEndTime.setText("08/05/2026 18:00");
-
-        lblCreatedAt.setText("07/05/2026");
-
-        txtDescription.setText("""
-                Laptop MSI RTX 4070
-                RAM 32GB
-                SSD 1TB
-                Tình trạng mới 95%
-                """);
+        txtDescription.setText(
+                request.getItemDescription()
+        );
 
         try {
 
-            Image image = new Image(
-                    Objects.requireNonNull(getClass().getResourceAsStream(
-                            "/image/default-product.png"
-                    ))
+            imgProduct.setImage(
+                    new Image(request.getImageUrl())
             );
-
-            imgProduct.setImage(image);
 
         } catch (Exception e) {
 
-            System.out.println("Không load được ảnh.");
+            System.out.println("Cannot load image.");
 
         }
-
     }
 
     // =====================================================
@@ -224,40 +315,42 @@ public class AdminAuctionApprovalController implements Initializable {
     @FXML
     private void handleApprove() {
 
-        Object selectedRequest =
+        AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel()
                         .getSelectedItem();
 
-        if (selectedRequest == null) {
+        if (selected == null) {
 
             showAlert(
                     Alert.AlertType.WARNING,
                     "Warning",
-                    "Vui lòng chọn yêu cầu cần duyệt."
+                    "Vui lòng chọn yêu cầu."
             );
 
             return;
         }
 
+        ApproveAuctionRequest request =
+                new ApproveAuctionRequest();
+
+        request.setRequestId(
+                selected.getRequestId()
+        );
+
+        request.setAdminId(1);
+
         /*
          TODO:
-
-         1. Update status -> APPROVED
-
-         2. Tạo Auction Room
-
-         3. Broadcast update dashboard
-
+         send request lên server
          */
 
         showAlert(
                 Alert.AlertType.INFORMATION,
                 "Success",
-                "Đã duyệt phiên đấu giá thành công."
+                "Đã duyệt thành công."
         );
 
         loadPendingRequests();
-
     }
 
     // =====================================================
@@ -267,41 +360,49 @@ public class AdminAuctionApprovalController implements Initializable {
     @FXML
     private void handleReject() {
 
-        Object selectedRequest =
+        AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel()
                         .getSelectedItem();
 
-        if (selectedRequest == null) {
+        if (selected == null) {
 
             showAlert(
                     Alert.AlertType.WARNING,
                     "Warning",
-                    "Vui lòng chọn yêu cầu cần từ chối."
+                    "Vui lòng chọn yêu cầu."
             );
 
             return;
         }
 
-        String reason = txtRejectReason.getText();
+        String reason =
+                txtRejectReason.getText();
 
-        if (reason == null || reason.trim().isEmpty()) {
+        if (reason == null || reason.isBlank()) {
 
             showAlert(
                     Alert.AlertType.WARNING,
                     "Warning",
-                    "Vui lòng nhập lý do từ chối."
+                    "Vui lòng nhập lý do."
             );
 
             return;
         }
+
+        RejectAuctionRequest request =
+                new RejectAuctionRequest();
+
+        request.setRequestId(
+                selected.getRequestId()
+        );
+
+        request.setAdminId(1);
+
+        request.setRejectReason(reason);
 
         /*
          TODO:
-
-         1. Update status -> REJECTED
-
-         2. Save reject reason
-
+         send request lên server
          */
 
         showAlert(
@@ -311,7 +412,6 @@ public class AdminAuctionApprovalController implements Initializable {
         );
 
         loadPendingRequests();
-
     }
 
     // =====================================================
@@ -344,16 +444,5 @@ public class AdminAuctionApprovalController implements Initializable {
         alert.setContentText(message);
 
         alert.showAndWait();
-
     }
-    @FXML
-    public void initialize() {
-
-        // Tự resize cột cho vừa bảng
-        tblAuctionRequests.setColumnResizePolicy(
-                TableView.UNCONSTRAINED_RESIZE_POLICY
-        );
-
-    }
-
 }

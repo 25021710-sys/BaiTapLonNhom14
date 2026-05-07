@@ -14,6 +14,7 @@
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/model/Auction.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/client/network/SocketClient.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/request/RegisterRequest.java
+/Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/request/ApproveAuctionRequest.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/response/UpdateProfileResponse.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/request/UpdateProfileRequest.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/client/controller/LoginController.java
@@ -30,6 +31,7 @@
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/controller/AuctionController.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/dao/AuctionDAO.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/dao/TextConnection.java
+/Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/request/RejectAuctionRequest.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/response/SimpleResponse.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/network/ClientHandler.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/request/LoginRequest.java
@@ -52,6 +54,7 @@
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/client/controller/CreateAuctionController.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/controller/UserController.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/response/CreateAuctionResponse.java
+/Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/dto/AdminAuctionRequestDTO.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/util/PasswordUtil.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/server/model/Item.java
 /Users/vanducthinh/IdeaProjects/BaiTapLon/BaiTapLonNhom14/src/main/java/com/auction/common/response/BalanceResponse.java
