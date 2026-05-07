@@ -2,16 +2,19 @@ package com.auction.server.dao;
 
 import com.auction.server.config.DatabaseConnection;
 import com.auction.server.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ItemDAO {
+    private static final Logger logger = LoggerFactory.getLogger(ItemDAO.class);
+    private Connection getConn() throws SQLException {
+        return DatabaseConnection.getConnection();
+    }
 
     // Nhận vào một item và lưu xuống MySQL
     public boolean insertItem(Item item) {
@@ -132,5 +135,59 @@ public class ItemDAO {
             System.out.println("Lỗi khi xóa Item: " + e.getMessage());
         }
         return false;
+    }
+    public List<Item> getItemsBySeller(int sellerId) {
+        String sql = "SELECT * FROM items WHERE seller_id = ? ORDER BY created_at DESC";
+        List<Item> list = new ArrayList<>();
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, String.valueOf(sellerId));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi getItemsBySeller sellerId={}", sellerId, e);
+        }
+        return list;
+    }
+    private Item mapRow(ResultSet rs) throws SQLException {
+        String categoryStr = rs.getString("category");
+        ItemCategory category = null;
+        try { if (categoryStr != null) category = ItemCategory.valueOf(categoryStr); }
+        catch (IllegalArgumentException ignored) {}
+
+        Item item;
+        if (category == ItemCategory.ART) {
+            Art art = new Art();
+            art.setArtist(rs.getString("artist"));
+            art.setYearCreated(rs.getInt("year_created"));
+            art.setMedium(rs.getString("medium"));
+            item = art;
+        } else if (category == ItemCategory.ELECTRONICS) {
+            Electronics elec = new Electronics();
+            elec.setBrand(rs.getString("brand"));
+            elec.setModel(rs.getString("model"));
+            elec.setWarrantyMonths(rs.getInt("warranty_months"));
+            item = elec;
+        } else if (category == ItemCategory.VEHICLE) {
+            Vehicle veh = new Vehicle();
+            veh.setMake(rs.getString("make"));
+            veh.setVehicleModel(rs.getString("vehicle_model"));
+            veh.setYear(rs.getInt("year"));
+            veh.setMileage(rs.getInt("mileage"));
+            item = veh;
+        } else {
+            item = new Electronics(); // fallback
+        }
+
+        item.setId(rs.getInt("id"));
+        item.setName(rs.getString("name"));
+        item.setDescription(rs.getString("description"));
+        item.setStartingPrice(new java.math.BigDecimal(rs.getDouble("starting_price") + ""));
+        item.setSellerId(rs.getString("seller_id"));
+        item.setCategory(category);
+
+        Timestamp created = rs.getTimestamp("created_at");
+        if (created != null) item.setCreatedAt(created.toLocalDateTime());
+        return item;
     }
 }

@@ -1,13 +1,7 @@
 package com.auction.client.network;
 
-import com.auction.common.request.BalanceRequest;
-import com.auction.common.request.LoginRequest;
-import com.auction.common.request.RegisterRequest;
-import com.auction.common.request.UpdateProfileRequest;
-import com.auction.common.response.BalanceResponse;
-import com.auction.common.response.LoginResponse;
-import com.auction.common.response.RegisterResponse;
-import com.auction.common.response.UpdateProfileResponse;
+import com.auction.common.request.*;
+import com.auction.common.response.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -166,4 +160,16 @@ public class SocketClient {
             return new BalanceResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
         }
     }
+    public CreateAuctionResponse createAuctionResponse(CreateAuctionRequest request){
+        try{
+            ensureConnected();
+            out.writeObject("AUCTION_CREATE");
+            out.writeObject(request);
+            out.flush();
+            return(CreateAuctionResponse) in.readObject();
+        }catch (Exception e){
+            return new CreateAuctionResponse(false,"Lỗi kết nối"+e.getMessage(),null);
+        }
+    }
+
 }
