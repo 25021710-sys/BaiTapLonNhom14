@@ -14,26 +14,45 @@ import javafx.stage.Stage;
  */
 public class MainApp extends Application {
 
+    // Kích thước dùng chung cho toàn bộ app
+    public static final double WIDTH = 1200;
+    public static final double HEIGHT = 700;
+
     @Override
     public void start(Stage primaryStage) throws Exception {
+
         // 1. Kết nối đến server
         try {
             SocketClient.getInstance().connect();
         } catch (Exception e) {
             System.err.println("[MainApp] Không thể kết nối server: " + e.getMessage());
-            // Vẫn cho phép mở app để hiển thị thông báo lỗi qua UI
         }
 
-        // 2. Load màn hình đăng nhập
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/AuctionRoomView.fxml"));
+        // 2. Load giao diện
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/view/DashBoardView.fxml")
+        );
+
         Parent root = loader.load();
 
+        // 3. Tạo scene với kích thước cố định
+        Scene scene = new Scene(root, WIDTH, HEIGHT);
+
         primaryStage.setTitle("Hệ thống đấu giá");
-        primaryStage.setScene(new Scene(root));
+        primaryStage.setScene(scene);
+
+        // Không cho resize (nếu muốn)
+        // primaryStage.setResizable(false);
+
+        // Hiển thị giữa màn hình
+        primaryStage.centerOnScreen();
+
         primaryStage.show();
 
-        // 3. Ngắt kết nối khi đóng app
-        primaryStage.setOnCloseRequest(e -> SocketClient.getInstance().disconnect());
+        // 4. Ngắt kết nối khi đóng app
+        primaryStage.setOnCloseRequest(
+                e -> SocketClient.getInstance().disconnect()
+        );
     }
 
     public static void main(String[] args) {
