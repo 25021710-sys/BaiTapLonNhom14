@@ -93,207 +93,203 @@
                         style="-fx-background-color: transparent;
                                -fx-border-color: transparent;">
 
-                <content>
+                <VBox spacing="18.0"
+                      style="-fx-padding: 20;
+                             -fx-background-color: white;">
 
-                    <VBox spacing="18.0"
-                          style="-fx-padding: 20;
-                                 -fx-background-color: white;">
+                    <!-- TITLE -->
+                    <Label text="Chi tiết yêu cầu"
+                           style="-fx-font-size: 20px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #1f2d3d;"/>
 
-                        <!-- TITLE -->
-                        <Label text="Chi tiết yêu cầu"
-                               style="-fx-font-size: 20px;
-                                      -fx-font-weight: bold;
-                                      -fx-text-fill: #1f2d3d;" />
+                    <!-- PRODUCT IMAGE -->
+                    <VBox spacing="10.0">
 
-                        <!-- PRODUCT IMAGE -->
-                        <VBox spacing="10.0">
+                        <Label text="Ảnh sản phẩm"
+                               style="-fx-font-weight: bold;"/>
 
-                            <Label text="Ảnh sản phẩm"
-                                   style="-fx-font-weight: bold;" />
+                        <StackPane prefHeight="240"
+                                   prefWidth="320"
+                                   style="-fx-background-color: #f2f4f7;
+                                          -fx-background-radius: 12;
+                                          -fx-border-color: #dfe6e9;
+                                          -fx-border-radius: 12;">
 
-                            <StackPane prefHeight="240"
-                                       prefWidth="320"
-                                       style="-fx-background-color: #f2f4f7;
-                                              -fx-background-radius: 12;
-                                              -fx-border-color: #dfe6e9;
-                                              -fx-border-radius: 12;">
+                            <ImageView fx:id="imgProduct"
+                                       fitWidth="300"
+                                       fitHeight="220"
+                                       preserveRatio="true"/>
 
-                                <ImageView fx:id="imgProduct"
-                                           fitWidth="300"
-                                           fitHeight="220"
-                                           preserveRatio="true"/>
-
-                            </StackPane>
-
-                        </VBox>
-
-                        <!-- PRODUCT INFO -->
-                        <VBox spacing="12.0">
-
-                            <Label text="Thông tin sản phẩm"
-                                   style="-fx-font-size: 16px;
-                                          -fx-font-weight: bold;" />
-
-                            <GridPane hgap="15"
-                                      vgap="12">
-
-                                <columnConstraints>
-                                    <ColumnConstraints prefWidth="140"/>
-                                    <ColumnConstraints hgrow="ALWAYS"/>
-                                </columnConstraints>
-
-                                <!-- PRODUCT NAME -->
-                                <Label text="Tên sản phẩm:"
-                                       GridPane.rowIndex="0"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblProductName"
-                                       text="---"
-                                       GridPane.rowIndex="0"
-                                       GridPane.columnIndex="1"/>
-
-                                <!-- SELLER -->
-                                <Label text="Người bán:"
-                                       GridPane.rowIndex="1"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblSeller"
-                                       text="---"
-                                       GridPane.rowIndex="1"
-                                       GridPane.columnIndex="1"/>
-
-                                <!-- CATEGORY -->
-                                <Label text="Danh mục:"
-                                       GridPane.rowIndex="2"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblCategory"
-                                       text="---"
-                                       GridPane.rowIndex="2"
-                                       GridPane.columnIndex="1"/>
-
-                                <!-- START PRICE -->
-                                <Label text="Giá khởi điểm:"
-                                       GridPane.rowIndex="3"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblStartPrice"
-                                       text="---"
-                                       GridPane.rowIndex="3"
-                                       GridPane.columnIndex="1"/>
-
-                                <!-- START TIME -->
-                                <Label text="Bắt đầu:"
-                                       GridPane.rowIndex="4"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblStartTime"
-                                       text="---"
-                                       GridPane.rowIndex="4"
-                                       GridPane.columnIndex="1"/>
-
-                                <!-- END TIME -->
-                                <Label text="Kết thúc:"
-                                       GridPane.rowIndex="5"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblEndTime"
-                                       text="---"
-                                       GridPane.rowIndex="5"
-                                       GridPane.columnIndex="1"/>
-
-                                <!-- CREATED -->
-                                <Label text="Ngày tạo:"
-                                       GridPane.rowIndex="6"
-                                       GridPane.columnIndex="0"
-                                       style="-fx-font-weight: bold;"/>
-
-                                <Label fx:id="lblCreatedAt"
-                                       text="---"
-                                       GridPane.rowIndex="6"
-                                       GridPane.columnIndex="1"/>
-
-                            </GridPane>
-
-                        </VBox>
-
-                        <!-- DESCRIPTION -->
-                        <VBox spacing="10.0">
-
-                            <Label text="Mô tả sản phẩm"
-                                   style="-fx-font-size: 16px;
-                                          -fx-font-weight: bold;" />
-
-                            <TextArea fx:id="txtDescription"
-                                      editable="false"
-                                      wrapText="true"
-                                      prefHeight="180"
-                                      style="-fx-background-radius: 10;" />
-
-                        </VBox>
-
-                        <!-- REJECT REASON -->
-                        <VBox spacing="10.0">
-
-                            <Label text="Lý do từ chối (nếu có)"
-                                   style="-fx-font-size: 16px;
-                                          -fx-font-weight: bold;" />
-
-                            <TextArea fx:id="txtRejectReason"
-                                      promptText="Nhập lý do từ chối..."
-                                      wrapText="true"
-                                      prefHeight="120"/>
-
-                        </VBox>
-
-                        <!-- ACTION BUTTONS -->
-                        <HBox spacing="15.0"
-                              alignment="CENTER_LEFT">
-
-                            <Button fx:id="btnApprove"
-                                    text="Approve"
-                                    prefWidth="140"
-                                    prefHeight="40"
-                                    onAction="#handleApprove"
-                                    style="-fx-background-color: #2ecc71;
-                                           -fx-text-fill: white;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 10;" />
-
-                            <Button fx:id="btnReject"
-                                    text="Reject"
-                                    prefWidth="140"
-                                    prefHeight="40"
-                                    onAction="#handleReject"
-                                    style="-fx-background-color: #e74c3c;
-                                           -fx-text-fill: white;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 10;" />
-
-                            <Button fx:id="btnRefresh"
-                                    text="Refresh"
-                                    prefWidth="120"
-                                    prefHeight="40"
-                                    onAction="#handleRefresh"
-                                    style="-fx-background-color: #3498db;
-                                           -fx-text-fill: white;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 10;" />
-
-                        </HBox>
+                        </StackPane>
 
                     </VBox>
 
-                </content>
+                    <!-- PRODUCT INFO -->
+                    <VBox spacing="12.0">
+
+                        <Label text="Thông tin sản phẩm"
+                               style="-fx-font-size: 16px;
+                                      -fx-font-weight: bold;"/>
+
+                        <GridPane hgap="15"
+                                  vgap="12">
+
+                            <columnConstraints>
+                                <ColumnConstraints prefWidth="140"/>
+                                <ColumnConstraints hgrow="ALWAYS"/>
+                            </columnConstraints>
+
+                            <!-- PRODUCT NAME -->
+                            <Label text="Tên sản phẩm:"
+                                   GridPane.rowIndex="0"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblProductName"
+                                   text="---"
+                                   GridPane.rowIndex="0"
+                                   GridPane.columnIndex="1"/>
+
+                            <!-- SELLER -->
+                            <Label text="Người bán:"
+                                   GridPane.rowIndex="1"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblSeller"
+                                   text="---"
+                                   GridPane.rowIndex="1"
+                                   GridPane.columnIndex="1"/>
+
+                            <!-- CATEGORY -->
+                            <Label text="Danh mục:"
+                                   GridPane.rowIndex="2"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblCategory"
+                                   text="---"
+                                   GridPane.rowIndex="2"
+                                   GridPane.columnIndex="1"/>
+
+                            <!-- START PRICE -->
+                            <Label text="Giá khởi điểm:"
+                                   GridPane.rowIndex="3"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblStartPrice"
+                                   text="---"
+                                   GridPane.rowIndex="3"
+                                   GridPane.columnIndex="1"/>
+
+                            <!-- START TIME -->
+                            <Label text="Bắt đầu:"
+                                   GridPane.rowIndex="4"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblStartTime"
+                                   text="---"
+                                   GridPane.rowIndex="4"
+                                   GridPane.columnIndex="1"/>
+
+                            <!-- END TIME -->
+                            <Label text="Kết thúc:"
+                                   GridPane.rowIndex="5"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblEndTime"
+                                   text="---"
+                                   GridPane.rowIndex="5"
+                                   GridPane.columnIndex="1"/>
+
+                            <!-- CREATED -->
+                            <Label text="Ngày tạo:"
+                                   GridPane.rowIndex="6"
+                                   GridPane.columnIndex="0"
+                                   style="-fx-font-weight: bold;"/>
+
+                            <Label fx:id="lblCreatedAt"
+                                   text="---"
+                                   GridPane.rowIndex="6"
+                                   GridPane.columnIndex="1"/>
+
+                        </GridPane>
+
+                    </VBox>
+
+                    <!-- DESCRIPTION -->
+                    <VBox spacing="10.0">
+
+                        <Label text="Mô tả sản phẩm"
+                               style="-fx-font-size: 16px;
+                                      -fx-font-weight: bold;"/>
+
+                        <TextArea fx:id="txtDescription"
+                                  editable="false"
+                                  wrapText="true"
+                                  prefHeight="180"
+                                  style="-fx-background-radius: 10;"/>
+
+                    </VBox>
+
+                    <!-- REJECT REASON -->
+                    <VBox spacing="10.0">
+
+                        <Label text="Lý do từ chối (nếu có)"
+                               style="-fx-font-size: 16px;
+                                      -fx-font-weight: bold;"/>
+
+                        <TextArea fx:id="txtRejectReason"
+                                  promptText="Nhập lý do từ chối..."
+                                  wrapText="true"
+                                  prefHeight="120"/>
+
+                    </VBox>
+
+                    <!-- ACTION BUTTONS -->
+                    <HBox spacing="15.0"
+                          alignment="CENTER_LEFT">
+
+                        <Button fx:id="btnApprove"
+                                text="Approve"
+                                prefWidth="140"
+                                prefHeight="40"
+                                onAction="#handleApprove"
+                                style="-fx-background-color: #2ecc71;
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 14px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 10;"/>
+
+                        <Button fx:id="btnReject"
+                                text="Reject"
+                                prefWidth="140"
+                                prefHeight="40"
+                                onAction="#handleReject"
+                                style="-fx-background-color: #e74c3c;
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 14px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 10;"/>
+
+                        <Button fx:id="btnRefresh"
+                                text="Refresh"
+                                prefWidth="120"
+                                prefHeight="40"
+                                onAction="#handleRefresh"
+                                style="-fx-background-color: #3498db;
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 14px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 10;"/>
+
+                    </HBox>
+
+                </VBox>
 
             </ScrollPane>
 
