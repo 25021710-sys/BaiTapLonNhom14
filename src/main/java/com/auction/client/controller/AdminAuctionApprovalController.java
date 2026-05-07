@@ -9,6 +9,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.net.URL;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 public class AdminAuctionApprovalController implements Initializable {
@@ -40,13 +41,10 @@ public class AdminAuctionApprovalController implements Initializable {
     private TableColumn<Object, String> colSeller;
 
     @FXML
-    private TableColumn<Object, String> colCategory;
+    private TableColumn<Object, String> colStartTime;
 
     @FXML
-    private TableColumn<Object, String> colStartPrice;
-
-    @FXML
-    private TableColumn<Object, String> colStatus;
+    private TableColumn<Object, String> colEndTime;
 
     // =====================================================
     // DETAIL PANEL
@@ -204,9 +202,9 @@ public class AdminAuctionApprovalController implements Initializable {
         try {
 
             Image image = new Image(
-                    getClass().getResourceAsStream(
+                    Objects.requireNonNull(getClass().getResourceAsStream(
                             "/image/default-product.png"
-                    )
+                    ))
             );
 
             imgProduct.setImage(image);
