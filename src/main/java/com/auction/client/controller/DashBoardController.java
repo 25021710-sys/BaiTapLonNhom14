@@ -229,6 +229,29 @@ public class DashBoardController {
     public void handleManageRooms(ActionEvent event) {
     }
 
+    @FXML
     public void handleAuctionApproval(ActionEvent event) {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/AdminAuctionApprovalView.fxml")
+            );
+
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource())
+                    .getScene()
+                    .getWindow();
+
+            stage.setScene(new Scene(root));
+
+            stage.setTitle("Admin - Auction Approval");
+
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
