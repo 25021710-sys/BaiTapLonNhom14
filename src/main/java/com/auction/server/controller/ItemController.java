@@ -80,7 +80,7 @@ public class ItemController {
         item.setName(req.getName());
         item.setDescription(req.getDescription());
         item.setStartingPrice(req.getStartingPrice());
-        item.setSellerId(String.valueOf(req.getSellerId()));
+        item.setSellerId(req.getSellerId());
         item.setCategory(ItemCategory.valueOf(req.getCategory()));
         return item;
     }

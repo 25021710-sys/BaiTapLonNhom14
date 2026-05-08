@@ -27,7 +27,7 @@ public class ItemDAO {
             pstmt.setString(1, item.getName());
             pstmt.setString(2, item.getDescription());
             pstmt.setBigDecimal(3, item.getStartingPrice());
-            pstmt.setString(4, item.getSellerId());
+            pstmt.setInt(4, item.getSellerId());
             // Chuyển Enum (ví dụ: ELECTRONICS) thành dạng chữ "ELECTRONICS" để lưu vào DB
             pstmt.setString(5, item.getCategory().name());
 
@@ -62,30 +62,7 @@ public class ItemDAO {
              ResultSet rs = pstmt.executeQuery()) { // executeQuery dùng cho lệnh SELECT
 
             while (rs.next()) {
-                // Dựa vào loại hàng để tạo đúng item
-                String categoryStr = rs.getString("category");
-                Item item = null;
-                if ("ELECTRONICS".equals(categoryStr)) {
-                    item = new Electronics();
-                } else if ("ART".equals(categoryStr)) {
-                    item = new Art();
-                } else if ("VEHICLE".equals(categoryStr)) {
-                    item = new Vehicle();
-                } else {
-                    continue;
-                }
-
-                item.setId(rs.getInt("id"));
-                item.setName(rs.getString("name"));
-                item.setDescription(rs.getString("description"));
-                item.setStartingPrice(rs.getBigDecimal("starting_price"));
-                item.setSellerId(rs.getString("seller_id"));
-                // Ép kiểu chữ (String) trong DB về lại kiểu Enum ItemCategory trong Java
-                if (categoryStr != null) {
-                    item.setCategory(ItemCategory.valueOf(categoryStr));
-                }
-
-                itemList.add(item);
+                itemList.add(mapRow(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -140,7 +117,7 @@ public class ItemDAO {
         String sql = "SELECT * FROM items WHERE seller_id = ? ORDER BY created_at DESC";
         List<Item> list = new ArrayList<>();
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, String.valueOf(sellerId));
+            ps.setInt(1, sellerId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
             }
@@ -154,40 +131,32 @@ public class ItemDAO {
         ItemCategory category = null;
         try { if (categoryStr != null) category = ItemCategory.valueOf(categoryStr); }
         catch (IllegalArgumentException ignored) {}
-
-        Item item;
-        if (category == ItemCategory.ART) {
-            Art art = new Art();
-            art.setArtist(rs.getString("artist"));
-            art.setYearCreated(rs.getInt("year_created"));
-            art.setMedium(rs.getString("medium"));
-            item = art;
-        } else if (category == ItemCategory.ELECTRONICS) {
-            Electronics elec = new Electronics();
-            elec.setBrand(rs.getString("brand"));
-            elec.setModel(rs.getString("model"));
-            elec.setWarrantyMonths(rs.getInt("warranty_months"));
-            item = elec;
-        } else if (category == ItemCategory.VEHICLE) {
-            Vehicle veh = new Vehicle();
-            veh.setMake(rs.getString("make"));
-            veh.setVehicleModel(rs.getString("vehicle_model"));
-            veh.setYear(rs.getInt("year"));
-            veh.setMileage(rs.getInt("mileage"));
-            item = veh;
-        } else {
-            item = new Electronics(); // fallback
+        if (category == null) {
+            throw new IllegalArgumentException(
+                    "Category cannot be null"
+            );
         }
+        Item item = createItemByCategory(category);
 
         item.setId(rs.getInt("id"));
         item.setName(rs.getString("name"));
         item.setDescription(rs.getString("description"));
-        item.setStartingPrice(new java.math.BigDecimal(rs.getDouble("starting_price") + ""));
-        item.setSellerId(rs.getString("seller_id"));
+        item.setStartingPrice(rs.getBigDecimal("starting_price"));
+        item.setSellerId(rs.getInt("seller_id"));
         item.setCategory(category);
 
         Timestamp created = rs.getTimestamp("created_at");
         if (created != null) item.setCreatedAt(created.toLocalDateTime());
         return item;
+    }
+    private Item createItemByCategory(ItemCategory category) {
+        return switch (category) {
+            case ART -> new Art();
+            case ELECTRONICS -> new Electronics();
+            case VEHICLE -> new Vehicle();
+            default -> throw new IllegalArgumentException(
+                    "Unknown category: " + category
+            );
+        };
     }
 }

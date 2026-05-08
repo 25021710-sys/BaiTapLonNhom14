@@ -1,34 +1,27 @@
 package com.auction.server.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class Electronics extends Item {
-    private String brand;
-    private String model;
-    private int warrantyMonths;
-
     public Electronics() {
         super();
     }
 
-    public Electronics(String name, String description, BigDecimal startingPrice, String sellerId, String brand, String model, int warrantyMonths ) {
-        super(name,description, startingPrice,sellerId,ItemCategory.ELECTRONICS);
-        this.brand=brand;
-        this.model=model;
-        this.warrantyMonths=warrantyMonths;
+    public Electronics(int id, String name, String description, BigDecimal startingPrice, int sellerId, ItemCategory category, LocalDateTime createdAt){
+        super(id, name, description, startingPrice, sellerId, category, createdAt);
     }
-
-    public String getBrand() { return brand; }
-    public void setBrand(String brand) { this.brand = brand; }
-
-    public String getModel() { return model; }
-    public void setModel(String model) { this.model = model; }
-
-    public int getWarrantyMonths() { return warrantyMonths; }
-    public void setWarrantyMonths(int warrantyMonths) { this.warrantyMonths = warrantyMonths; }
 
     @Override
     public void printInfo() {
-        System.out.println("[ELECTRONICS] " + brand + " " + model + " | Bảo hành: " + warrantyMonths + " tháng | Giá KĐ: " + startingPrice);
+        System.out.println(
+                String.format(
+                        "[ELECTRONICS] %s | Giá khởi điểm: %s | Mô tả: %s | Thời điểm tạo %s",
+                        name,
+                        startingPrice,
+                        description,
+                        createdAt
+                )
+        );
     }
 }

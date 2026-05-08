@@ -1,34 +1,28 @@
 package com.auction.server.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class Art extends Item {
-    private String artist;
-    private int yearCreated;
-    private String medium; // chất liệu
 
     public Art() {
         super();
     }
 
-    public Art(String name, String description, BigDecimal startingPrice, String sellerId, String artist, int yearCreated, String medium) {
-        super(name, description, startingPrice,sellerId,ItemCategory.ART);
-        this.artist=artist;
-        this.yearCreated=yearCreated;
-        this.medium=medium;
+    public Art(int id, String name, String description, BigDecimal startingPrice, int sellerId, ItemCategory category, LocalDateTime createdAt){
+        super(id, name, description, startingPrice, sellerId, category, createdAt);
     }
-
-    public String getArtist() { return artist; }
-    public void setArtist(String artist) { this.artist = artist; }
-
-    public int getYearCreated() { return yearCreated; }
-    public void setYearCreated(int yearCreated) { this.yearCreated = yearCreated; }
-
-    public String getMedium() { return medium; }
-    public void setMedium(String medium) { this.medium = medium; }
 
     @Override
     public void printInfo() {
-        System.out.println("[ART] " + name + " | Tác giả: " + artist + " | Năm: " + yearCreated + " | Giá khởi điểm: " + startingPrice);
+        System.out.println(
+                String.format(
+                        "[ART] %s | Giá khởi điểm: %s | Mô tả: %s | Thời điểm tạo %s",
+                        name,
+                        startingPrice,
+                        description,
+                        createdAt
+                )
+        );
     }
 }
