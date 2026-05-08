@@ -18,6 +18,10 @@ public class AutoBidEngine {
     public AutoBidEngine(BidDAO bidDAO) {
         this.bidDAO = bidDAO;
     }
+    // Constructor rỗng
+    public AutoBidEngine() {
+        this.bidDAO = new BidDAO();
+    }
     public synchronized void registerAutoBid(AutoBidConfig config) {
         bidDAO.saveAutoBidConfig(config);
 

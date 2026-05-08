@@ -208,5 +208,27 @@ public class AuctionService {
             log.info("Anti-snipe: auction {} gia hạn đến {}", auction.getId(), newEnd);
         }
     }
+    public boolean approveAuction(int auctionId, int adminId) {
+
+        Auction auction = auctionDAO.findById(auctionId);
+
+        if (auction == null) {
+            return false;
+        }
+
+        auction.setStatus(AuctionStatus.OPEN);
+
+        auctionDAO.updateStatus(
+                auctionId,
+                AuctionStatus.OPEN
+        );
+
+        return true;
+    }
+    public List<Auction> getPendingAuctions() {
+
+        return auctionDAO.findPendingAuctions();
+
+    }
 }
 

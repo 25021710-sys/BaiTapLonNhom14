@@ -171,5 +171,41 @@ public class SocketClient {
             return new CreateAuctionResponse(false,"Lỗi kết nối"+e.getMessage(),null);
         }
     }
+    public synchronized GetPendingAuctionRequestsResponse getPendingAuctionRequests(
+            GetPendingAuctionRequestsRequest request
+    ) {
 
+        try {
+
+            ensureConnected();
+
+            // gửi action
+            out.writeObject(
+                    "AUCTION_GET_PENDING_REQUESTS"
+            );
+
+            // gửi request object
+            out.writeObject(request);
+
+            out.flush();
+
+            // đọc response
+            return (GetPendingAuctionRequestsResponse)
+                    in.readObject();
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "[SocketClient] Lỗi AUCTION_GET_PENDING_REQUESTS: "
+                            + e.getMessage()
+            );
+
+            return new GetPendingAuctionRequestsResponse(
+                    false,
+                    "Không thể kết nối đến máy chủ: "
+                            + e.getMessage(),
+                    null
+            );
+        }
+    }
 }

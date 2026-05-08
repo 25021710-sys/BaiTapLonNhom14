@@ -3,6 +3,8 @@ package com.auction.client.controller;
 import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.common.request.ApproveAuctionRequest;
 import com.auction.common.request.RejectAuctionRequest;
+import com.auction.common.request.GetPendingAuctionRequestsRequest;
+import com.auction.common.response.GetPendingAuctionRequestsResponse;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -15,7 +17,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.net.URL;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class AdminAuctionApprovalController implements Initializable {
@@ -71,14 +75,17 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
     // INITIALIZE
     // =====================================================
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
         setupTableColumns();
         initializeStatusFilter();
         setupTableSelection();
-        loadPendingRequests();
+        try {
+            loadPendingRequests();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         tblAuctionRequests.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
@@ -137,54 +144,80 @@ public class AdminAuctionApprovalController implements Initializable {
     // LOAD REQUESTS
     // =====================================================
 
-    private void loadPendingRequests() {
+    private void loadPendingRequests() throws SQLException {
 
         ObservableList<AdminAuctionRequestDTO> list =
                 FXCollections.observableArrayList();
 
-        // =================================================
-        // SAMPLE DATA
-        // =================================================
+        // lấy auction pending thật từ DB
+        List<Auction> pendingAuctions = auctionService.getPendingAuctions();
 
-        AdminAuctionRequestDTO dto =
-                new AdminAuctionRequestDTO();
+        for (Auction auction : pendingAuctions) {
 
-        dto.setRequestId(1);
+            Item item =
+                    itemDAO.findById(
+                            auction.getItemId()
+                    );
 
-        dto.setItemName("Laptop Gaming MSI");
+            User seller =
+                    userDAO.findById(
+                            auction.getSellerId()
+                    );
 
-        dto.setSellerUsername("Thịnh Văn Đức");
+            if (item == null || seller == null) {
+                continue;
+            }
 
-        dto.setItemCategory("Electronics");
+            AdminAuctionRequestDTO dto =
+                    new AdminAuctionRequestDTO();
 
-        dto.setItemDescription("""
-                Laptop RTX 4070
-                RAM 32GB
-                SSD 1TB
-                Tình trạng mới 95%
-                """);
+            dto.setRequestId(
+                    auction.getId()
+            );
 
-        dto.setApprovalStatus("PENDING");
+            dto.setItemName(
+                    item.getName()
+            );
 
-        dto.setImageUrl(
-                "https://picsum.photos/300"
-        );
+            dto.setSellerUsername(
+                    seller.getUsername()
+            );
 
-        dto.setStartTime(java.time.LocalDateTime.now());
+            dto.setItemCategory(
+                    item.getCategory().name()
+            );
 
-        dto.setEndTime(
-                java.time.LocalDateTime.now().plusDays(1)
-        );
+            dto.setItemDescription(
+                    item.getDescription()
+            );
 
-        dto.setCreatedAt(
-                java.time.LocalDateTime.now()
-        );
+            dto.setApprovalStatus(
+                    auction.getStatus().name()
+            );
 
-        dto.setStartingPrice(
-                new java.math.BigDecimal("15000000")
-        );
+            dto.setStartTime(
+                    auction.getStartTime()
+            );
 
-        list.add(dto);
+            dto.setEndTime(
+                    auction.getEndTime()
+            );
+
+            dto.setCreatedAt(
+                    auction.getCreatedAt()
+            );
+
+            dto.setStartingPrice(
+                    auction.getStartingPrice()
+            );
+
+            // nếu sau này có image_url
+            dto.setImageUrl(
+                    "https://picsum.photos/300"
+            );
+
+            list.add(dto);
+        }
 
         tblAuctionRequests.setItems(list);
     }
@@ -267,7 +300,7 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleApprove() {
+    private void handleApprove() throws SQLException {
 
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel()
@@ -312,7 +345,7 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleReject() {
+    private void handleReject() throws SQLException {
 
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel()
@@ -373,7 +406,7 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleRefresh() {
+    private void handleRefresh() throws SQLException {
 
         loadPendingRequests();
 

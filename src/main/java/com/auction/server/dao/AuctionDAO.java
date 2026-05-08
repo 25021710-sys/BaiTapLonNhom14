@@ -224,4 +224,33 @@ public class AuctionDAO {
         a.setExtensionCount(rs.getInt("extension_count"));
         return a;
     }
+    public List<Auction> findPendingAuctions() {
+
+        String sql = """
+        SELECT *
+        FROM auctions
+        WHERE status = 'PENDING'
+        ORDER BY created_at DESC
+    """;
+
+        List<Auction> list = new ArrayList<>();
+
+        try (
+                Connection c = getConn();
+                PreparedStatement ps = c.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()
+        ) {
+
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+
+        } catch (SQLException e) {
+
+            logger.error("Lỗi findPendingAuctions", e);
+
+        }
+
+        return list;
+    }
 }
