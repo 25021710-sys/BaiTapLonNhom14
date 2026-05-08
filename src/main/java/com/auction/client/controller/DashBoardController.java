@@ -1,5 +1,5 @@
 package com.auction.client.controller;
-
+import com.auction.common.dto.UserDTO;
 import com.auction.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -20,75 +20,35 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class DashBoardController {
-
-    @FXML
-    private Button btnHome;
-
-    @FXML
-    private Button btnJoinedAuction;
-
-    @FXML
-    private Button btnMyAuction;
-
-    @FXML
-    private Button btnAuctionApproval;
-
-    @FXML
-    private Button btnManageUsers;
-
-    @FXML
-    private Button btnManageRooms;
-
-    @FXML
-    private Button btnCreateAuction;
-
-    @FXML
-    private Circle profileCircle;
-
-    @FXML
-    private Label lblUsername;
-
-    @FXML
-    private ScrollPane spBidsJoined;
-
-    @FXML
-    private ScrollPane spFeaturedProducts;
-
-    @FXML
-    private ScrollPane spFavoriteProducts;
-
-    @FXML
-    private HBox pnlBidsJoined;
-
-    @FXML
-    private HBox pnlFeaturedProducts;
-
-    @FXML
-    private HBox pnlFavoriteProducts;
+    @FXML private VBox adminSection;
+    @FXML private Button btnHome;
+    @FXML private Button btnJoinedAuction;
+    @FXML private Button btnMyAuction;
+    @FXML private Button btnAuctionApproval;
+    @FXML private Button btnManageUsers;
+    @FXML private Button btnManageRooms;
+    @FXML private Button btnCreateAuction;
+    @FXML private Circle profileCircle;
+    @FXML private Label lblUsername;
+    @FXML private ScrollPane spBidsJoined;
+    @FXML private ScrollPane spFeaturedProducts;
+    @FXML private ScrollPane spFavoriteProducts;
+    @FXML private HBox pnlBidsJoined;
+    @FXML private HBox pnlFeaturedProducts;
+    @FXML private HBox pnlFavoriteProducts;
 
     // Buttons section 1
-    @FXML
-    private Button btnLeftBids;
-
-    @FXML
-    private Button btnRightBids;
+    @FXML private Button btnLeftBids;
+    @FXML private Button btnRightBids;
 
     // Buttons section 2
-    @FXML
-    private Button btnLeftFeatured;
-
-    @FXML
-    private Button btnRightFeatured;
+    @FXML private Button btnLeftFeatured;
+    @FXML private Button btnRightFeatured;
 
     // Buttons section 3
-    @FXML
-    private Button btnLeftFavorite;
-
-    @FXML
-    private Button btnRightFavorite;
-
-    @FXML
-    private BorderPane rootPane;
+    @FXML private Button btnLeftFavorite;
+    @FXML private Button btnRightFavorite;
+    @FXML private BorderPane rootPane;
 
     @FXML
     public void initialize() {
@@ -97,9 +57,22 @@ public class DashBoardController {
 
         // set username từ Session
         if (Session.getCurrentUser() != null) {
-            lblUsername.setText(Session.getCurrentUser().getUsername());
+
+            UserDTO currentUser = Session.getCurrentUser();
+
+            lblUsername.setText(currentUser.getUsername());
+
+            boolean isAdmin = "ADMIN".equals(currentUser.getRole());
+
+            adminSection.setVisible(isAdmin);
+            adminSection.setManaged(isAdmin);
+
         } else {
+
             lblUsername.setText("Guest");
+
+//            adminSection.setVisible(false);
+//            adminSection.setManaged(false);
         }
 
         setupArrowButtons(spBidsJoined, btnLeftBids, btnRightBids);

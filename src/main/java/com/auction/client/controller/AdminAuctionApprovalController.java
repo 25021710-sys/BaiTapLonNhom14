@@ -5,6 +5,7 @@ import com.auction.common.request.ApproveAuctionRequest;
 import com.auction.common.request.RejectAuctionRequest;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -30,80 +31,42 @@ public class AdminAuctionApprovalController implements Initializable {
     // SEARCH + FILTER
     // =====================================================
 
-    @FXML
-    private TextField txtSearch;
-
-    @FXML
-    private ComboBox<String> cbStatusFilter;
+    @FXML private TextField txtSearch;
+    @FXML private ComboBox<String> cbStatusFilter;
 
     // =====================================================
     // TABLE
     // =====================================================
 
-    @FXML
-    private TableView<AdminAuctionRequestDTO> tblAuctionRequests;
-
-    @FXML
-    private TableColumn<AdminAuctionRequestDTO, String> colRequestId;
-
-    @FXML
-    private TableColumn<AdminAuctionRequestDTO, String> colProductName;
-
-    @FXML
-    private TableColumn<AdminAuctionRequestDTO, String> colSeller;
-
-    @FXML
-    private TableColumn<AdminAuctionRequestDTO, String> colStartTime;
-
-    @FXML
-    private TableColumn<AdminAuctionRequestDTO, String> colEndTime;
+    @FXML private TableView<AdminAuctionRequestDTO> tblAuctionRequests;
+    @FXML private TableColumn<AdminAuctionRequestDTO, Integer> colRequestId;
+    @FXML private TableColumn<AdminAuctionRequestDTO, String> colProductName;
+    @FXML private TableColumn<AdminAuctionRequestDTO, String> colSeller;
+    @FXML private TableColumn<AdminAuctionRequestDTO, String> colStartTime;
+    @FXML private TableColumn<AdminAuctionRequestDTO, String> colEndTime;
 
     // =====================================================
     // DETAIL PANEL
     // =====================================================
 
-    @FXML
-    private ImageView imgProduct;
-
-    @FXML
-    private Label lblProductName;
-
-    @FXML
-    private Label lblSeller;
-
-    @FXML
-    private Label lblCategory;
-
-    @FXML
-    private Label lblStartPrice;
-
-    @FXML
-    private Label lblStartTime;
-
-    @FXML
-    private Label lblEndTime;
-
-    @FXML
-    private Label lblCreatedAt;
-
-    @FXML
-    private TextArea txtDescription;
-
-    @FXML
-    private TextArea txtRejectReason;
+    @FXML private ImageView imgProduct;
+    @FXML private Label lblProductName;
+    @FXML private Label lblSeller;
+    @FXML private Label lblCategory;
+    @FXML private Label lblStartPrice;
+    @FXML private Label lblStartTime;
+    @FXML private Label lblEndTime;
+    @FXML private Label lblCreatedAt;
+    @FXML private TextArea txtDescription;
+    @FXML private TextArea txtRejectReason;
 
     // =====================================================
     // BUTTONS
     // =====================================================
 
-    @FXML
-    private Button btnApprove;
-
-    @FXML
-    private Button btnReject;
-
-    @FXML
-    private Button btnRefresh;
+    @FXML private Button btnApprove;
+    @FXML private Button btnReject;
+    @FXML private Button btnRefresh;
 
     // =====================================================
     // INITIALIZE
@@ -113,15 +76,12 @@ public class AdminAuctionApprovalController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         setupTableColumns();
-
         initializeStatusFilter();
-
         setupTableSelection();
-
         loadPendingRequests();
 
         tblAuctionRequests.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
         );
     }
 
@@ -132,19 +92,13 @@ public class AdminAuctionApprovalController implements Initializable {
     private void setupTableColumns() {
 
         colRequestId.setCellValueFactory(data ->
-                new SimpleStringProperty(
-                        String.valueOf(data.getValue().getRequestId())
-                ));
+                new SimpleIntegerProperty(data.getValue().getRequestId()).asObject());
 
         colProductName.setCellValueFactory(data ->
-                new SimpleStringProperty(
-                        data.getValue().getItemName()
-                ));
+                new SimpleStringProperty(data.getValue().getItemName()));
 
         colSeller.setCellValueFactory(data ->
-                new SimpleStringProperty(
-                        data.getValue().getSellerUsername()
-                ));
+                new SimpleStringProperty(data.getValue().getSellerUsername()));
 
         colStartTime.setCellValueFactory(data ->
                 new SimpleStringProperty(
