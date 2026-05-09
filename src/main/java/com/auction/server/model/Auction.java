@@ -104,6 +104,13 @@ public class Auction extends Entity {
         this.reservePrice = reservePrice;
     }
 
+    public BigDecimal getMinBidIncrement() {
+        return minBidIncrement != null ? minBidIncrement : new BigDecimal("1000");
+    }
+    public void setMinBidIncrement(BigDecimal minBidIncrement) {
+        this.minBidIncrement = minBidIncrement;
+    }
+
     @Override
     public void printInfo() {
         System.out.printf(

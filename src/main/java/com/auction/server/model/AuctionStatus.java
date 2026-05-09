@@ -1,6 +1,7 @@
 package com.auction.server.model;
 
 public enum AuctionStatus {
+    PENDING("Chờ duyệt"),
     OPEN("Mở"),
     RUNNING("Đang diễn ra"),
     FINISHED("Kết thúc"),
@@ -9,7 +10,7 @@ public enum AuctionStatus {
 
     private final String display;
 
-    private AuctionStatus(String display) {
+    AuctionStatus(String display) {
         this.display = display;
     }
 
@@ -17,6 +18,7 @@ public enum AuctionStatus {
         return this.display;
     }
 
+    @Override
     public String toString() {
         return this.display;
     }

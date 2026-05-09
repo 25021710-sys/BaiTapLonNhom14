@@ -39,7 +39,8 @@ public class AuctionDAO {
 
         try (
                 Connection c = getConn();
-                PreparedStatement ps = c.prepareStatement(sql)
+                // FIX: thêm RETURN_GENERATED_KEYS để lấy ID được DB tự sinh
+                PreparedStatement ps = c.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)
         ) {
 
             ps.setInt(1, auction.getItemId());
@@ -59,7 +60,14 @@ public class AuctionDAO {
 
             ps.executeUpdate();
 
-            logger.info("Đã lưu auction cho item_id: {}", auction.getItemId());
+            // FIX: lấy ID được sinh và gắn ngược vào object auction
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    auction.setId(generatedKeys.getInt(1));
+                }
+            }
+
+            logger.info("Đã lưu auction id={} cho item_id: {}", auction.getId(), auction.getItemId());
 
         } catch (SQLException e) {
 
@@ -93,6 +101,10 @@ public class AuctionDAO {
                     auction.setStartingPrice(rs.getBigDecimal("starting_price"));
                     auction.setCurrentPrice(rs.getBigDecimal("current_price"));
                     auction.setReservePrice(rs.getBigDecimal("reserve_price"));
+
+                    // FIX: setStatus bị thiếu trước đây → auction luôn có status = OPEN (mặc định)
+                    String statusStr = rs.getString("status");
+                    if (statusStr != null) auction.setStatus(AuctionStatus.valueOf(statusStr));
 
                     auction.setExtensionCount(rs.getInt("extension_count"));
                     return auction;
@@ -202,6 +214,23 @@ public class AuctionDAO {
             logger.error("Lỗi findAll auctions", e);
         }
         return list;
+    }
+    public void updateBidInfo(int auctionId, BigDecimal newPrice,
+                              int highestBidderId, int extensionCount, Timestamp newEndTime) {
+        // FIX: bỏ cột current_highest_bid không tồn tại trong schema
+        String sql = "UPDATE auctions SET current_price = ?, " +
+                "highest_bidder_id = ?, extension_count = ?, end_time = ?, status = 'RUNNING' WHERE id = ?";
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setBigDecimal(1, newPrice);
+            ps.setInt(2, highestBidderId);
+            ps.setInt(3, extensionCount);
+            ps.setTimestamp(4, newEndTime);
+            ps.setInt(5, auctionId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Error updating bid info for auction {}", auctionId, e);
+            throw new RuntimeException(e);
+        }
     }
     private Auction mapRow(ResultSet rs) throws SQLException {
         Auction a = new Auction();

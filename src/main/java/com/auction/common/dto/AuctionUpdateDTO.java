@@ -1,16 +1,17 @@
 package com.auction.common.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class AuctionUpdateDTO {
-    private static final long serialVersionUID= 1L;
+public class AuctionUpdateDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    public enum UpdateType{
+    public enum UpdateType {
         BID_PLACED,
         AUCTION_ENDED,
         AUCTION_EXTENDED,
-        AUCTION_STARTED;
+        AUCTION_STARTED
     }
 
     private int auctionId;
@@ -21,16 +22,18 @@ public class AuctionUpdateDTO {
     private LocalDateTime newEndTime;
     private String message;
 
-    public AuctionUpdateDTO(){}
+    public AuctionUpdateDTO() {}
 
-    public AuctionUpdateDTO(int auctionId,UpdateType type,BigDecimal newPrice,int highestBidderId,String highestBidderUsername,LocalDateTime newEndTime,String message){
-        this.auctionId=auctionId;
-        this.type=type;
-        this.newPrice=newPrice;
-        this.highestBidderId=highestBidderId;
-        this.highestBidderUsername=highestBidderUsername;
-        this.newEndTime=newEndTime;
-        this.message=message;
+    public AuctionUpdateDTO(int auctionId, UpdateType type, BigDecimal newPrice,
+                            int highestBidderId, String highestBidderUsername,
+                            LocalDateTime newEndTime, String message) {
+        this.auctionId = auctionId;
+        this.type = type;
+        this.newPrice = newPrice;
+        this.highestBidderId = highestBidderId;
+        this.highestBidderUsername = highestBidderUsername;
+        this.newEndTime = newEndTime;
+        this.message = message;
     }
 
     public int getAuctionId() { return auctionId; }
@@ -53,5 +56,4 @@ public class AuctionUpdateDTO {
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
-
 }

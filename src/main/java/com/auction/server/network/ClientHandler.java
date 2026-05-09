@@ -21,7 +21,6 @@ import java.net.Socket;
  *   2. Vòng lặp đọc action (String) từ client
  *   3. Phân loại theo tiền tố (USER_, ITEM_, BID_, AUCTION_)
  *   4. Chuyển đến controller tương ứng để xử lý tiếp
- *   5. Controller đọc request object từ stream và ghi response object trở lại
  */
 public class ClientHandler implements Runnable, AuctionObserver {
 
@@ -31,9 +30,8 @@ public class ClientHandler implements Runnable, AuctionObserver {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    // Controller cho từng nhóm chức năng
-    private final UserController userController    = new UserController();
-    private final ItemController itemController    = new ItemController();
+    private final UserController    userController    = new UserController();
+    private final ItemController    itemController    = new ItemController();
     private final AuctionController auctionController = new AuctionController();
 
     public ClientHandler(Socket socket) {
@@ -44,8 +42,6 @@ public class ClientHandler implements Runnable, AuctionObserver {
     public void run() {
         String clientAddr = socket.getInetAddress().getHostAddress();
         try {
-            // ObjectOutputStream phải được tạo TRƯỚC ObjectInputStream
-            // (tránh deadlock khi cả hai đầu đều chờ header của nhau)
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             in  = new ObjectInputStream(socket.getInputStream());
@@ -53,17 +49,15 @@ public class ClientHandler implements Runnable, AuctionObserver {
             log.info("[{}] Kết nối thành công.", clientAddr);
 
             while (true) {
-                // Đọc action do client gửi lên
                 String action = (String) in.readObject();
                 log.info("[{}] Yêu cầu: {}", clientAddr, action);
 
-                // Phân loại theo tiền tố
                 String prefix = action.contains("_") ? action.split("_")[0] : action;
                 switch (prefix) {
                     case "USER"    -> userController.processRequest(action, in, out);
                     case "ITEM"    -> itemController.processRequest(action, in, out);
-                    case "BID",
-                         "AUCTION" -> auctionController.processRequest(action, in, out);
+                    case "BID", "AUCTION", "AUTOBID" ->
+                            auctionController.processRequest(action, in, out, this);
                     default -> {
                         log.warn("[{}] Action không xác định: {}", clientAddr, action);
                         out.writeObject("ERROR_UNKNOWN_ACTION");
@@ -73,7 +67,6 @@ public class ClientHandler implements Runnable, AuctionObserver {
             }
 
         } catch (EOFException e) {
-            // Client ngắt kết nối bình thường
             log.info("[{}] Client ngắt kết nối.", clientAddr);
         } catch (Exception e) {
             log.error("[{}] Lỗi kết nối: {}", clientAddr, e.getMessage());
@@ -81,18 +74,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
             closeConnections();
         }
     }
-    /**
-     * Push notification realtime đến client này (được gọi từ AuctionManager).
-     * Synchronized để tránh conflict với luồng đọc/ghi khác.
-     */
-    public synchronized void sendNotification(String jsonPayload) throws Exception {
-        if (out != null && !socket.isClosed()) {
-            // Dùng "PUSH_NOTIFICATION" làm signal để client phân biệt
-            out.writeObject("PUSH_NOTIFICATION");
-            out.writeObject(jsonPayload);
-            out.flush();
-        }
-    }
+
     /**
      * Observer callback: được gọi bởi AuctionManager khi có update.
      * Push AuctionUpdateDTO về client qua socket.
@@ -102,19 +84,28 @@ public class ClientHandler implements Runnable, AuctionObserver {
     public synchronized void onAuctionUpdate(AuctionUpdateDTO update) {
         try {
             if (out != null && !socket.isClosed()) {
-                // Gửi "push action" để client biết đây là push message
                 out.writeObject("AUCTION_PUSH_UPDATE");
                 out.writeObject(update);
                 out.flush();
-                out.reset(); // Tránh ObjectOutputStream cache cũ
+                out.reset();
             }
         } catch (Exception e) {
             log.warn("Không thể push update đến client: {}", e.getMessage());
         }
     }
+
+    /** Push raw JSON notification (backward compat) */
+    public synchronized void sendNotification(String jsonPayload) throws Exception {
+        if (out != null && !socket.isClosed()) {
+            out.writeObject("PUSH_NOTIFICATION");
+            out.writeObject(jsonPayload);
+            out.flush();
+        }
+    }
+
     private void closeConnections() {
-        try { if (in     != null) in.close();                         } catch (Exception ignored) {}
-        try { if (out    != null) out.close();                        } catch (Exception ignored) {}
+        try { if (in     != null) in.close();                          } catch (Exception ignored) {}
+        try { if (out    != null) out.close();                         } catch (Exception ignored) {}
         try { if (socket != null && !socket.isClosed()) socket.close();} catch (Exception ignored) {}
     }
 }
