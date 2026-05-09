@@ -52,6 +52,20 @@ public class BidDAO {
         return list;
     }
 
+    /** Đếm tổng số bid của một phiên */
+    public int countByAuction(int auctionId) {
+        String sql = "SELECT COUNT(*) FROM bid_transactions WHERE auction_id = ?";
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, auctionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            log.error("Lỗi countByAuction auctionId={}", auctionId, e);
+        }
+        return 0;
+    }
+
     /** Lấy N bid gần nhất của một phiên (dùng cho biểu đồ realtime) */
     public List<BidTransaction> findLatestByAuction(int auctionId, int limit) {
         String sql = """
@@ -87,21 +101,23 @@ public class BidDAO {
 
     // ── AUTO BID CONFIG ───────────────────────────────────────────────────────
 
+    /**
+     * Lưu hoặc cập nhật auto-bid config.
+     * Fix: đúng số tham số (6 ? tương ứng 6 giá trị).
+     */
     public void saveAutoBidConfig(AutoBidConfig config) {
-        // MySQL MERGE dùng INSERT ... ON DUPLICATE KEY UPDATE
         String sql = """
-            INSERT INTO auto_bid_configs (auction_id, bidder_id, bidder_username, max_bid, increment, registered_at, active)
+            INSERT INTO auto_bid_configs (auction_id, bidder_id, bidder_username, max_bid, `increment`, registered_at, active)
             VALUES (?,?,?,?,?,?,1)
-            ON DUPLICATE KEY UPDATE max_bid = VALUES(max_bid), increment = VALUES(increment),
+            ON DUPLICATE KEY UPDATE max_bid = VALUES(max_bid), `increment` = VALUES(`increment`),
                                     bidder_username = VALUES(bidder_username), active = 1
             """;
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, config.getAuctionId());
             ps.setInt(2, config.getBidderId());
             ps.setString(3, config.getBidderUsername() != null ? config.getBidderUsername() : "");
-            ps.setDouble(3, config.getMaxBid().doubleValue());
-            ps.setDouble(4, config.getMaxBid().doubleValue());
-            ps.setDouble(5, config.getIncrement().doubleValue());
+            ps.setBigDecimal(4, config.getMaxBid());
+            ps.setBigDecimal(5, config.getIncrement());
             ps.setTimestamp(6, Timestamp.valueOf(config.getRegisteredAt()));
             ps.executeUpdate();
             log.info("Lưu auto-bid config: bidder={}, auction={}", config.getBidderId(), config.getAuctionId());
