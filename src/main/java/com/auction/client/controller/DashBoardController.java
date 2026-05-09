@@ -284,4 +284,22 @@ public class DashBoardController {
             System.out.println("Lỗi load màn hình JoinedAuction: " + e.getMessage());
         }
     }
+
+    @FXML
+    public void handleMyAuctionView() {
+        try {
+            // Đổi màu menu để báo hiệu đang ở tab này
+            setActiveMenu(btnMyAuction);
+
+            // Load file giao diện MyAuctionView
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/MyAuctionView.fxml"));
+            Parent view = loader.load();
+
+            // Thay thế nội dung phần CENTER của BorderPane bằng giao diện mới
+            rootPane.setCenter(view);
+
+        } catch (IOException e) {
+            System.out.println("Lỗi load màn hình MyAuction: " + e.getMessage());
+        }
+    }
 }

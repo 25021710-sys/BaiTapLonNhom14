@@ -61,6 +61,7 @@
 
          <Button fx:id="btnMyAuction"
                  mnemonicParsing="false"
+                 onAction="#handleMyAuctionView"
                  prefWidth="180.0"
                  prefHeight="35.0"
                  styleClass="menu-button"

@@ -60,6 +60,7 @@ C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\c
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\client\controller\DashBoardController.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\server\dao\UserDAO.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\server\model\AuctionStatus.java
+C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\client\controller\MyAuctionController.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\common\response\RegisterResponse.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\common\response\LoginResponse.java
 C:\Users\Nguyen Duy Anh\IdeaProjects\BaiTapLonNhom14\src\main\java\com\auction\server\service\AutoBidEngine.java
