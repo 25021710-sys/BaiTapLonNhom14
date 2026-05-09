@@ -65,7 +65,20 @@ public class AuctionController {
     }
 
     /** Overload để tương thích với ClientHandler cũ không truyền handler */
+    public void processRequest(
+            String action,
+            ObjectInputStream in,
+            ObjectOutputStream out
+    ) throws Exception {
 
+        processRequest(
+                action,
+                in,
+                out,
+                null,
+                null
+        );
+    }
     // ── HANDLERS ──────────────────────────────────────────────────────────────
 
     private void handlePlaceBid(ObjectInputStream in, ObjectOutputStream out) {
@@ -186,25 +199,83 @@ public class AuctionController {
 
     private void handleApproveAuction(ObjectInputStream in, ObjectOutputStream out) {
         try {
-            ApproveAuctionRequest req = (ApproveAuctionRequest) in.readObject();
-            boolean ok = auctionService.approveAuction(req.getRequestId(), req.getAdminId());
-            out.writeObject(new SimpleResponse(ok, ok ? "Đã duyệt phiên đấu giá." : "Không tìm thấy phiên."));
+            ApproveAuctionRequest req =
+                    (ApproveAuctionRequest) in.readObject();
+
+            boolean ok = auctionService.approveAuction(
+                    req.getRequestId(),
+                    req.getAdminId()
+            );
+
+            ApproveAuctionResponse response =
+                    new ApproveAuctionResponse(
+                            ok,
+                            ok
+                                    ? "Đã duyệt phiên đấu giá."
+                                    : "Không tìm thấy phiên."
+                    );
+
+            out.writeObject(response);
             out.flush();
+
         } catch (Exception e) {
+
             log.error("Lỗi AUCTION_APPROVE: {}", e.getMessage(), e);
-            try { out.writeObject(new SimpleResponse(false, "Lỗi: " + e.getMessage())); out.flush(); } catch (Exception ignored) {}
+
+            try {
+
+                out.writeObject(
+                        new ApproveAuctionResponse(
+                                false,
+                                "Lỗi: " + e.getMessage()
+                        )
+                );
+
+                out.flush();
+
+            } catch (Exception ignored) {}
         }
     }
 
     private void handleRejectAuction(ObjectInputStream in, ObjectOutputStream out) {
         try {
-            RejectAuctionRequest req = (RejectAuctionRequest) in.readObject();
-            boolean ok = auctionService.rejectAuction(req.getRequestId(), req.getAdminId(), req.getRejectReason());
-            out.writeObject(new SimpleResponse(ok, ok ? "Đã từ chối phiên đấu giá." : "Không tìm thấy phiên."));
+
+            RejectAuctionRequest req =
+                    (RejectAuctionRequest) in.readObject();
+
+            boolean ok = auctionService.rejectAuction(
+                    req.getRequestId(),
+                    req.getAdminId(),
+                    req.getRejectReason()
+            );
+
+            RejectAuctionResponse response =
+                    new RejectAuctionResponse(
+                            ok,
+                            ok
+                                    ? "Đã từ chối phiên đấu giá."
+                                    : "Không tìm thấy phiên."
+                    );
+
+            out.writeObject(response);
             out.flush();
+
         } catch (Exception e) {
+
             log.error("Lỗi AUCTION_REJECT: {}", e.getMessage(), e);
-            try { out.writeObject(new SimpleResponse(false, "Lỗi: " + e.getMessage())); out.flush(); } catch (Exception ignored) {}
+
+            try {
+
+                out.writeObject(
+                        new RejectAuctionResponse(
+                                false,
+                                "Lỗi: " + e.getMessage()
+                        )
+                );
+
+                out.flush();
+
+            } catch (Exception ignored) {}
         }
     }
 
