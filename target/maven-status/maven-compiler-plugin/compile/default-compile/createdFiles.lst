@@ -1,5 +1,9 @@
-com/auction/common/dto/AdminAuctionRequestDTO.class
-com/auction/server/model/Art.class
-com/auction/server/model/Item.class
-com/auction/common/request/RejectAuctionRequest.class
-com/auction/common/request/ApproveAuctionRequest.class
+com\auction\server\model\Art.class
+com\auction\client\controller\AuctionCardController.class
+com\auction\common\request\ApproveAuctionRequest.class
+com\auction\common\dto\AdminAuctionRequestDTO.class
+com\auction\client\controller\JoinedAuctionController.class
+com\auction\server\model\Item.class
+com\auction\server\dao\ItemDAO$1.class
+com\auction\client\controller\AdminRoomManagementController.class
+com\auction\common\request\RejectAuctionRequest.class

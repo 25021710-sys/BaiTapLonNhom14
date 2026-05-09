@@ -53,6 +53,7 @@
 
          <Button fx:id="btnJoinedAuction"
                  mnemonicParsing="false"
+                 onAction="#handleJoinedAuctionView"
                  styleClass="menu-button"
                  prefHeight="35.0"
                  prefWidth="180.0"
@@ -113,7 +114,8 @@
 
    <!-- CENTER CONTENT -->
    <center>
-      <VBox prefHeight="760.0"
+      <VBox fx:id="contentArea"
+            prefHeight="760.0"
             prefWidth="1170.0"
             style="-fx-background-color: transparent;"
             BorderPane.alignment="CENTER">

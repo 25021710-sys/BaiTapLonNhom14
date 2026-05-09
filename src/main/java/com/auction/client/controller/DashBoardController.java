@@ -1,4 +1,5 @@
 package com.auction.client.controller;
+
 import com.auction.common.dto.UserDTO;
 import com.auction.session.Session;
 import javafx.event.ActionEvent;
@@ -6,64 +7,81 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
-import javafx.stage.Stage;
+
 import java.io.IOException;
+import java.io.InputStream;
 
 public class DashBoardController {
+
     @FXML private VBox adminSection;
+
     @FXML private Button btnHome;
     @FXML private Button btnJoinedAuction;
     @FXML private Button btnMyAuction;
+    @FXML private Button btnCreateAuction;
+
     @FXML private Button btnAuctionApproval;
     @FXML private Button btnManageUsers;
     @FXML private Button btnManageRooms;
-    @FXML private Button btnCreateAuction;
+
     @FXML private Circle profileCircle;
     @FXML private Label lblUsername;
+
+    @FXML private ScrollPane mainScrollPane;
+
     @FXML private ScrollPane spBidsJoined;
     @FXML private ScrollPane spFeaturedProducts;
     @FXML private ScrollPane spFavoriteProducts;
+
     @FXML private HBox pnlBidsJoined;
     @FXML private HBox pnlFeaturedProducts;
     @FXML private HBox pnlFavoriteProducts;
 
-    // Buttons section 1
     @FXML private Button btnLeftBids;
     @FXML private Button btnRightBids;
 
-    // Buttons section 2
     @FXML private Button btnLeftFeatured;
     @FXML private Button btnRightFeatured;
 
-    // Buttons section 3
     @FXML private Button btnLeftFavorite;
     @FXML private Button btnRightFavorite;
-    @FXML private BorderPane rootPane;
+
+    private Node dashboardHomeContent;
+    @FXML private VBox contentArea;
 
     @FXML
     public void initialize() {
         loadProfileImage();
-        renderCards();
+        loadUserInfo();
 
-        // set username từ Session
+        // LƯU Ý: Lưu lại toàn bộ mainScrollPane làm Trang chủ, chứ không chỉ content bên trong
+        dashboardHomeContent = mainScrollPane;
+
+        setupArrowButtons(spBidsJoined, btnLeftBids, btnRightBids);
+        setupArrowButtons(spFeaturedProducts, btnLeftFeatured, btnRightFeatured);
+        setupArrowButtons(spFavoriteProducts, btnLeftFavorite, btnRightFavorite);
+
+        renderDashboardCards();
+        setActiveMenu(btnHome);
+    }
+
+    private void loadUserInfo() {
+
         if (Session.getCurrentUser() != null) {
 
             UserDTO currentUser = Session.getCurrentUser();
-
             lblUsername.setText(currentUser.getUsername());
 
-            boolean isAdmin = "ADMIN".equals(currentUser.getRole());
-
+            boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getRole());
             adminSection.setVisible(isAdmin);
             adminSection.setManaged(isAdmin);
 
@@ -71,54 +89,25 @@ public class DashBoardController {
 
             lblUsername.setText("Guest");
 
-//            adminSection.setVisible(false);
-//            adminSection.setManaged(false);
+            adminSection.setVisible(false);
+            adminSection.setManaged(false);
         }
-
-        setupArrowButtons(spBidsJoined, btnLeftBids, btnRightBids);
-        setupArrowButtons(spFeaturedProducts, btnLeftFeatured, btnRightFeatured);
-        setupArrowButtons(spFavoriteProducts, btnLeftFavorite, btnRightFavorite);
-
-        setActiveMenu(btnHome);
     }
 
     private void loadProfileImage() {
         try {
-            Image img = new Image(getClass().getResourceAsStream("/image/DSC00245.JPG"));
-            if (img != null) {
+            InputStream is = getClass().getResourceAsStream("/image/DSC00245.JPG");
+            if (is != null) {
+                Image img = new Image(is);
                 profileCircle.setFill(new ImagePattern(img));
             }
         } catch (Exception e) {
-            System.err.println("Không tìm thấy ảnh profile, sử dụng màu mặc định.");
-        }
-    }
-
-    public void renderCards() {
-        try {
-            renderSection(pnlBidsJoined, 10);
-            renderSection(pnlFeaturedProducts, 10);
-            renderSection(pnlFavoriteProducts, 10);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void renderSection(HBox panel, int count) throws IOException {
-        if (panel == null) {
-            System.err.println("Panel is null, kiểm tra fx:id trong FXML!");
-            return;
-        }
-
-        panel.getChildren().clear();
-
-        for (int i = 0; i < count; i++) {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ProductCard.fxml"));
-            VBox card = loader.load();
-            panel.getChildren().add(card);
+            System.out.println("Không load được ảnh profile.");
         }
     }
 
     private void setupArrowButtons(ScrollPane sp, Button leftBtn, Button rightBtn) {
+
         if (sp == null) return;
 
         double step = 0.25;
@@ -132,138 +121,116 @@ public class DashBoardController {
         }
     }
 
-    // bấm avatar + tên => sang profile
-    @FXML
-    private void handleGoToProfile(ActionEvent event) {
+    private void renderDashboardCards() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/UserProfile.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.setTitle("Hồ sơ cá nhân");
-            stage.show();
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            renderSection(pnlBidsJoined, 10);
+            renderSection(pnlFeaturedProducts, 10);
+            renderSection(pnlFavoriteProducts, 10);
+        } catch (Exception e) {
+            System.out.println("Render cards error: " + e.getMessage());
         }
     }
 
-    @FXML
-    public void handleCreateAuctionView() {
+    private void renderSection(HBox panel, int count) throws IOException {
+
+        if (panel == null) return;
+
+        panel.getChildren().clear();
+
+        for (int i = 0; i < count; i++) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ProductCard.fxml"));
+            VBox card = loader.load();
+            panel.getChildren().add(card);
+        }
+    }
+
+    private void loadContent(String fxmlPath) {
         try {
-
-            setActiveMenu(btnCreateAuction);
-
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/CreateAuctionView.fxml")
-            );
-
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent view = loader.load();
 
-            // chỉ thay CENTER, giữ menu + topbar
-            rootPane.setCenter(view);
+            // VBox contentArea hiện tại có 2 con: [0] là Top Bar, [1] là màn hình nội dung bên dưới.
+            // Xóa nội dung màn hình hiện tại (nếu có) nhưng giữ lại Top Bar (index 0)
+            if (contentArea.getChildren().size() > 1) {
+                contentArea.getChildren().remove(1);
+            }
+
+            // Thêm View mới vào bên dưới Top Bar và cho phép nó chiếm toàn bộ không gian còn lại
+            VBox.setVgrow(view, Priority.ALWAYS);
+            contentArea.getChildren().add(view);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Không load được view: " + fxmlPath);
+            e.printStackTrace(); // In lỗi ra log để dễ debug
+        }
+    }
+
+    private void showDashboardHome() {
+        if (contentArea.getChildren().size() > 1) {
+            contentArea.getChildren().remove(1);
+        }
+        if (dashboardHomeContent != null) {
+            VBox.setVgrow(dashboardHomeContent, Priority.ALWAYS);
+            contentArea.getChildren().add(dashboardHomeContent);
         }
     }
 
     private void setActiveMenu(Button activeButton) {
 
-        // remove active tất cả menu
         btnHome.getStyleClass().remove("active-menu");
         btnJoinedAuction.getStyleClass().remove("active-menu");
         btnMyAuction.getStyleClass().remove("active-menu");
         btnCreateAuction.getStyleClass().remove("active-menu");
 
-        // add active cho button hiện tại
-        activeButton.getStyleClass().add("active-menu");
+        btnAuctionApproval.getStyleClass().remove("active-menu");
+        btnManageRooms.getStyleClass().remove("active-menu");
+        btnManageUsers.getStyleClass().remove("active-menu");
+
+        if (activeButton != null) {
+            activeButton.getStyleClass().add("active-menu");
+        }
+    }
+
+    // ================== EVENTS ==================
+
+    @FXML
+    private void handleGoToProfile(ActionEvent event) {
+        System.out.println("Go to profile");
     }
 
     @FXML
     private void handleGoToDashboard() {
-        try {
-            setActiveMenu(btnHome);
+        setActiveMenu(btnHome);
+        showDashboardHome();
+    }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DashBoardView.fxml"));
-            Parent root = loader.load();
+    @FXML
+    public void handleCreateAuctionView() {
+        setActiveMenu(btnCreateAuction);
+        loadContent("/view/CreateAuctionView.fxml");
+    }
 
-            Stage stage = (Stage) rootPane.getScene().getWindow(); // rootPane là fx:id BorderPane của bạn
-            stage.setScene(new Scene(root));
-
-            stage.setTitle("Dashboard");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @FXML
+    private void handleJoinedAuctionView() {
+        setActiveMenu(btnJoinedAuction);
+        loadContent("/view/JoinedAuctionView.fxml");
     }
 
     @FXML
     public void handleAuctionApproval(ActionEvent event) {
-
-        try {
-
-            setActiveMenu(btnAuctionApproval);
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/view/AdminAuctionApprovalView.fxml"
-                    )
-            );
-
-            Parent view = loader.load();
-
-            // chỉ đổi CENTER
-            rootPane.setCenter(view);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        setActiveMenu(btnAuctionApproval);
+        loadContent("/view/AdminAuctionApprovalView.fxml");
     }
 
     @FXML
     public void handleManageRooms(ActionEvent event) {
-
-        try {
-
-            setActiveMenu(btnManageRooms);
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/view/AdminRoomManagementView.fxml"
-                    )
-            );
-
-            Parent view = loader.load();
-
-            rootPane.setCenter(view);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        setActiveMenu(btnManageRooms);
+        loadContent("/view/AdminRoomManagementView.fxml");
     }
 
     @FXML
     public void handleManageUsers(ActionEvent event) {
-
-        try {
-
-            setActiveMenu(btnManageUsers);
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/view/AdminUserManagementView.fxml"
-                    )
-            );
-
-            Parent view = loader.load();
-
-            rootPane.setCenter(view);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        setActiveMenu(btnManageUsers);
+        loadContent("/view/AdminUserManagementView.fxml");
     }
 }
