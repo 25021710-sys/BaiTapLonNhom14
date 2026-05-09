@@ -1,7 +1,0 @@
-com\auction\client\controller\MyAuctionController.class
-com\auction\client\session\ClientSession.class
-com\auction\server\model\Art.class
-com\auction\common\request\ApproveAuctionRequest.class
-com\auction\common\dto\AdminAuctionRequestDTO.class
-com\auction\server\model\Item.class
-com\auction\common\request\RejectAuctionRequest.class
