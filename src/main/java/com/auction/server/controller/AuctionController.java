@@ -23,6 +23,7 @@ import java.util.List;
 
 public class AuctionController {
     private static final Logger log = LoggerFactory.getLogger(AuctionController.class);
+    private ServerSession session;
 
     private final AuctionManager auctionManager = AuctionManager.getInstance();
     private final AuctionService auctionService = auctionManager.getAuctionService();
@@ -32,6 +33,7 @@ public class AuctionController {
 
     public void processRequest(String action, ObjectInputStream in, ObjectOutputStream out, ServerSession session,
                                ClientHandler handler) throws Exception {
+        this.session = session;
         switch (action) {
 
             case "BID_PLACE" -> handlePlaceBid(in, out);
@@ -82,10 +84,20 @@ public class AuctionController {
     // ── HANDLERS ──────────────────────────────────────────────────────────────
 
     private void handlePlaceBid(ObjectInputStream in, ObjectOutputStream out) {
+        if (session == null || !session.isLoggedIn()) {
+            try {
+                out.writeObject(new BidResponse(false, "Bạn chưa đăng nhập.", BigDecimal.ZERO));
+                out.flush();
+            } catch (Exception ignored) {}
+            return;
+        }
         try {
             BidRequest request = (BidRequest) in.readObject();
-            log.info("Bid: User {} đặt {} cho auction {}", request.getUserId(),
-                    request.getAmount(), request.getAuctionId());
+
+            // Dùng userId từ session thay vì tin tưởng client gửi lên
+            // (tránh client giả mạo userId của người khác)
+            int trustedUserId = session.getUserId();
+            request.setUserId(trustedUserId); // override userId bằng session
             BidResponse response = auctionService.placeBid(request);
             out.writeObject(response);
             out.flush();
@@ -199,6 +211,13 @@ public class AuctionController {
 
     private void handleApproveAuction(ObjectInputStream in, ObjectOutputStream out) {
         try {
+            if (session == null || !session.isAdmin()) {
+                try {
+                    out.writeObject(new ApproveAuctionResponse(false, "Không có quyền thực hiện."));
+                    out.flush();
+                } catch (Exception ignored) {}
+                return;
+            }
             ApproveAuctionRequest req =
                     (ApproveAuctionRequest) in.readObject();
 
@@ -239,7 +258,13 @@ public class AuctionController {
 
     private void handleRejectAuction(ObjectInputStream in, ObjectOutputStream out) {
         try {
-
+            if (session == null || !session.isAdmin()) {
+                try {
+                    out.writeObject(new RejectAuctionResponse(false, "Không có quyền thực hiện."));
+                    out.flush();
+                } catch (Exception ignored) {}
+                return;
+            }
             RejectAuctionRequest req =
                     (RejectAuctionRequest) in.readObject();
 

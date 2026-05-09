@@ -83,8 +83,9 @@ public class AuctionManager {
     public AuctionService getAuctionService() { return auctionService; }
 
     /** Trả về AutoBidEngine đang thực sự chạy (dùng cho AutoBid registration). */
-    public AutoBidEngine getAutoBidEngine() { return autoBidEngine; }
-
+    public AutoBidEngine getAutoBidEngine() {
+        return autoBidEngine; // trả về instance đang dùng thật
+    }
     /**
      * Đăng ký client nhận realtime update của một phiên.
      */
