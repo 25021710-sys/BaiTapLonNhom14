@@ -1,6 +1,7 @@
 package com.auction.client.controller;
 
 import com.auction.client.network.SocketClient;
+import com.auction.client.session.ClientSession;
 import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.common.request.ApproveAuctionRequest;
 import com.auction.common.request.RejectAuctionRequest;
@@ -243,8 +244,7 @@ public class AdminAuctionApprovalController implements Initializable {
     private void handleApprove() throws SQLException {
 
         AdminAuctionRequestDTO selected =
-                tblAuctionRequests.getSelectionModel()
-                        .getSelectedItem();
+                tblAuctionRequests.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
 
@@ -263,7 +263,7 @@ public class AdminAuctionApprovalController implements Initializable {
                 selected.getRequestId()
         );
 
-        request.setAdminId(1);
+        request.setAdminId(ClientSession.getCurrentUser().getId());
 
         ApproveAuctionResponse response =
                 SocketClient.getInstance().approveAuction(request);
@@ -295,8 +295,7 @@ public class AdminAuctionApprovalController implements Initializable {
     private void handleReject() throws SQLException {
 
         AdminAuctionRequestDTO selected =
-                tblAuctionRequests.getSelectionModel()
-                        .getSelectedItem();
+                tblAuctionRequests.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
 
@@ -330,18 +329,22 @@ public class AdminAuctionApprovalController implements Initializable {
                 selected.getRequestId()
         );
 
-        request.setAdminId(1);
+        request.setAdminId(ClientSession.getCurrentUser().getId());
 
         request.setRejectReason(reason);
 
         RejectAuctionResponse response =
                 SocketClient.getInstance().rejectAuction(request);
 
-        if (response != null && response.isSuccess()) {
+        if (response == null) {
+            showAlert(Alert.AlertType.ERROR, "Error", "Server error");
+            return;
+        }
+
+        if (response.isSuccess()) {
             showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
         } else {
-            showAlert(Alert.AlertType.ERROR, "Error",
-                    response != null ? response.getMessage() : "Server error");
+            showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
         }
 
         loadPendingRequests();
