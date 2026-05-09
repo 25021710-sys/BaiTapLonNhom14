@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+
+<HBox xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.auction.client.controller.AuctionCardController"
+      fx:id="rootCard"
+      spacing="15"
+      alignment="CENTER_LEFT"
+      style="-fx-background-color: white;
+             -fx-padding: 16;
+             -fx-background-radius: 14;
+             -fx-border-radius: 14;
+             -fx-border-color: #e0e0e0;
+             -fx-cursor: hand;">
+
+    <!-- IMAGE -->
+    <ImageView fx:id="imgProduct"
+               fitWidth="90"
+               fitHeight="90"
+               preserveRatio="true"
+               smooth="true" />
+
+    <!-- INFO -->
+    <VBox spacing="5">
+
+        <Label fx:id="lblProductName"
+               text="Rolex Submariner"
+               style="-fx-font-size: 16px;
+                      -fx-font-weight: bold;
+                      -fx-text-fill: #1f2d3d;"/>
+
+        <Label fx:id="lblAuctionCode"
+               text="Mã: AUC-2026-001"
+               style="-fx-font-size: 12px;
+                      -fx-text-fill: #6c757d;"/>
+
+        <VBox spacing="2">
+            <Label text="Giá hiện tại"
+                   style="-fx-font-size: 12px;
+                  -fx-text-fill: #6c757d;"/>
+
+            <Label fx:id="lblCurrentPrice"
+                   text="12,500,000 VNĐ"
+                   style="-fx-font-size: 18px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #2980B9;"/>
+        </VBox>
+        <Label fx:id="lblLeader"
+               text="Dẫn đầu: duyanh"
+               style="-fx-font-size: 12px;
+                      -fx-text-fill: #6c757d;"/>
+
+    </VBox>
+
+    <Region HBox.hgrow="ALWAYS"/>
+
+    <!-- STATUS -->
+    <VBox spacing="6" alignment="CENTER">
+
+        <Label fx:id="lblStatus"
+               text="ĐANG DIỄN RA"
+               style="-fx-font-size: 12px;
+                  -fx-font-weight: bold;
+                  -fx-padding: 6 12;
+                  -fx-background-radius: 10;
+                  -fx-background-color: #d1fae5;
+                  -fx-text-fill: #047857;"/>
+
+        <Label fx:id="lblTimeLeft"
+               text="00:12:35"
+               style="-fx-font-size: 16px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #1f2d3d;"/>
+
+    </VBox></HBox>
