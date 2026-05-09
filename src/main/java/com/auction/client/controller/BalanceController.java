@@ -4,7 +4,7 @@ import com.auction.client.network.SocketClient;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.BalanceRequest;
 import com.auction.common.response.BalanceResponse;
-import com.auction.session.Session;
+import com.auction.client.session.ClientSession;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -34,7 +34,7 @@ public class BalanceController {
 
     @FXML
     public void initialize() {
-        if (Session.getCurrentUser() == null) {
+        if (ClientSession.getCurrentUser() == null) {
             balanceLabel.setText("0 VND");
             return;
         }
@@ -63,7 +63,7 @@ public class BalanceController {
     public void handleConfirm() {
         hideError();
 
-        UserDTO user = Session.getCurrentUser();
+        UserDTO user = ClientSession.getCurrentUser();
         if (user == null) return;
 
         // Lấy số tiền từ input
@@ -93,7 +93,7 @@ public class BalanceController {
 
         if (response.isSuccess()) {
             // Cập nhật session với dữ liệu mới từ server
-            Session.setCurrentUser(response.getData());
+            ClientSession.setCurrentUser(response.getData());
             refreshBalanceUI();
             resetForm();
             System.out.println(type + " thành công. Số dư mới: " + response.getData().getBalance());
@@ -111,7 +111,7 @@ public class BalanceController {
     // ── Helper ────────────────────────────────────────────────
 
     private void refreshBalanceUI() {
-        UserDTO user = Session.getCurrentUser();
+        UserDTO user = ClientSession.getCurrentUser();
         if (user == null) return;
         NumberFormat nf = NumberFormat.getInstance(Locale.of("vi", "VN"));
         balanceLabel.setText(nf.format(user.getBalance()) + " VND");

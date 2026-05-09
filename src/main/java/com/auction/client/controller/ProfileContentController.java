@@ -4,7 +4,7 @@ import com.auction.client.network.SocketClient;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.UpdateProfileRequest;
 import com.auction.common.response.UpdateProfileResponse;
-import com.auction.session.Session;
+import com.auction.client.session.ClientSession;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -35,7 +35,7 @@ public class ProfileContentController {
 
     @FXML
     public void initialize() {
-        UserDTO user = Session.getCurrentUser();
+        UserDTO user = ClientSession.getCurrentUser();
 
         cancelButton.setVisible(false);
         cancelButton.setManaged(false);
@@ -60,7 +60,7 @@ public class ProfileContentController {
             cancelButton.setManaged(true);
 
             // Điền sẵn giá trị hiện tại
-            UserDTO user = Session.getCurrentUser();
+            UserDTO user = ClientSession.getCurrentUser();
             nameField.setText(user.getUsername());
             locationField.setText(user.getLocation());
             desField.setText(user.getDescription());
@@ -80,7 +80,7 @@ public class ProfileContentController {
 
     @FXML
     private void handleSave() {
-        UserDTO user = Session.getCurrentUser();
+        UserDTO user = ClientSession.getCurrentUser();
         if (user == null) return;
 
         // --- Gửi yêu cầu đến server qua socket ---
@@ -100,7 +100,7 @@ public class ProfileContentController {
         }
 
         // Cập nhật Session với dữ liệu mới từ server
-        Session.setCurrentUser(response.getUser());
+        ClientSession.setCurrentUser(response.getUser());
         UserDTO updated = response.getUser();
 
         // Cập nhật UI

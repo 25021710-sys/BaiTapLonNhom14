@@ -159,4 +159,28 @@ public class ItemDAO {
             );
         };
     }
+    public Item findById(int itemId) {
+        String sql = "SELECT * FROM items WHERE id = ?";
+
+        try (
+                Connection conn = getConn();
+                PreparedStatement ps =
+                        conn.prepareStatement(sql)
+        ) {
+            ps.setInt(1, itemId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error(
+                    "Lỗi findById itemId={}",
+                    itemId,
+                    e
+            );
+        }
+        return null;
+    }
 }

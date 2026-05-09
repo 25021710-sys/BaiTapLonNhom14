@@ -1,8 +1,8 @@
-package com.auction.session;
+package com.auction.client.session;
 
 import com.auction.common.dto.UserDTO;
 
-public class Session {
+public class ClientSession {
     private static UserDTO currentUser;
 
     public static void setCurrentUser(UserDTO user) {

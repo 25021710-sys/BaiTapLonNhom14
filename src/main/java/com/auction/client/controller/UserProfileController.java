@@ -1,21 +1,15 @@
 package com.auction.client.controller;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import com.auction.session.Session;
+import com.auction.client.session.ClientSession;
 import com.auction.common.dto.UserDTO;
 
 import java.io.IOException;
@@ -69,7 +63,7 @@ public class UserProfileController {
 
         try {
 
-            Session.clear();
+            ClientSession.clear();
 
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/LoginView.fxml")
@@ -130,7 +124,7 @@ public class UserProfileController {
     }
     @FXML
     public void initialize() {
-        UserDTO user = Session.getCurrentUser();
+        UserDTO user = ClientSession.getCurrentUser();
 
         if (user != null) {
             sideBarName.setText(user.getUsername());

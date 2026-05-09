@@ -1,9 +1,15 @@
 package com.auction.client.controller;
 
+import com.auction.client.network.SocketClient;
+import com.auction.client.session.ClientSession;
 import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.common.request.ApproveAuctionRequest;
 import com.auction.common.request.RejectAuctionRequest;
+import com.auction.common.request.GetPendingAuctionRequestsRequest;
+import com.auction.common.response.ApproveAuctionResponse;
+import com.auction.common.response.GetPendingAuctionRequestsResponse;
 
+import com.auction.common.response.RejectAuctionResponse;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
@@ -15,7 +21,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.net.URL;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class AdminAuctionApprovalController implements Initializable {
@@ -71,7 +79,6 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
     // INITIALIZE
     // =====================================================
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
@@ -139,53 +146,20 @@ public class AdminAuctionApprovalController implements Initializable {
 
     private void loadPendingRequests() {
 
+        GetPendingAuctionRequestsRequest request = new GetPendingAuctionRequestsRequest();
+
+
+        GetPendingAuctionRequestsResponse response =
+                SocketClient.getInstance().getPendingAuctionRequests(request);
+        if (response == null || response.getRequests() == null) {
+            tblAuctionRequests.setItems(FXCollections.observableArrayList());
+            return;
+        }
+        List<AdminAuctionRequestDTO> requests =
+                response.getRequests() != null ? response.getRequests() : List.of();
+
         ObservableList<AdminAuctionRequestDTO> list =
-                FXCollections.observableArrayList();
-
-        // =================================================
-        // SAMPLE DATA
-        // =================================================
-
-        AdminAuctionRequestDTO dto =
-                new AdminAuctionRequestDTO();
-
-        dto.setRequestId(1);
-
-        dto.setItemName("Laptop Gaming MSI");
-
-        dto.setSellerUsername("Thịnh Văn Đức");
-
-        dto.setItemCategory("Electronics");
-
-        dto.setItemDescription("""
-                Laptop RTX 4070
-                RAM 32GB
-                SSD 1TB
-                Tình trạng mới 95%
-                """);
-
-        dto.setApprovalStatus("PENDING");
-
-        dto.setImageUrl(
-                "https://picsum.photos/300"
-        );
-
-        dto.setStartTime(java.time.LocalDateTime.now());
-
-        dto.setEndTime(
-                java.time.LocalDateTime.now().plusDays(1)
-        );
-
-        dto.setCreatedAt(
-                java.time.LocalDateTime.now()
-        );
-
-        dto.setStartingPrice(
-                new java.math.BigDecimal("15000000")
-        );
-
-        list.add(dto);
-
+                FXCollections.observableArrayList(requests);
         tblAuctionRequests.setItems(list);
     }
 
@@ -267,11 +241,10 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleApprove() {
+    private void handleApprove() throws SQLException {
 
         AdminAuctionRequestDTO selected =
-                tblAuctionRequests.getSelectionModel()
-                        .getSelectedItem();
+                tblAuctionRequests.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
 
@@ -284,27 +257,34 @@ public class AdminAuctionApprovalController implements Initializable {
             return;
         }
 
-        ApproveAuctionRequest request =
-                new ApproveAuctionRequest();
+        ApproveAuctionRequest request = new ApproveAuctionRequest();
 
         request.setRequestId(
                 selected.getRequestId()
         );
 
-        request.setAdminId(1);
+        request.setAdminId(ClientSession.getCurrentUser().getId());
 
-        /*
-         TODO:
-         send request lên server
-         */
+        ApproveAuctionResponse response =
+                SocketClient.getInstance().approveAuction(request);
+        if (response.isSuccess()) {
 
-        showAlert(
-                Alert.AlertType.INFORMATION,
-                "Success",
-                "Đã duyệt thành công."
-        );
+            showAlert(
+                    Alert.AlertType.INFORMATION,
+                    "Success",
+                    response.getMessage()
+            );
 
-        loadPendingRequests();
+            loadPendingRequests();
+
+        } else {
+
+            showAlert(
+                    Alert.AlertType.ERROR,
+                    "Error",
+                    response.getMessage()
+            );
+        }
     }
 
     // =====================================================
@@ -312,11 +292,10 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleReject() {
+    private void handleReject() throws SQLException {
 
         AdminAuctionRequestDTO selected =
-                tblAuctionRequests.getSelectionModel()
-                        .getSelectedItem();
+                tblAuctionRequests.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
 
@@ -350,20 +329,23 @@ public class AdminAuctionApprovalController implements Initializable {
                 selected.getRequestId()
         );
 
-        request.setAdminId(1);
+        request.setAdminId(ClientSession.getCurrentUser().getId());
 
         request.setRejectReason(reason);
 
-        /*
-         TODO:
-         send request lên server
-         */
+        RejectAuctionResponse response =
+                SocketClient.getInstance().rejectAuction(request);
 
-        showAlert(
-                Alert.AlertType.INFORMATION,
-                "Rejected",
-                "Đã từ chối yêu cầu."
-        );
+        if (response == null) {
+            showAlert(Alert.AlertType.ERROR, "Error", "Server error");
+            return;
+        }
+
+        if (response.isSuccess()) {
+            showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
+        }
 
         loadPendingRequests();
     }
@@ -373,10 +355,8 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleRefresh() {
-
+    private void handleRefresh(){
         loadPendingRequests();
-
     }
 
     // =====================================================

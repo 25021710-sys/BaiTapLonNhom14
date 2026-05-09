@@ -4,7 +4,7 @@ import com.auction.client.network.SocketClient;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.LoginRequest;
 import com.auction.common.response.LoginResponse;
-import com.auction.session.Session;
+import com.auction.client.session.ClientSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -56,7 +56,7 @@ public class LoginController {
             System.out.println("Đăng nhập thành công: " + user.getUsername());
 
             // Lưu vào Session (DTO, không phải Entity)
-            Session.setCurrentUser(user);
+            ClientSession.setCurrentUser(user);
             goToDashBoard(event);
 
         } else {
