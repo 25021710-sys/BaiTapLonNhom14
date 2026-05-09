@@ -3,40 +3,63 @@ package com.auction.server.service;
 import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.request.BidRequest;
 import com.auction.common.response.BidResponse;
-import com.auction.server.model.*;
 import com.auction.server.dao.AuctionDAO;
 import com.auction.server.dao.BidDAO;
 import com.auction.server.dao.UserDAO;
 import com.auction.server.exception.AuctionException;
+import com.auction.server.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * AuctionService – lớp nghiệp vụ trung tâm của hệ thống đấu giá.
+ *
+ * Trách nhiệm:
+ *   - Tạo / duyệt / từ chối phiên đấu giá
+ *   - Xử lý đặt giá thủ công (placeBid) và tự động (placeAutoBid)
+ *   - Quản lý cache phiên và lock per-auction (thread-safe)
+ *   - Anti-sniping: gia hạn phiên khi bid sát giờ kết thúc
+ *   - Broadcast realtime update qua AuctionManager (Observer pattern)
+ *   - Kích hoạt chuỗi auto-bid sau mỗi bid thủ công
+ *
+ */
 public class AuctionService {
+
     private static final Logger log = LoggerFactory.getLogger(AuctionService.class);
 
-    private final AuctionDAO auctionDAO;
-    private final BidDAO bidDAO;
-    private final AutoBidEngine autoBidEngine;
-    private final UserDAO userDAO = new UserDAO();
-
+    // ── Hằng số nghiệp vụ ────────────────────────────────────────────────────
+    /** Số giây cuối phiên: nếu có bid trong khoảng này sẽ kích hoạt anti-snipe */
     private static final int ANTI_SNIPE_THRESHOLD_SECONDS = 30;
+    /** Số giây gia hạn thêm khi anti-snipe kích hoạt */
     private static final int ANTI_SNIPE_EXTEND_SECONDS    = 60;
 
-    private final ConcurrentHashMap<Integer, ReentrantLock> auctionLocks = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Integer, Auction> auctionCache = new ConcurrentHashMap<>();
+    // ── Dependencies ──────────────────────────────────────────────────────────
+    private final AuctionDAO    auctionDAO;
+    private final BidDAO        bidDAO;
+    private final AutoBidEngine autoBidEngine;
+    private final UserDAO       userDAO = new UserDAO();
 
-    // Reference đến AuctionManager để broadcast (set sau khi init)
+    /** Được inject sau khi khởi tạo (tránh circular dependency với AuctionManager) */
     private AuctionManager auctionManager;
 
+    // ── Thread-safety ─────────────────────────────────────────────────────────
+    /** Cache phiên đấu giá đang hoạt động: auctionId → Auction */
+    private final ConcurrentHashMap<Integer, Auction>       auctionCache  = new ConcurrentHashMap<>();
+    /** Lock per-auction (fair=true để tránh starvation): auctionId → Lock */
+    private final ConcurrentHashMap<Integer, ReentrantLock> auctionLocks  = new ConcurrentHashMap<>();
+
+    // ── Constructor ───────────────────────────────────────────────────────────
+
     public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO, AutoBidEngine autoBidEngine) {
-        this.auctionDAO = auctionDAO;
-        this.bidDAO = bidDAO;
+        this.auctionDAO    = auctionDAO;
+        this.bidDAO        = bidDAO;
         this.autoBidEngine = autoBidEngine;
     }
 
@@ -46,174 +69,452 @@ public class AuctionService {
 
     // ── CREATE AUCTION ────────────────────────────────────────────────────────
 
+    /**
+     * Tạo phiên đấu giá mới với trạng thái PENDING (chờ Admin duyệt).
+     *
+     * @throws AuctionException nếu tham số không hợp lệ
+     */
     public Auction createAuction(int itemId, int sellerId,
                                  BigDecimal startingPrice,
                                  BigDecimal reservePrice,
                                  LocalDateTime startTime,
                                  LocalDateTime endTime) {
-        if (endTime.isBefore(startTime))
-            throw new AuctionException("INVALID_TIME", "Thời gian kết thúc phải sau thời gian bắt đầu");
-        if (startingPrice.compareTo(BigDecimal.ZERO) <= 0)
-            throw new AuctionException("INVALID_PRICE", "Giá khởi điểm phải lớn hơn 0");
+
+        // Validate thời gian
+        if (startTime == null || endTime == null)
+            throw new AuctionException("INVALID_TIME", "Thời gian bắt đầu và kết thúc không được để trống.");
+        if (!endTime.isAfter(startTime))
+            throw new AuctionException("INVALID_TIME", "Thời gian kết thúc phải sau thời gian bắt đầu.");
+
+        // Validate giá
+        if (startingPrice == null || startingPrice.compareTo(BigDecimal.ZERO) <= 0)
+            throw new AuctionException("INVALID_PRICE", "Giá khởi điểm phải lớn hơn 0.");
 
         Auction auction = new Auction(itemId, sellerId, startingPrice, startTime, endTime);
-        auction.setReservePrice(reservePrice);
+        auction.setReservePrice(reservePrice != null ? reservePrice : startingPrice);
         auction.setCurrentPrice(startingPrice);
-        auction.setStatus(AuctionStatus.PENDING); // cần admin duyệt
+        auction.setStatus(AuctionStatus.PENDING);
         auctionDAO.saveAuction(auction);
 
-        log.info("Tạo phiên đấu giá: {} | Item: {}", auction.getId(), itemId);
+        log.info("Tạo phiên đấu giá: id={} | itemId={} | sellerId={}", auction.getId(), itemId, sellerId);
         return auction;
     }
 
-    // ── PLACE BID ─────────────────────────────────────────────────────────────
+    // ── PLACE BID (thủ công) ──────────────────────────────────────────────────
 
+    /**
+     * Xử lý đặt giá thủ công từ client.
+     *
+     * Luồng xử lý (toàn bộ bên trong ReentrantLock):
+     *   1. Kiểm tra phiên tồn tại
+     *   2. Kiểm tra trạng thái & thời gian
+     *   3. Kiểm tra seller không tự bid
+     *   4. Kiểm tra giá hợp lệ (> currentPrice và >= minBidIncrement)
+     *   5. Kiểm tra không tự outbid chính mình
+     *   6. Kiểm tra số dư
+     *   7. Hoàn tiền người dẫn đầu cũ
+     *   8. Trừ tiền người đặt
+     *   9. Cập nhật auction (DB + cache)
+     *  10. Lưu BidTransaction
+     *  11. Anti-sniping
+     *  12. Broadcast realtime update
+     *  13. Kích hoạt chuỗi auto-bid
+     */
     public BidResponse placeBid(BidRequest request) {
-        int auctionId = Integer.parseInt(request.getAuctionId());
-        int userId = request.getUserId();
+        int        auctionId = Integer.parseInt(request.getAuctionId());
+        int        userId    = request.getUserId();
         BigDecimal bidAmount = request.getAmount();
+
+        if (bidAmount == null || bidAmount.compareTo(BigDecimal.ZERO) <= 0)
+            return new BidResponse(false, "Giao dịch bị từ chối: Số tiền đặt giá không hợp lệ.", BigDecimal.ZERO);
 
         ReentrantLock lock = auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
         lock.lock();
 
         try {
+            // 1. Kiểm tra phiên tồn tại
             Auction auction;
             try {
                 auction = getAuction(auctionId);
             } catch (AuctionException e) {
-                return new BidResponse(false, "Phiên đấu giá không tồn tại!", BigDecimal.ZERO);
+                return new BidResponse(false, "Phiên đấu giá không tồn tại.", BigDecimal.ZERO);
             }
 
             BigDecimal currentPrice = auction.getCurrentPrice() != null
-                    ? auction.getCurrentPrice() : auction.getStartingPrice();
+                    ? auction.getCurrentPrice()
+                    : auction.getStartingPrice();
 
-            // Kiểm tra trạng thái phiên
+            // 2. Kiểm tra trạng thái phiên
             AuctionStatus status = auction.getStatus();
             if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
                 return new BidResponse(false,
-                        "Giao dịch bị từ chối: Phiên đấu giá không trong trạng thái mở.", currentPrice);
+                        "Giao dịch bị từ chối: Phiên đấu giá đang ở trạng thái "
+                                + status.getDisplay() + ".", currentPrice);
             }
 
-            // Kiểm tra thời gian
+            // 3. Kiểm tra thời gian
             LocalDateTime now = LocalDateTime.now();
-            if (now.isBefore(auction.getStartTime()) || now.isAfter(auction.getEndTime())) {
+            if (now.isBefore(auction.getStartTime())) {
                 return new BidResponse(false,
-                        "Giao dịch bị từ chối: Phiên đấu giá không trong thời gian hoạt động.", currentPrice);
+                        "Giao dịch bị từ chối: Phiên đấu giá chưa bắt đầu.", currentPrice);
+            }
+            if (now.isAfter(auction.getEndTime())) {
+                return new BidResponse(false,
+                        "Giao dịch bị từ chối: Phiên đấu giá đã kết thúc.", currentPrice);
             }
 
-            // Kiểm tra mức giá
+            // 4. Seller không được tự bid vào phiên của mình
+            if (auction.getSellerId() == userId) {
+                return new BidResponse(false,
+                        "Giao dịch bị từ chối: Người bán không thể tự đấu giá sản phẩm của mình.",
+                        currentPrice);
+            }
+
+            // 5. Kiểm tra giá hợp lệ: phải cao hơn currentPrice
             if (bidAmount.compareTo(currentPrice) <= 0) {
                 return new BidResponse(false,
-                        "Giao dịch bị từ chối: Mức giá đề xuất phải cao hơn giá hiện tại (" + currentPrice + ").", currentPrice);
+                        "Giao dịch bị từ chối: Mức giá đề xuất phải cao hơn giá hiện tại ("
+                                + currentPrice + ").", currentPrice);
             }
 
-            // Kiểm tra không tự đấu với chính mình
+            // 6. Kiểm tra bước giá tối thiểu (nếu auction đã có bid)
+            BigDecimal minIncrement = auction.getMinBidIncrement();
+            if (auction.getHighestBidderId() != 0
+                    && bidAmount.compareTo(currentPrice.add(minIncrement)) < 0) {
+                return new BidResponse(false,
+                        "Giao dịch bị từ chối: Mức giá tối thiểu phải cao hơn giá hiện tại ít nhất "
+                                + minIncrement + " VND.", currentPrice);
+            }
+
+            // 7. Không tự outbid chính mình
             if (auction.getHighestBidderId() == userId) {
                 return new BidResponse(false,
-                        "Giao dịch bị từ chối: Bạn đang dẫn đầu phiên này.", currentPrice);
+                        "Giao dịch bị từ chối: Bạn đang dẫn đầu phiên này, không cần đặt lại.",
+                        currentPrice);
             }
 
-            // Kiểm tra tài chính
+            // 8. Kiểm tra số dư
             User user;
             try {
                 user = userDAO.findById(userId);
             } catch (Exception e) {
-                return new BidResponse(false, "Lỗi kiểm tra tài khoản.", currentPrice);
+                log.error("Lỗi truy vấn user {}: {}", userId, e.getMessage());
+                return new BidResponse(false, "Lỗi kiểm tra tài khoản, vui lòng thử lại.", currentPrice);
             }
-            if (user == null || user.getBalance().compareTo(bidAmount) < 0) {
+            if (user == null) {
+                return new BidResponse(false, "Tài khoản không tồn tại.", currentPrice);
+            }
+            if (user.getBalance().compareTo(bidAmount) < 0) {
                 return new BidResponse(false,
-                        "Giao dịch bị từ chối: Tài khoản không đủ để thực hiện.", currentPrice);
+                        "Giao dịch bị từ chối: Số dư tài khoản không đủ (hiện có: "
+                                + user.getBalance() + " VND).", currentPrice);
             }
 
-            // Hoàn tiền người dẫn đầu trước đó
+            // 9. Hoàn tiền cho người dẫn đầu trước đó
             int previousBidderId = auction.getHighestBidderId();
             if (previousBidderId != 0 && previousBidderId != userId) {
-                try {
-                    User previousBidder = userDAO.findById(previousBidderId);
-                    if (previousBidder != null) {
-                        previousBidder.setBalance(previousBidder.getBalance().add(currentPrice));
-                        userDAO.updateBalance(previousBidder.getId(), previousBidder.getBalance());
-                    }
-                } catch (Exception e) {
-                    log.warn("Lỗi hoàn tiền cho previousBidder {}: {}", previousBidderId, e.getMessage());
-                }
+                refundPreviousBidder(previousBidderId, currentPrice);
             }
 
-            // Trừ tiền người đặt
+            // 10. Trừ tiền người đặt giá mới
             try {
                 user.setBalance(user.getBalance().subtract(bidAmount));
                 userDAO.updateBalance(user.getId(), user.getBalance());
             } catch (Exception e) {
-                return new BidResponse(false, "Lỗi cập nhật tài khoản.", currentPrice);
+                log.error("Lỗi trừ tiền user {}: {}", userId, e.getMessage());
+                // Rollback: hoàn lại tiền cho previousBidder nếu đã hoàn
+                if (previousBidderId != 0 && previousBidderId != userId) {
+                    chargeUser(previousBidderId, currentPrice);
+                }
+                return new BidResponse(false, "Lỗi cập nhật số dư, vui lòng thử lại.", currentPrice);
             }
 
-            // Cập nhật phiên đấu giá
+            // 11. Cập nhật auction (DB trước, rồi cache)
             auction.setCurrentPrice(bidAmount);
             auction.setHighestBidderId(userId);
             auction.setStatus(AuctionStatus.RUNNING);
             auctionDAO.updateAuction(auction);
             auctionCache.put(auctionId, auction);
 
-            // Lưu lịch sử
+            // 12. Lưu lịch sử giao dịch
             BidTransaction transaction = new BidTransaction(0, now, auctionId, userId, bidAmount, false);
             bidDAO.saveBid(transaction);
 
-            // Anti-sniping
+            // 13. Anti-sniping
             boolean extended = checkAndExtend(auction);
 
-            // Broadcast update đến tất cả client đang xem phiên
+            // 14. Broadcast realtime update đến tất cả client đang xem phiên
             if (auctionManager != null) {
-                String username = user.getUsername();
-                AuctionUpdateDTO update = new AuctionUpdateDTO(
-                        auctionId,
-                        extended ? AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED : AuctionUpdateDTO.UpdateType.BID_PLACED,
-                        bidAmount,
-                        userId,
-                        username,
-                        auction.getEndTime(),
-                        extended ? "Phiên được gia hạn do có bid trong 30 giây cuối" : "Bid mới!"
-                );
-                auctionManager.broadcastUpdate(auctionId, update);
+                AuctionUpdateDTO.UpdateType updateType = extended
+                        ? AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED
+                        : AuctionUpdateDTO.UpdateType.BID_PLACED;
+                String message = extended
+                        ? "Phiên được gia hạn do có bid trong " + ANTI_SNIPE_THRESHOLD_SECONDS + " giây cuối!"
+                        : "Bid mới từ " + user.getUsername() + "!";
+
+                auctionManager.broadcastUpdate(auctionId, new AuctionUpdateDTO(
+                        auctionId, updateType, bidAmount,
+                        userId, user.getUsername(),
+                        auction.getEndTime(), message
+                ));
             }
 
-            // Kích hoạt auto-bid của người khác (nếu có)
+            // 15. Kích hoạt chuỗi auto-bid (nếu có config đang active)
             BidTransaction autoBidTx = autoBidEngine.triggerAutoBid(auctionId, userId, bidAmount);
             if (autoBidTx != null && auctionManager != null) {
-                // Broadcast auto-bid update
-                AuctionUpdateDTO autoUpdate = new AuctionUpdateDTO(
+                // Lấy username thật của auto-bidder (không dùng chuỗi "auto-bid")
+                String autoBidderName = resolveUsername(autoBidTx.getBidderId());
+                auctionManager.broadcastUpdate(auctionId, new AuctionUpdateDTO(
                         auctionId,
                         AuctionUpdateDTO.UpdateType.BID_PLACED,
                         autoBidTx.getAmount(),
                         autoBidTx.getBidderId(),
-                        "auto-bid",
+                        autoBidderName + " (auto)",
                         auction.getEndTime(),
-                        "Auto-bid!"
-                );
-                auctionManager.broadcastUpdate(auctionId, autoUpdate);
+                        "Auto-bid từ " + autoBidderName + "!"
+                ));
             }
 
-            log.info("Bid thành công: UserID {} đặt {} VND cho AuctionID {}", userId, bidAmount, auctionId);
-            return new BidResponse(true, "Giao dịch thành công. Mức giá mới đã được ghi nhận.", bidAmount);
+            log.info("Bid thành công: userId={} đặt {} VND cho auctionId={}", userId, bidAmount, auctionId);
+            return new BidResponse(true,
+                    "Giao dịch thành công. Mức giá mới: " + bidAmount + " VND.", bidAmount);
 
         } catch (Exception e) {
-            log.error("Lỗi đặt cược (AuctionID: {}): {}", auctionId, e.getMessage(), e);
-            return new BidResponse(false, "Lỗi Server, vui lòng thử lại sau.", BigDecimal.ZERO);
+            log.error("Lỗi nghiêm trọng trong placeBid (auctionId={}, userId={}): {}",
+                    auctionId, userId, e.getMessage(), e);
+            return new BidResponse(false, "Lỗi server, vui lòng thử lại sau.", BigDecimal.ZERO);
         } finally {
             lock.unlock();
         }
     }
 
-    // ── GET AUCTION ───────────────────────────────────────────────────────────
+    // ── PLACE AUTO BID (nội bộ, gọi từ AutoBidEngine) ────────────────────────
 
+    /**
+     * Đặt auto-bid thay người dùng. Được AutoBidEngine gọi sau khi có bid thủ công.
+     *
+     * Khác với placeBid:
+     *  - KHÔNG gọi triggerAutoBid lại (tránh đệ quy vô hạn)
+     *  - Có lock riêng để thread-safe với placeBid đang chạy song song
+     *
+     * @return BidTransaction nếu thành công, null nếu thất bại (không đủ tiền, phiên đóng, ...)
+     */
+    public BidTransaction placeAutoBid(int auctionId, int bidderId, BigDecimal amount) {
+        ReentrantLock lock = auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
+        lock.lock();
+
+        try {
+            // 1. Kiểm tra phiên tồn tại
+            Auction auction;
+            try {
+                auction = getAuction(auctionId);
+            } catch (AuctionException e) {
+                log.warn("Auto-bid thất bại: phiên {} không tồn tại.", auctionId);
+                return null;
+            }
+
+            // 2. Kiểm tra trạng thái phiên
+            AuctionStatus status = auction.getStatus();
+            if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
+                log.warn("Auto-bid thất bại: phiên {} ở trạng thái {}.", auctionId, status);
+                return null;
+            }
+
+            // 3. Kiểm tra thời gian (phiên có thể vừa đóng lúc auto-bid kích hoạt)
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isAfter(auction.getEndTime())) {
+                log.warn("Auto-bid thất bại: phiên {} đã hết giờ.", auctionId);
+                return null;
+            }
+
+            // 4. Seller không tự auto-bid auction của mình
+            if (auction.getSellerId() == bidderId) {
+                log.warn("Auto-bid thất bại: bidderId {} là seller của phiên {}.", bidderId, auctionId);
+                return null;
+            }
+
+            // 5. Giá auto-bid phải cao hơn giá hiện tại
+            BigDecimal currentPrice = auction.getCurrentPrice() != null
+                    ? auction.getCurrentPrice()
+                    : auction.getStartingPrice();
+            if (amount.compareTo(currentPrice) <= 0) {
+                log.warn("Auto-bid thất bại: amount={} không cao hơn currentPrice={}.", amount, currentPrice);
+                return null;
+            }
+
+            // 6. Hoàn tiền cho người dẫn đầu trước đó
+            int previousBidderId = auction.getHighestBidderId();
+            if (previousBidderId != 0 && previousBidderId != bidderId) {
+                refundPreviousBidder(previousBidderId, currentPrice);
+            }
+
+            // 7. Kiểm tra và trừ tiền auto-bidder
+            User bidder;
+            try {
+                bidder = userDAO.findById(bidderId);
+            } catch (Exception e) {
+                log.warn("Auto-bid thất bại: không lấy được user {}: {}", bidderId, e.getMessage());
+                // Rollback: hoàn lại tiền cho previousBidder
+                if (previousBidderId != 0 && previousBidderId != bidderId) {
+                    chargeUser(previousBidderId, currentPrice);
+                }
+                return null;
+            }
+
+            if (bidder == null) {
+                log.warn("Auto-bid thất bại: user {} không tồn tại.", bidderId);
+                return null;
+            }
+            if (bidder.getBalance().compareTo(amount) < 0) {
+                log.warn("Auto-bid thất bại: user {} không đủ tiền (balance={}, cần={}).",
+                        bidderId, bidder.getBalance(), amount);
+                // Rollback hoàn tiền
+                if (previousBidderId != 0 && previousBidderId != bidderId) {
+                    chargeUser(previousBidderId, currentPrice);
+                }
+                return null;
+            }
+
+            try {
+                bidder.setBalance(bidder.getBalance().subtract(amount));
+                userDAO.updateBalance(bidderId, bidder.getBalance());
+            } catch (Exception e) {
+                log.warn("Auto-bid thất bại: lỗi trừ tiền user {}: {}", bidderId, e.getMessage());
+                if (previousBidderId != 0 && previousBidderId != bidderId) {
+                    chargeUser(previousBidderId, currentPrice);
+                }
+                return null;
+            }
+
+            // 8. Lưu BidTransaction
+            BidTransaction bid = new BidTransaction(0, now, auctionId, bidderId, amount, true);
+            bidDAO.saveBid(bid);
+
+            // 9. Cập nhật auction (DB trước, rồi cache)
+            auctionDAO.updateBidPrice(auctionId, bidderId, amount);
+            auction.setCurrentPrice(amount);
+            auction.setHighestBidderId(bidderId);
+            auction.setStatus(AuctionStatus.RUNNING);
+            auctionCache.put(auctionId, auction);
+
+            // 10. Anti-sniping
+            checkAndExtend(auction);
+
+            log.info("Auto-bid thành công: auctionId={} bidderId={} amount={}", auctionId, bidderId, amount);
+            return bid;
+
+        } catch (Exception e) {
+            log.error("Lỗi nghiêm trọng trong placeAutoBid (auctionId={}, bidderId={}): {}",
+                    auctionId, bidderId, e.getMessage(), e);
+            return null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // ── CLOSE AUCTION ─────────────────────────────────────────────────────────
+
+    /**
+     * Đóng phiên đấu giá khi hết giờ (được gọi từ AuctionManager scheduler).
+     *
+     * Nếu giá thắng không đạt reservePrice → hoàn tiền người dẫn đầu.
+     */
+    public void closeAuction(Auction auction) {
+        auction.setStatus(AuctionStatus.FINISHED);
+        auctionDAO.updateStatus(auction.getId(), AuctionStatus.FINISHED);
+        auctionCache.remove(auction.getId());
+
+        // Kiểm tra giá sàn (reserve price)
+        BigDecimal currentPrice  = auction.getCurrentPrice();
+        BigDecimal reservePrice  = auction.getReservePrice();
+        int        winnerId      = auction.getHighestBidderId();
+
+        if (winnerId != 0 && reservePrice != null
+                && currentPrice != null
+                && currentPrice.compareTo(reservePrice) < 0) {
+            // Giá không đạt sàn → hoàn tiền người dẫn đầu, phiên coi như không có người thắng
+            log.info("Phiên {} không đạt giá sàn ({} < {}). Hoàn tiền cho bidderId={}.",
+                    auction.getId(), currentPrice, reservePrice, winnerId);
+            refundPreviousBidder(winnerId, currentPrice);
+            auction.setHighestBidderId(0); // xóa người thắng
+        }
+
+        log.info("Phiên {} kết thúc. Winner: bidderId={}, giá={}",
+                auction.getId(), auction.getHighestBidderId(), currentPrice);
+    }
+
+    // ── ADMIN ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Admin duyệt phiên đấu giá: PENDING → OPEN.
+     * Sau khi duyệt, phiên được load vào cache và auto-bid config được nạp.
+     *
+     * @return true nếu thành công, false nếu phiên không tồn tại hoặc không đúng trạng thái
+     */
+    public boolean approveAuction(int auctionId, int adminId) {
+        Auction auction = auctionDAO.findById(auctionId);
+        if (auction == null) {
+            log.warn("approveAuction: phiên {} không tồn tại.", auctionId);
+            return false;
+        }
+        if (auction.getStatus() != AuctionStatus.PENDING) {
+            log.warn("approveAuction: phiên {} không ở trạng thái PENDING (hiện: {}).",
+                    auctionId, auction.getStatus());
+            return false;
+        }
+
+        auction.setStatus(AuctionStatus.OPEN);
+        auctionDAO.updateStatus(auctionId, AuctionStatus.OPEN);
+        auctionCache.put(auctionId, auction);
+        auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
+        autoBidEngine.loadFromDb(auctionId);
+
+        log.info("Admin {} duyệt phiên {}.", adminId, auctionId);
+        return true;
+    }
+
+    /**
+     * Admin từ chối phiên đấu giá: PENDING → CANCELED.
+     *
+     * @return true nếu thành công, false nếu phiên không tồn tại hoặc không đúng trạng thái
+     */
+    public boolean rejectAuction(int auctionId, int adminId, String reason) {
+        Auction auction = auctionDAO.findById(auctionId);
+        if (auction == null) {
+            log.warn("rejectAuction: phiên {} không tồn tại.", auctionId);
+            return false;
+        }
+        if (auction.getStatus() != AuctionStatus.PENDING) {
+            log.warn("rejectAuction: phiên {} không ở trạng thái PENDING (hiện: {}).",
+                    auctionId, auction.getStatus());
+            return false;
+        }
+
+        auction.setStatus(AuctionStatus.CANCELED);
+        auctionDAO.updateStatus(auctionId, AuctionStatus.CANCELED);
+
+        log.info("Admin {} từ chối phiên {} | Lý do: {}", adminId, auctionId, reason);
+        return true;
+    }
+
+    // ── QUERIES ───────────────────────────────────────────────────────────────
+
+    /**
+     * Lấy phiên đấu giá từ cache; nếu chưa có thì load từ DB.
+     *
+     * @throws AuctionException nếu không tìm thấy
+     */
     public Auction getAuction(int auctionId) {
         return auctionCache.computeIfAbsent(auctionId, id -> {
             Auction a = auctionDAO.findById(id);
-            if (a == null) throw new AuctionException("NOT_FOUND", "Phiên đấu giá không tồn tại: " + id);
+            if (a == null)
+                throw new AuctionException("NOT_FOUND", "Phiên đấu giá không tồn tại: " + id);
             auctionLocks.computeIfAbsent(id, k -> new ReentrantLock(true));
             return a;
         });
     }
 
+    /** Load tất cả phiên OPEN/RUNNING vào cache khi server khởi động. */
     public void loadActiveAuctions() {
         List<Auction> active = auctionDAO.findActiveAuctions();
         for (Auction a : active) {
@@ -221,121 +522,86 @@ public class AuctionService {
             auctionLocks.put(a.getId(), new ReentrantLock(true));
             autoBidEngine.loadFromDb(a.getId());
         }
-        log.info("Đã load {} phiên đấu giá vào cache", active.size());
+        log.info("Đã load {} phiên đấu giá vào cache.", active.size());
     }
 
+    /** Lấy danh sách phiên OPEN/RUNNING (cho Dashboard). */
     public List<Auction> getActiveAuctions() {
         return auctionDAO.findActiveAuctions();
     }
 
+    /** Lấy danh sách phiên PENDING (cho Admin duyệt). */
     public List<Auction> getPendingAuctions() {
         return auctionDAO.findPendingAuctions();
     }
 
-    // ── AUTO BID (internal, không gọi triggerAutoBid lại) ────────────────────
-
-    public BidTransaction placeAutoBid(int auctionId, int bidderId, BigDecimal amount) {
-        Auction auction = getAuction(auctionId);
-
-        // Hoàn tiền người dẫn đầu cũ
-        int previousBidderId = auction.getHighestBidderId();
-        if (previousBidderId != 0 && previousBidderId != bidderId) {
-            try {
-                User prev = userDAO.findById(previousBidderId);
-                BigDecimal prevPrice = auction.getCurrentPrice();
-                if (prev != null && prevPrice != null) {
-                    prev.setBalance(prev.getBalance().add(prevPrice));
-                    userDAO.updateBalance(prev.getId(), prev.getBalance());
-                }
-            } catch (Exception e) {
-                log.warn("Lỗi hoàn tiền auto-bid previousBidder {}: {}", previousBidderId, e.getMessage());
-            }
-        }
-
-        // Trừ tiền auto-bidder
-        try {
-            User bidder = userDAO.findById(bidderId);
-            if (bidder != null && bidder.getBalance().compareTo(amount) >= 0) {
-                bidder.setBalance(bidder.getBalance().subtract(amount));
-                userDAO.updateBalance(bidderId, bidder.getBalance());
-            } else {
-                log.warn("Auto-bidder {} không đủ tiền: balance={}", bidderId,
-                        bidder != null ? bidder.getBalance() : "null");
-                return null;
-            }
-        } catch (Exception e) {
-            log.warn("Lỗi trừ tiền auto-bidder {}: {}", bidderId, e.getMessage());
-            return null;
-        }
-
-        BidTransaction bid = new BidTransaction();
-        bid.setAuctionId(auctionId);
-        bid.setBidderId(bidderId);
-        bid.setAmount(amount);
-        bid.setAutoBid(true);
-        bid.setCreatedAt(LocalDateTime.now());
-        bidDAO.saveBid(bid);
-
-        auctionDAO.updateBidPrice(auctionId, bidderId, amount);
-        auction.setCurrentPrice(amount);
-        auction.setHighestBidderId(bidderId);
-
-        checkAndExtend(auction);
-        log.info("Auto-bid: auctionId={} bidderId={} amount={}", auctionId, bidderId, amount);
-        return bid;
-    }
-
-    // ── CLOSE AUCTION ─────────────────────────────────────────────────────────
-
-    public void closeAuction(Auction auction) {
-        auction.setStatus(AuctionStatus.FINISHED);
-        auctionDAO.updateStatus(auction.getId(), AuctionStatus.FINISHED);
-        auctionCache.remove(auction.getId()); // xóa khỏi cache
-        log.info("Phiên {} kết thúc. Người thắng: bidderId={}, giá={}",
-                auction.getId(), auction.getHighestBidderId(), auction.getCurrentPrice());
-    }
-
-    // ── ADMIN ─────────────────────────────────────────────────────────────────
-
-    public boolean approveAuction(int auctionId, int adminId) {
-        Auction auction = auctionDAO.findById(auctionId);
-        if (auction == null) return false;
-        auction.setStatus(AuctionStatus.OPEN);
-        auctionDAO.updateStatus(auctionId, AuctionStatus.OPEN);
-        // Load vào cache
-        auctionCache.put(auctionId, auction);
-        auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
-        autoBidEngine.loadFromDb(auctionId);
-        log.info("Admin {} duyệt phiên đấu giá {}", adminId, auctionId);
-        return true;
-    }
-
-    public boolean rejectAuction(int auctionId, int adminId, String reason) {
-        Auction auction = auctionDAO.findById(auctionId);
-        if (auction == null) return false;
-        auction.setStatus(AuctionStatus.CANCELED);
-        auctionDAO.updateStatus(auctionId, AuctionStatus.CANCELED);
-        log.info("Admin {} từ chối phiên đấu giá {} | Lý do: {}", adminId, auctionId, reason);
-        return true;
-    }
-
-    // ── ANTI-SNIPING ──────────────────────────────────────────────────────────
+    // ── PRIVATE HELPERS ───────────────────────────────────────────────────────
 
     /**
-     * Nếu bid trong X giây cuối → gia hạn thêm Y giây.
+     * Anti-sniping: nếu bid xuất hiện trong X giây cuối → gia hạn thêm Y giây.
+     *
      * @return true nếu đã gia hạn
      */
     private boolean checkAndExtend(Auction auction) {
-        long secondsLeft = java.time.Duration.between(LocalDateTime.now(), auction.getEndTime()).getSeconds();
+        long secondsLeft = Duration.between(LocalDateTime.now(), auction.getEndTime()).getSeconds();
         if (secondsLeft > 0 && secondsLeft < ANTI_SNIPE_THRESHOLD_SECONDS) {
             LocalDateTime newEnd = auction.getEndTime().plusSeconds(ANTI_SNIPE_EXTEND_SECONDS);
             auction.setEndTime(newEnd);
             auction.setExtensionCount(auction.getExtensionCount() + 1);
             auctionDAO.extendEndTime(auction.getId(), newEnd);
-            log.info("Anti-snipe: auction {} gia hạn đến {}", auction.getId(), newEnd);
+            log.info("Anti-snipe: phiên {} gia hạn đến {} (lần {})",
+                    auction.getId(), newEnd, auction.getExtensionCount());
             return true;
         }
         return false;
+    }
+
+    /**
+     * Hoàn tiền cho người dẫn đầu trước khi bị outbid.
+     * Log warning nếu thất bại nhưng không throw (không chặn bid đang diễn ra).
+     */
+    private void refundPreviousBidder(int bidderId, BigDecimal amount) {
+        try {
+            User prev = userDAO.findById(bidderId);
+            if (prev != null) {
+                prev.setBalance(prev.getBalance().add(amount));
+                userDAO.updateBalance(prev.getId(), prev.getBalance());
+                log.debug("Hoàn {} VND cho userId={}", amount, bidderId);
+            }
+        } catch (Exception e) {
+            log.warn("Lỗi hoàn tiền cho userId={}: {}", bidderId, e.getMessage());
+        }
+    }
+
+    /**
+     * Trừ tiền người dùng (dùng khi rollback hoàn tiền thất bại).
+     * Log warning nếu thất bại.
+     */
+    private void chargeUser(int userId, BigDecimal amount) {
+        try {
+            User user = userDAO.findById(userId);
+            if (user != null && user.getBalance().compareTo(amount) >= 0) {
+                user.setBalance(user.getBalance().subtract(amount));
+                userDAO.updateBalance(userId, user.getBalance());
+                log.debug("Rollback: trừ {} VND của userId={}", amount, userId);
+            }
+        } catch (Exception e) {
+            log.warn("Lỗi rollback trừ tiền userId={}: {}", userId, e.getMessage());
+        }
+    }
+
+    /**
+     * Tra cứu username theo userId. Trả về chuỗi rỗng nếu thất bại.
+     */
+    private String resolveUsername(int userId) {
+        if (userId == 0) return "";
+        try {
+            User u = userDAO.findById(userId);
+            return u != null ? u.getUsername() : "";
+        } catch (Exception e) {
+            log.debug("Không lấy được username userId={}: {}", userId, e.getMessage());
+            return "";
+        }
     }
 }
 
