@@ -11,6 +11,7 @@ import com.auction.server.model.*;
 import com.auction.server.service.AuctionManager;
 import com.auction.server.service.AuctionService;
 import com.auction.server.network.ClientHandler;
+import com.auction.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ public class AuctionController {
     private final UserDAO userDAO = new UserDAO();
     private final BidDAO bidDAO = new BidDAO();
 
-    public void processRequest(String action, ObjectInputStream in, ObjectOutputStream out,
+    public void processRequest(String action, ObjectInputStream in, ObjectOutputStream out, ServerSession session,
                                ClientHandler handler) throws Exception {
         switch (action) {
 
@@ -64,9 +65,6 @@ public class AuctionController {
     }
 
     /** Overload để tương thích với ClientHandler cũ không truyền handler */
-    public void processRequest(String action, ObjectInputStream in, ObjectOutputStream out) throws Exception {
-        processRequest(action, in, out, null);
-    }
 
     // ── HANDLERS ──────────────────────────────────────────────────────────────
 

@@ -37,6 +37,10 @@ public class ClientHandler implements Runnable, AuctionObserver {
     /** Session riêng của kết nối này - lưu user đã đăng nhập */
     private final ServerSession session = new ServerSession();
 
+    public ServerSession getSession() {
+        return session;
+    }
+
     private final UserController    userController    = new UserController(session);
     private final ItemController    itemController    = new ItemController();
     private final AuctionController auctionController = new AuctionController();
@@ -64,7 +68,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
                     case "USER"    -> userController.processRequest(action, in, out);
                     case "ITEM"    -> itemController.processRequest(action, in, out);
                     case "BID", "AUCTION", "AUTOBID" ->
-                            auctionController.processRequest(action, in, out, this);
+                            auctionController.processRequest(action, in, out, session, this);
                     default -> {
                         log.warn("[{}] Action không xác định: {}", clientAddr, action);
                         out.writeObject("ERROR_UNKNOWN_ACTION");
