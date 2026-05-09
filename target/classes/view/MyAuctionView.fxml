@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.auction.client.controller.MyAuctionController"
+      spacing="20"
+      style="-fx-padding: 25; -fx-background-color: transparent;">
+
+    <!-- TITLE -->
+    <VBox spacing="6">
+        <Label text="Phiên đấu giá của bạn"
+               style="-fx-font-size: 22px;
+                      -fx-font-weight: bold;
+                      -fx-text-fill: #1f2d3d;"/>
+
+        <Label text="Danh sách các phiên đấu giá của bạn"
+               style="-fx-font-size: 13px;
+                      -fx-text-fill: #6c757d;"/>
+    </VBox>
+
+    <!-- FILTER BAR -->
+    <HBox spacing="12"
+          alignment="CENTER_LEFT"
+          style="-fx-background-color: white;
+                 -fx-padding: 15;
+                 -fx-background-radius: 14;
+                 -fx-border-radius: 14;
+                 -fx-border-color: #e0e0e0;">
+
+        <children>
+
+            <Label text="Trạng thái:"
+                   style="-fx-font-size: 13px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #1f2d3d;"/>
+
+            <ComboBox fx:id="cbStatus"
+                      prefWidth="180"
+                      promptText="Tất cả"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="btnRefresh"
+                    onAction="#handleRefresh"
+                    mnemonicParsing="false"
+                    text="Làm mới"
+                    style="-fx-background-color: #142932;
+                           -fx-text-fill: white;
+                           -fx-background-radius: 10;
+                           -fx-cursor: hand;"
+                    prefHeight="35"
+                    prefWidth="120"/>
+
+        </children>
+    </HBox>
+
+    <!-- LIST CONTAINER (SCROLLABLE) -->
+    <ScrollPane fitToWidth="true"
+                VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent;"
+                hbarPolicy="NEVER">
+
+        <content>
+            <VBox fx:id="auctionListContainer"
+                  spacing="15"
+                  style="-fx-background-color: transparent;"/>
+        </content>
+
+    </ScrollPane>
+
+</VBox>
