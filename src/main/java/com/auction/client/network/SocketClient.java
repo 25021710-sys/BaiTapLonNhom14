@@ -240,7 +240,7 @@ public class SocketClient {
         }
     }
 
-    public synchronized SimpleResponse approveAuction(ApproveAuctionRequest request) {
+    public synchronized ApproveAuctionResponse approveAuction(ApproveAuctionRequest request) {
         try {
             ensureConnected();
             out.writeObject("AUCTION_APPROVE");
@@ -248,11 +248,11 @@ public class SocketClient {
             out.flush();
             return readResponse();
         } catch (Exception e) {
-            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+            return new ApproveAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
 
-    public synchronized SimpleResponse rejectAuction(RejectAuctionRequest request) {
+    public synchronized RejectAuctionResponse rejectAuction(RejectAuctionRequest request) {
         try {
             ensureConnected();
             out.writeObject("AUCTION_REJECT");
@@ -260,7 +260,7 @@ public class SocketClient {
             out.flush();
             return readResponse();
         } catch (Exception e) {
-            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+            return new RejectAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
 
