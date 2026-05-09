@@ -1,6 +1,6 @@
 package com.auction.client.controller;
 import com.auction.common.dto.UserDTO;
-import com.auction.session.Session;
+import com.auction.client.session.ClientSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -56,9 +56,9 @@ public class DashBoardController {
         renderCards();
 
         // set username từ Session
-        if (Session.getCurrentUser() != null) {
+        if (ClientSession.getCurrentUser() != null) {
 
-            UserDTO currentUser = Session.getCurrentUser();
+            UserDTO currentUser = ClientSession.getCurrentUser();
 
             lblUsername.setText(currentUser.getUsername());
 

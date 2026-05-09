@@ -1,11 +1,14 @@
 package com.auction.client.controller;
 
+import com.auction.client.network.SocketClient;
 import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.common.request.ApproveAuctionRequest;
 import com.auction.common.request.RejectAuctionRequest;
 import com.auction.common.request.GetPendingAuctionRequestsRequest;
+import com.auction.common.response.ApproveAuctionResponse;
 import com.auction.common.response.GetPendingAuctionRequestsResponse;
 
+import com.auction.common.response.RejectAuctionResponse;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
@@ -81,11 +84,7 @@ public class AdminAuctionApprovalController implements Initializable {
         setupTableColumns();
         initializeStatusFilter();
         setupTableSelection();
-        try {
-            loadPendingRequests();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        loadPendingRequests();
 
         tblAuctionRequests.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
@@ -144,81 +143,22 @@ public class AdminAuctionApprovalController implements Initializable {
     // LOAD REQUESTS
     // =====================================================
 
-    private void loadPendingRequests() throws SQLException {
+    private void loadPendingRequests() {
+
+        GetPendingAuctionRequestsRequest request = new GetPendingAuctionRequestsRequest();
+
+
+        GetPendingAuctionRequestsResponse response =
+                SocketClient.getInstance().getPendingAuctionRequests(request);
+        if (response == null || response.getRequests() == null) {
+            tblAuctionRequests.setItems(FXCollections.observableArrayList());
+            return;
+        }
+        List<AdminAuctionRequestDTO> requests =
+                response.getRequests() != null ? response.getRequests() : List.of();
 
         ObservableList<AdminAuctionRequestDTO> list =
-                FXCollections.observableArrayList();
-
-        // lấy auction pending thật từ DB
-        List<Auction> pendingAuctions = auctionService.getPendingAuctions();
-
-        for (Auction auction : pendingAuctions) {
-
-            Item item =
-                    itemDAO.findById(
-                            auction.getItemId()
-                    );
-
-            User seller =
-                    userDAO.findById(
-                            auction.getSellerId()
-                    );
-
-            if (item == null || seller == null) {
-                continue;
-            }
-
-            AdminAuctionRequestDTO dto =
-                    new AdminAuctionRequestDTO();
-
-            dto.setRequestId(
-                    auction.getId()
-            );
-
-            dto.setItemName(
-                    item.getName()
-            );
-
-            dto.setSellerUsername(
-                    seller.getUsername()
-            );
-
-            dto.setItemCategory(
-                    item.getCategory().name()
-            );
-
-            dto.setItemDescription(
-                    item.getDescription()
-            );
-
-            dto.setApprovalStatus(
-                    auction.getStatus().name()
-            );
-
-            dto.setStartTime(
-                    auction.getStartTime()
-            );
-
-            dto.setEndTime(
-                    auction.getEndTime()
-            );
-
-            dto.setCreatedAt(
-                    auction.getCreatedAt()
-            );
-
-            dto.setStartingPrice(
-                    auction.getStartingPrice()
-            );
-
-            // nếu sau này có image_url
-            dto.setImageUrl(
-                    "https://picsum.photos/300"
-            );
-
-            list.add(dto);
-        }
-
+                FXCollections.observableArrayList(requests);
         tblAuctionRequests.setItems(list);
     }
 
@@ -317,8 +257,7 @@ public class AdminAuctionApprovalController implements Initializable {
             return;
         }
 
-        ApproveAuctionRequest request =
-                new ApproveAuctionRequest();
+        ApproveAuctionRequest request = new ApproveAuctionRequest();
 
         request.setRequestId(
                 selected.getRequestId()
@@ -326,18 +265,26 @@ public class AdminAuctionApprovalController implements Initializable {
 
         request.setAdminId(1);
 
-        /*
-         TODO:
-         send request lên server
-         */
+        ApproveAuctionResponse response =
+                SocketClient.getInstance().approveAuction(request);
+        if (response.isSuccess()) {
 
-        showAlert(
-                Alert.AlertType.INFORMATION,
-                "Success",
-                "Đã duyệt thành công."
-        );
+            showAlert(
+                    Alert.AlertType.INFORMATION,
+                    "Success",
+                    response.getMessage()
+            );
 
-        loadPendingRequests();
+            loadPendingRequests();
+
+        } else {
+
+            showAlert(
+                    Alert.AlertType.ERROR,
+                    "Error",
+                    response.getMessage()
+            );
+        }
     }
 
     // =====================================================
@@ -387,16 +334,15 @@ public class AdminAuctionApprovalController implements Initializable {
 
         request.setRejectReason(reason);
 
-        /*
-         TODO:
-         send request lên server
-         */
+        RejectAuctionResponse response =
+                SocketClient.getInstance().rejectAuction(request);
 
-        showAlert(
-                Alert.AlertType.INFORMATION,
-                "Rejected",
-                "Đã từ chối yêu cầu."
-        );
+        if (response != null && response.isSuccess()) {
+            showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Error",
+                    response != null ? response.getMessage() : "Server error");
+        }
 
         loadPendingRequests();
     }
@@ -406,10 +352,8 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleRefresh() throws SQLException {
-
+    private void handleRefresh(){
         loadPendingRequests();
-
     }
 
     // =====================================================

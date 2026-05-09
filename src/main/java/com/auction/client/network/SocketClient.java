@@ -208,4 +208,64 @@ public class SocketClient {
             );
         }
     }
+    public synchronized ApproveAuctionResponse approveAuction(
+            ApproveAuctionRequest request
+    ) {
+
+        try {
+
+            ensureConnected();
+
+            out.writeObject("AUCTION_APPROVE");
+
+            out.writeObject(request);
+
+            out.flush();
+
+            return (ApproveAuctionResponse)
+                    in.readObject();
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "[SocketClient] Lỗi AUCTION_APPROVE: "
+                            + e.getMessage()
+            );
+
+            return new ApproveAuctionResponse(
+                    false,
+                    "Không thể kết nối đến máy chủ"
+            );
+        }
+    }
+    public synchronized RejectAuctionResponse rejectAuction(
+            RejectAuctionRequest request
+    ) {
+
+        try {
+
+            ensureConnected();
+
+            out.writeObject("AUCTION_REJECT");
+
+            out.writeObject(request);
+
+            out.flush();
+
+            return (RejectAuctionResponse)
+                    in.readObject();
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "[SocketClient] Lỗi AUCTION_REJECT: "
+                            + e.getMessage()
+            );
+
+            return new RejectAuctionResponse(
+                    false,
+                    "Không thể kết nối đến máy chủ"
+            );
+        }
+    }
 }
