@@ -9,6 +9,7 @@ import com.auction.common.response.LoginResponse;
 import com.auction.common.response.RegisterResponse;
 import com.auction.common.response.UpdateProfileResponse;
 import com.auction.server.service.AuthService;
+import com.auction.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,8 @@ import java.io.ObjectOutputStream;
  *   Client gửi: action (String) → request object
  *   Server trả: response object
  *
+ * Nhận ServerSession để ghi nhận trạng thái đăng nhập của kết nối này.
+ *
  * Các action được hỗ trợ:
  *   USER_LOGIN           → LoginRequest    → LoginResponse
  *   USER_REGISTER        → RegisterRequest → RegisterResponse
@@ -33,6 +36,11 @@ public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final AuthService authService = new AuthService();
+    private final ServerSession session;
+
+    public UserController(ServerSession session) {
+        this.session = session;
+    }
 
     /**
      * Điểm vào duy nhất — được gọi từ ClientHandler sau khi đọc action.
@@ -65,16 +73,24 @@ public class UserController {
 
     /**
      * Đăng nhập: đọc LoginRequest → xử lý → ghi LoginResponse.
+     * Nếu thành công, lưu user vào ServerSession của kết nối này.
      */
     private void handleLogin(ObjectInputStream in, ObjectOutputStream out) throws Exception {
         LoginRequest req = (LoginRequest) in.readObject();
         log.info("Xử lý đăng nhập: email={}", req.getEmail());
 
         LoginResponse res = authService.login(req);
+
+        if (res.isSuccess() && res.getUser() != null) {
+            // Ghi nhận đăng nhập vào session của kết nối này
+            session.login(res.getUser());
+            log.info("Đăng nhập thành công: {} ({})", res.getUser().getUsername(), session);
+        } else {
+            log.info("Đăng nhập thất bại [{}]: {}", req.getEmail(), res.getMessage());
+        }
+
         out.writeObject(res);
         out.flush();
-
-        log.info("Kết quả đăng nhập [{}]: {}", req.getEmail(), res.isSuccess() ? "OK" : res.getMessage());
     }
 
     /**
@@ -93,12 +109,29 @@ public class UserController {
 
     /**
      * Cập nhật profile: đọc UpdateProfileRequest → xử lý → ghi UpdateProfileResponse.
+     * Nếu thành công, cập nhật lại thông tin trong session.
      */
     private void handleUpdateProfile(ObjectInputStream in, ObjectOutputStream out) throws Exception {
         UpdateProfileRequest req = (UpdateProfileRequest) in.readObject();
         log.info("Xử lý cập nhật profile: userId={}", req.getUserId());
 
+        // Kiểm tra quyền: chỉ được cập nhật profile của chính mình
+        if (session.isLoggedIn() && session.getUserId() != req.getUserId()) {
+            log.warn("Từ chối cập nhật profile: session user={} nhưng request userId={}",
+                    session.getUserId(), req.getUserId());
+            out.writeObject(new UpdateProfileResponse(false, "Không có quyền cập nhật profile của user khác", null));
+            out.flush();
+            return;
+        }
+
         UpdateProfileResponse res = authService.updateProfile(req);
+
+        if (res.isSuccess() && res.getUser() != null) {
+            // Cập nhật lại session với thông tin mới
+            session.updateUser(res.getUser());
+            log.info("Cập nhật session sau update profile: {}", session);
+        }
+
         out.writeObject(res);
         out.flush();
 
@@ -108,12 +141,21 @@ public class UserController {
 
     /**
      * Nạp/rút tiền: đọc BalanceRequest → xử lý → ghi BalanceResponse.
+     * Nếu thành công, cập nhật lại balance trong session.
      */
     private void handleBalance(ObjectInputStream in, ObjectOutputStream out) throws Exception {
         BalanceRequest req = (BalanceRequest) in.readObject();
         log.info("Xử lý {} tiền: userId={}, amount={}", req.getType(), req.getUserId(), req.getAmount());
 
         BalanceResponse res = authService.handleBalance(req);
+
+        if (res.isSuccess() && res.getData() != null) {
+            // Cập nhật lại session với balance mới
+            session.updateUser(res.getData());
+            log.info("Cập nhật balance trong session: userId={}, balance={}",
+                    session.getUserId(), res.getData().getBalance());
+        }
+
         out.writeObject(res);
         out.flush();
 

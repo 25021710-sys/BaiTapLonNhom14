@@ -5,6 +5,7 @@ import com.auction.server.controller.AuctionController;
 import com.auction.server.controller.ItemController;
 import com.auction.server.controller.UserController;
 import com.auction.server.observer.AuctionObserver;
+import com.auction.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,9 @@ import java.net.Socket;
  *   2. Vòng lặp đọc action (String) từ client
  *   3. Phân loại theo tiền tố (USER_, ITEM_, BID_, AUCTION_)
  *   4. Chuyển đến controller tương ứng để xử lý tiếp
+ *
+ * Mỗi ClientHandler giữ một ServerSession riêng, theo dõi
+ * user đã đăng nhập trong suốt vòng đời kết nối này.
  */
 public class ClientHandler implements Runnable, AuctionObserver {
 
@@ -30,7 +34,10 @@ public class ClientHandler implements Runnable, AuctionObserver {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    private final UserController    userController    = new UserController();
+    /** Session riêng của kết nối này - lưu user đã đăng nhập */
+    private final ServerSession session = new ServerSession();
+
+    private final UserController    userController    = new UserController(session);
     private final ItemController    itemController    = new ItemController();
     private final AuctionController auctionController = new AuctionController();
 
@@ -67,10 +74,11 @@ public class ClientHandler implements Runnable, AuctionObserver {
             }
 
         } catch (EOFException e) {
-            log.info("[{}] Client ngắt kết nối.", clientAddr);
+            log.info("[{}] Client ngắt kết nối. ({})", clientAddr, session);
         } catch (Exception e) {
-            log.error("[{}] Lỗi kết nối: {}", clientAddr, e.getMessage());
+            log.error("[{}] Lỗi kết nối: {} ({})", clientAddr, e.getMessage(), session);
         } finally {
+            session.logout();
             closeConnections();
         }
     }

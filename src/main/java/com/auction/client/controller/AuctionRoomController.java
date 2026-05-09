@@ -9,7 +9,7 @@ import com.auction.common.response.BidResponse;
 import com.auction.common.response.CreateAuctionResponse;
 import com.auction.server.model.AutoBidConfig;
 import com.auction.server.model.BidTransaction;
-import com.auction.session.Session;
+import com.auction.client.session.ClientSession;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -22,7 +22,6 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
@@ -31,7 +30,6 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 /**
  * AuctionRoomController – màn hình đấu giá trực tiếp (realtime bidding).
@@ -311,9 +309,9 @@ public class AuctionRoomController {
     }
 
     if (currentAuction == null) { showBidError("Chưa chọn phiên đấu giá"); return; }
-    if (Session.getCurrentUser() == null) { showBidError("Bạn chưa đăng nhập"); return; }
+    if (ClientSession.getCurrentUser() == null) { showBidError("Bạn chưa đăng nhập"); return; }
 
-    int userId = Session.getCurrentUser().getId();
+    int userId = ClientSession.getCurrentUser().getId();
     BidRequest req = new BidRequest(userId, String.valueOf(currentAuction.getAuctionId()), bidAmount);
 
     // Gửi bid trong thread riêng để không block UI
@@ -353,13 +351,13 @@ public class AuctionRoomController {
       catch (NumberFormatException ignored) {}
     }
 
-    if (currentAuction == null || Session.getCurrentUser() == null) {
+    if (currentAuction == null || ClientSession.getCurrentUser() == null) {
       showBidError("Lỗi session"); return;
     }
 
     AutoBidConfig config = new AutoBidConfig(
-            Session.getCurrentUser().getId(),
-            Session.getCurrentUser().getUsername(),
+            ClientSession.getCurrentUser().getId(),
+            ClientSession.getCurrentUser().getUsername(),
             currentAuction.getAuctionId(),
             max, increment
     );
@@ -381,11 +379,11 @@ public class AuctionRoomController {
 
   @FXML
   public void handleDisableAutoBid() {
-    if (currentAuction == null || Session.getCurrentUser() == null) return;
+    if (currentAuction == null || ClientSession.getCurrentUser() == null) return;
     chkAutoBid.setSelected(false);
     new Thread(() -> {
       SocketClient.getInstance().cancelAutoBid(
-              Session.getCurrentUser().getId(), currentAuction.getAuctionId());
+              ClientSession.getCurrentUser().getId(), currentAuction.getAuctionId());
       Platform.runLater(() ->
               lvChatMessages.getItems().add("[SYSTEM] Auto-bid đã tắt."));
     }, "cancel-autobid-thread").start();
@@ -397,8 +395,8 @@ public class AuctionRoomController {
   public void handleSendChat() {
     String msg = txtChatInput.getText().trim();
     if (msg.isEmpty()) return;
-    lvChatMessages.getItems().add("[" + (Session.getCurrentUser() != null
-            ? Session.getCurrentUser().getUsername() : "Bạn") + "] " + msg);
+    lvChatMessages.getItems().add("[" + (ClientSession.getCurrentUser() != null
+            ? ClientSession.getCurrentUser().getUsername() : "Bạn") + "] " + msg);
     txtChatInput.clear();
   }
 
@@ -474,8 +472,8 @@ public class AuctionRoomController {
   }
 
   private void updateYourStatus() {
-    if (lblYourStatus == null || currentAuction == null || Session.getCurrentUser() == null) return;
-    if (currentAuction.getHighestBidderId() == Session.getCurrentUser().getId()) {
+    if (lblYourStatus == null || currentAuction == null || ClientSession.getCurrentUser() == null) return;
+    if (currentAuction.getHighestBidderId() == ClientSession.getCurrentUser().getId()) {
       lblYourStatus.setText("✅ Bạn đang dẫn đầu!");
       lblYourStatus.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
     } else {
