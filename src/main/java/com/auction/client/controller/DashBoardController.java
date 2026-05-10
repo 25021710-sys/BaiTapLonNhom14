@@ -73,8 +73,8 @@ public class DashBoardController {
 
             lblUsername.setText("Guest");
 
-//            adminSection.setVisible(false);
-//            adminSection.setManaged(false);
+            adminSection.setVisible(false);
+            adminSection.setManaged(false);
         }
 
         setupArrowButtons(spBidsJoined, btnLeftBids, btnRightBids);
