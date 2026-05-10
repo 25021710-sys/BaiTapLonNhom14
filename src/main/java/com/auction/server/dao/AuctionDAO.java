@@ -45,7 +45,11 @@ public class AuctionDAO {
 
             ps.setInt(1, auction.getItemId());
             ps.setInt(2, auction.getSellerId());
-            ps.setInt(3, auction.getHighestBidderId());
+            if (auction.getHighestBidderId() == 0) {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(3, auction.getHighestBidderId());
+            }
 
             ps.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
             ps.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
@@ -237,7 +241,8 @@ public class AuctionDAO {
         a.setId(rs.getInt("id"));
         a.setItemId(rs.getInt("item_id"));
         a.setSellerId(rs.getInt("seller_id"));
-        a.setHighestBidderId(rs.getInt("highest_bidder_id"));
+        int highestBidderId = rs.getInt("highest_bidder_id");
+        a.setHighestBidderId(rs.wasNull() ? 0 : highestBidderId);
 
         Timestamp start = rs.getTimestamp("start_time");
         Timestamp end   = rs.getTimestamp("end_time");
