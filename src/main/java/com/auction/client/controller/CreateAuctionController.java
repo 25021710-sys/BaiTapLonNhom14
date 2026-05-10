@@ -1,5 +1,8 @@
 package com.auction.client.controller;
 
+import com.auction.client.network.SocketClient;
+import com.auction.common.request.CreateAuctionRequest;
+import com.auction.common.response.CreateAuctionResponse;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -10,6 +13,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -41,31 +45,6 @@ public class CreateAuctionController {
   @FXML private Label lblError;
 
   // ======================
-  // ART FIELDS
-  // ======================
-  @FXML private VBox artFields;
-  @FXML private TextField txtArtist;
-  @FXML private TextField txtArtYear;
-  @FXML private TextField txtMaterial;
-
-  // ======================
-  // ELECTRONICS FIELDS
-  // ======================
-  @FXML private VBox electronicFields;
-  @FXML private TextField txtBrand;
-  @FXML private TextField txtModel;
-  @FXML private TextField txtWarranty;
-
-  // ======================
-  // VEHICLES FIELDS
-  // ======================
-  @FXML private VBox vehicleFields;
-  @FXML private TextField txtCarBrand;
-  @FXML private TextField txtCarModel;
-  @FXML private TextField txtYear;
-  @FXML private TextField txtMileage;
-
-  // ======================
   // IMAGES
   // ======================
   @FXML private ListView<File> lvImages;
@@ -80,10 +59,11 @@ public class CreateAuctionController {
   public void initialize() {
 
     // Category options
-    cbCategory.getItems().addAll("Art", "Electronics", "Vehicles");
-
-    // Hide dynamic fields
-    hideAllDynamicFields();
+    cbCategory.getItems().addAll(
+            "ART",
+            "ELECTRONICS",
+            "VEHICLE"
+    );
 
     // Setup hours
     for (int h = 0; h <= 23; h++) {
@@ -118,26 +98,6 @@ public class CreateAuctionController {
   // ======================
   // CATEGORY CHANGE
   // ======================
-  @FXML
-  public void handleCategoryChange() {
-
-    String category = cbCategory.getValue();
-    hideAllDynamicFields();
-
-    if (category == null) return;
-
-    switch (category) {
-      case "Art" -> showFields(artFields);
-      case "Electronics" -> showFields(electronicFields);
-      case "Vehicles" -> showFields(vehicleFields);
-    }
-  }
-
-  private void hideAllDynamicFields() {
-    hideFields(artFields);
-    hideFields(electronicFields);
-    hideFields(vehicleFields);
-  }
 
   private void hideFields(VBox box) {
     box.setVisible(false);
@@ -279,60 +239,29 @@ public class CreateAuctionController {
 
     // CATEGORY REQUIRED FIELDS
     String category = cbCategory.getValue();
+    CreateAuctionRequest req = new CreateAuctionRequest();
 
-    if ("Art".equals(category)) {
-      if (isEmpty(txtArtist) || isEmpty(txtArtYear) || isEmpty(txtMaterial)) {
-        showError("Danh mục Art yêu cầu nhập Tác giả, Năm ra đời và Chất liệu");
-        return;
-      }
-    }
+    req.setItemName(
+            txtName.getText().trim()
+    );
 
-    if ("Electronics".equals(category)) {
-      if (isEmpty(txtBrand) || isEmpty(txtModel) || isEmpty(txtWarranty)) {
-        showError("Danh mục Electronics yêu cầu nhập Brand, Model và Warranty");
-        return;
-      }
+    req.setItemDescription(
+            txtDescription.getText().trim()
+    );
 
-      try {
-        int warranty = Integer.parseInt(txtWarranty.getText().trim());
-        if (warranty < 0) {
-          showError("Warranty phải >= 0");
-          return;
-        }
-      } catch (NumberFormatException e) {
-        showError("Warranty phải là số nguyên");
-        return;
-      }
-    }
+    req.setItemCategory(category);
 
-    if ("Vehicles".equals(category)) {
-      if (isEmpty(txtCarBrand) || isEmpty(txtCarModel) || isEmpty(txtYear) || isEmpty(txtMileage)) {
-        showError("Danh mục Vehicles yêu cầu nhập Hãng xe, Dòng xe, Năm và Số km đã đi");
-        return;
-      }
+    req.setStartingPrice(
+            BigDecimal.valueOf(startPrice)
+    );
 
-      try {
-        int year = Integer.parseInt(txtYear.getText().trim());
-        if (year < 1900 || year > LocalDate.now().getYear() + 1) {
-          showError("Năm sản xuất không hợp lệ");
-          return;
-        }
-      } catch (NumberFormatException e) {
-        showError("Năm sản xuất phải là số");
-        return;
-      }
+    req.setStartTime(startTime);
 
-      try {
-        double km = Double.parseDouble(txtMileage.getText().trim());
-        if (km < 0) {
-          showError("Số km đã đi phải >= 0");
-          return;
-        }
-      } catch (NumberFormatException e) {
-        showError("Số km đã đi phải là số");
-        return;
-      }
-    }
+    req.setEndTime(endTime);
+
+    CreateAuctionResponse response =
+            SocketClient.getInstance()
+                    .createAuction(req);
 
     // ======================
     // SUCCESS
@@ -346,10 +275,6 @@ public class CreateAuctionController {
     System.out.println("End Time: " + endTime);
     System.out.println("Images selected: " + imageFiles.size());
     System.out.println("==================================");
-
-    // TODO: Send to server later
-    // SocketClient.getInstance().createAuction(...)
-
     // ======================
     // POPUP MESSAGE
     // ======================
@@ -374,5 +299,18 @@ public class CreateAuctionController {
   private void showError(String msg) {
     lblError.setText(msg);
     lblError.setVisible(true);
+  }
+  @FXML
+  public void handleCategoryChange() {
+
+    String category = cbCategory.getValue();
+
+    if (category == null) {
+      return;
+    }
+
+    System.out.println(
+            "Đã chọn category: " + category
+    );
   }
 }

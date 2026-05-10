@@ -119,7 +119,10 @@ public class AuctionController {
             item.setName(req.getItemName());
             item.setDescription(req.getItemDescription());
             item.setStartingPrice(req.getStartingPrice());
-            item.setSellerId(req.getSellerId());
+
+            int trustedSellerId = session.getUserId();
+            item.setSellerId(trustedSellerId);
+
             item.setCategory(ItemCategory.valueOf(req.getItemCategory()));
 
             ItemDAO iDao = new ItemDAO();
@@ -132,7 +135,7 @@ public class AuctionController {
 
             Auction auction = auctionService.createAuction(
                     item.getId(),
-                    req.getSellerId(),
+                    trustedSellerId,
                     req.getStartingPrice(),
                     req.getReservePrice() != null ? req.getReservePrice() : req.getStartingPrice(),
                     req.getStartTime(),

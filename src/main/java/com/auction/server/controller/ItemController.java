@@ -1,6 +1,6 @@
 package com.auction.server.controller;
 
-import com.auction.common.request.CreateItemRequest;
+import com.auction.common.request.CreateAuctionRequest;
 import com.auction.common.response.ItemListResponse;
 import com.auction.common.response.SimpleResponse;
 import com.auction.server.dao.ItemDAO;
@@ -24,32 +24,10 @@ public class ItemController {
             }
 
             // ── Tạo item mới (Seller) ─────────────────────────────────────────
-            case "ITEM_CREATE" -> {
-                CreateItemRequest req = (CreateItemRequest) in.readObject();
-                try {
-                    Item item = createItemFromRequest(req);
-                    boolean ok = itemDAO.insertItem(item);
-                    out.writeObject(new SimpleResponse(ok,
-                            ok ? "Tạo sản phẩm thành công! ID=" + item.getId() : "Lỗi tạo sản phẩm"));
-                } catch (Exception e) {
-                    out.writeObject(new SimpleResponse(false, "Lỗi: " + e.getMessage()));
-                }
-                out.flush();
-            }
+            // phần này sẽ được tạo ở AuctionController nha anh em
 
             // ── Cập nhật item ─────────────────────────────────────────────────
-            case "ITEM_UPDATE" -> {
-                CreateItemRequest req = (CreateItemRequest) in.readObject();
-                try {
-                    Item item = createItemFromRequest(req);
-                    item.setId(req.getItemId());
-                    boolean ok = itemDAO.updateItem(item);
-                    out.writeObject(new SimpleResponse(ok, ok ? "Cập nhật thành công" : "Cập nhật thất bại"));
-                } catch (Exception e) {
-                    out.writeObject(new SimpleResponse(false, "Lỗi: " + e.getMessage()));
-                }
-                out.flush();
-            }
+            // update item để sau nếu có đủ tgian nhé
 
             // ── Xóa item ──────────────────────────────────────────────────────
             case "ITEM_DELETE" -> {
@@ -67,21 +45,5 @@ public class ItemController {
                 out.flush();
             }
         }
-    }
-
-    /** Factory Method: tạo đúng loại Item dựa vào category */
-    private Item createItemFromRequest(CreateItemRequest req) {
-        Item item = switch (req.getCategory()) {
-            case "ELECTRONICS" -> new Electronics();
-            case "ART"         -> new Art();
-            case "VEHICLE"     -> new Vehicle();
-            default            -> throw new IllegalArgumentException("Danh mục không hợp lệ: " + req.getCategory());
-        };
-        item.setName(req.getName());
-        item.setDescription(req.getDescription());
-        item.setStartingPrice(req.getStartingPrice());
-        item.setSellerId(req.getSellerId());
-        item.setCategory(ItemCategory.valueOf(req.getCategory()));
-        return item;
     }
 }

@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 public class CreateAuctionRequest implements Serializable {
     private static final long serialVersionIDL=1L;
 
-    private int sellerId;
     private String itemName;
     private String itemDescription;
     private String itemCategory;
@@ -17,8 +16,6 @@ public class CreateAuctionRequest implements Serializable {
     private LocalDateTime endTime;
 
     public CreateAuctionRequest(){}
-    public int getSellerId() { return sellerId; }
-    public void setSellerId(int sellerId) { this.sellerId = sellerId; }
 
     public String getItemName() { return itemName; }
     public void setItemName(String itemName) { this.itemName = itemName; }

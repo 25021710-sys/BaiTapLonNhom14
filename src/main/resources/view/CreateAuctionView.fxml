@@ -17,7 +17,6 @@
             prefViewportWidth="900"
             prefViewportHeight="650"
             hbarPolicy="NEVER"
-            vbarPolicy="AS_NEEDED"
             style="-fx-background-color: transparent;"
             xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -44,52 +43,6 @@
                 <ComboBox fx:id="cbCategory"
                           promptText="Chọn danh mục"
                           onAction="#handleCategoryChange"/>
-            </VBox>
-
-            <!-- DYNAMIC FIELDS (UNDER CATEGORY) -->
-            <VBox fx:id="dynamicFields"
-                  spacing="10"
-                  style="-fx-background-color: white; -fx-padding: 12; -fx-border-color: #ddd; -fx-border-radius: 5;">
-
-                <!-- ART -->
-                <VBox fx:id="artFields" spacing="6" visible="false" managed="false">
-                    <Label text="Tác giả"/>
-                    <TextField fx:id="txtArtist" promptText="Nhập tác giả"/>
-
-                    <Label text="Năm ra đời"/>
-                    <TextField fx:id="txtArtYear" promptText="Ví dụ: 1999"/>
-
-                    <Label text="Chất liệu"/>
-                    <TextField fx:id="txtMaterial" promptText="Ví dụ: Sơn dầu, Gỗ..."/>
-                </VBox>
-
-                <!-- ELECTRONICS -->
-                <VBox fx:id="electronicFields" spacing="6" visible="false" managed="false">
-                    <Label text="Brand"/>
-                    <TextField fx:id="txtBrand" promptText="Ví dụ: Apple, Samsung"/>
-
-                    <Label text="Model"/>
-                    <TextField fx:id="txtModel" promptText="Ví dụ: iPhone 15 Pro"/>
-
-                    <Label text="Warranty (months)"/>
-                    <TextField fx:id="txtWarranty" promptText="Ví dụ: 12"/>
-                </VBox>
-
-                <!-- VEHICLES -->
-                <VBox fx:id="vehicleFields" spacing="6" visible="false" managed="false">
-                    <Label text="Hãng xe"/>
-                    <TextField fx:id="txtCarBrand" promptText="Ví dụ: Honda, Toyota"/>
-
-                    <Label text="Dòng xe"/>
-                    <TextField fx:id="txtCarModel" promptText="Ví dụ: Civic, Vios"/>
-
-                    <Label text="Năm sản xuất"/>
-                    <TextField fx:id="txtYear" promptText="Ví dụ: 2020"/>
-
-                    <Label text="Số km đã đi"/>
-                    <TextField fx:id="txtMileage" promptText="Ví dụ: 50000"/>
-                </VBox>
-
             </VBox>
 
             <!-- DESCRIPTION -->
