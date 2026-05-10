@@ -150,6 +150,10 @@ public class AdminAuctionApprovalController implements Initializable {
             GetPendingAuctionRequestsResponse response =
                     SocketClient.getInstance().getPendingAuctionRequests(request);
 
+            // THÊM DÒNG NÀY
+            System.out.println("=== CLIENT DEBUG: response = " +
+                    (response != null ? response.isSuccess() + " | " + response.getMessage() : "null"));
+
             javafx.application.Platform.runLater(() -> {
                 if (response == null || response.getRequests() == null) {
                     tblAuctionRequests.setItems(FXCollections.observableArrayList());
