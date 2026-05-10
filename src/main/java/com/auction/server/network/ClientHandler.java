@@ -60,20 +60,26 @@ public class ClientHandler implements Runnable, AuctionObserver {
             log.info("[{}] Kết nối thành công.", clientAddr);
 
             while (true) {
-                String action = (String) in.readObject();
-                log.info("[{}] Yêu cầu: {}", clientAddr, action);
+                Object obj = in.readObject();
 
-                String prefix = action.contains("_") ? action.split("_")[0] : action;
-                switch (prefix) {
-                    case "USER"    -> userController.processRequest(action, in, out);
-                    case "ITEM"    -> itemController.processRequest(action, in, out);
-                    case "BID", "AUCTION", "AUTOBID" ->
-                            auctionController.processRequest(action, in, out, session, this);
-                    default -> {
-                        log.warn("[{}] Action không xác định: {}", clientAddr, action);
-                        out.writeObject("ERROR_UNKNOWN_ACTION");
-                        out.flush();
+                if (obj instanceof String action) {
+
+                    log.info("[{}] Yêu cầu: {}", clientAddr, action);
+
+                    String prefix = action.contains("_") ? action.split("_")[0] : action;
+
+                    switch (prefix) {
+                        case "USER" -> userController.processRequest(action, in, out);
+                        case "ITEM" -> itemController.processRequest(action, in, out);
+                        case "BID", "AUCTION", "AUTOBID" ->
+                                auctionController.processRequest(action, in, out, session, this);
+                        default -> {
+                            log.warn("[{}] Action không xác định: {}", clientAddr, action);
+                            out.writeObject("ERROR_UNKNOWN_ACTION");
+                            out.flush();
+                        }
                     }
+
                 }
             }
 
