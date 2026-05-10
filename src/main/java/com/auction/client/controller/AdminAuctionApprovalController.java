@@ -244,7 +244,7 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleApprove() throws SQLException {
+    private void handleApprove(){
 
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel().getSelectedItem();
