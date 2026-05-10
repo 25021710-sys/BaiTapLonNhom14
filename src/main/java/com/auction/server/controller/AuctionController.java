@@ -137,14 +137,14 @@ public class AuctionController {
             CreateAuctionRequest req = (CreateAuctionRequest) in.readObject();
 
             // sellerId luôn lấy từ session, không tin client
-            req.setSellerId(session.getUserId());
+            int sellerId = session.getUserId();
 
             // Tạo Item đúng loại theo category
             Item item = createItemByCategory(req.getItemCategory());
             item.setName(req.getItemName());
             item.setDescription(req.getItemDescription());
             item.setStartingPrice(req.getStartingPrice());
-            item.setSellerId(req.getSellerId());
+            item.setSellerId(sellerId);
             item.setCategory(ItemCategory.valueOf(req.getItemCategory().toUpperCase()));
 
             boolean itemSaved = itemDAO.insertItem(item);
@@ -159,7 +159,7 @@ public class AuctionController {
 
             Auction auction = auctionService.createAuction(
                     item.getId(),
-                    req.getSellerId(),
+                    sellerId,
                     req.getStartingPrice(),
                     reservePrice,
                     req.getStartTime(),
