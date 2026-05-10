@@ -165,6 +165,22 @@ public class AuctionController {
                     req.getStartTime(),
                     req.getEndTime()
             );
+            if (req.getImageBase64() != null && !req.getImageBase64().isEmpty()) {
+                try {
+                    byte[] bytes = java.util.Base64.getDecoder().decode(req.getImageBase64());
+                    java.nio.file.Path dir = java.nio.file.Paths.get("images");
+                    if (!java.nio.file.Files.exists(dir)) {
+                        java.nio.file.Files.createDirectories(dir);
+                    }
+                    java.nio.file.Files.write(
+                            java.nio.file.Paths.get("images/" + auction.getId() + ".jpg"),
+                            bytes
+                    );
+                } catch (Exception e) {
+                    log.warn("Không lưu được ảnh cho auction {}: {}", auction.getId(), e.getMessage());
+                    // không return, vẫn tiếp tục bình thường
+                }
+            }
 
             AuctionDTO dto = mapToDTO(auction, item, session.getUsername());
             send(out, new CreateAuctionResponse(true,
@@ -240,8 +256,13 @@ public class AuctionController {
                 dto.setEndTime(a.getEndTime());
                 dto.setCreatedAt(a.getCreatedAt());
                 dto.setApprovalStatus(a.getStatus().name());
-                // Ảnh placeholder theo auctionId để mỗi phiên có ảnh khác nhau
-                dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200");
+                // ảnh real cho chất
+                String imagePath = "images/" + a.getId() + ".jpg";
+                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
+                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
+                } else {
+                    dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200"); // fallback
+                }
                 dtos.add(dto);
             }
             send(out, new GetPendingAuctionRequestsResponse(true, "OK", dtos));

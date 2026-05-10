@@ -14,6 +14,7 @@ public class CreateAuctionRequest implements Serializable {
     private BigDecimal reservePrice;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private String imageBase64;
 
     public CreateAuctionRequest(){}
 
@@ -37,4 +38,12 @@ public class CreateAuctionRequest implements Serializable {
 
     public LocalDateTime getEndTime() { return endTime; }
     public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
+    }
 }

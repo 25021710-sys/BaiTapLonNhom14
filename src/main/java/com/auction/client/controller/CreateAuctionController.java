@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,6 +52,7 @@ public class CreateAuctionController {
   @FXML private ImageView imgPreview;
 
   private final ObservableList<File> imageFiles = FXCollections.observableArrayList();
+  private String imageBase64; // thêm field này
 
   // ======================
   // INIT
@@ -184,7 +186,7 @@ public class CreateAuctionController {
       return;
     }
 
-    // PRICE CHECK
+      // PRICE CHECK
     double startPrice;
     try {
       startPrice = Double.parseDouble(txtStartPrice.getText().trim());
@@ -258,6 +260,17 @@ public class CreateAuctionController {
     req.setStartTime(startTime);
 
     req.setEndTime(endTime);
+
+    try {
+      if (!imageFiles.isEmpty()) {
+        File img = imageFiles.getFirst(); // lấy ảnh đầu tiên
+        byte[] bytes = java.nio.file.Files.readAllBytes(img.toPath());
+        String base64 = java.util.Base64.getEncoder().encodeToString(bytes);
+        req.setImageBase64(base64);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
     CreateAuctionResponse response =
             SocketClient.getInstance()
