@@ -220,6 +220,9 @@ public class AuctionController {
             in.readObject(); // đọc request object (GetPendingAuctionRequestsRequest) – bắt buộc để giải phóng stream
 
             List<Auction> auctions = auctionService.getPendingAuctions();
+            // THÊM 2 DÒNG NÀY
+            log.info("=== DEBUG: session role = {}", session.getLoggedInUser().getRole());
+            log.info("=== DEBUG: pending auctions count = {}", auctions.size());
             List<AdminAuctionRequestDTO> dtos = new ArrayList<>(auctions.size());
 
             for (Auction a : auctions) {

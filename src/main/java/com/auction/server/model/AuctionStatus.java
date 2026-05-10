@@ -3,6 +3,7 @@ package com.auction.server.model;
 public enum AuctionStatus {
     PENDING("Chờ duyệt"),
     OPEN("Mở"),
+    UPCOMING("Sắp diễn ra"),
     RUNNING("Đang diễn ra"),
     FINISHED("Kết thúc"),
     PAID("Đã thanh toán"),

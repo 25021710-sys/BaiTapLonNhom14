@@ -49,6 +49,8 @@ public class DashBoardController {
     @FXML private Button btnLeftFavorite;
     @FXML private Button btnRightFavorite;
     @FXML private BorderPane rootPane;
+    private Parent adminApprovalView;
+    private AdminAuctionApprovalController adminApprovalController;
 
     @FXML
     public void initialize() {
@@ -202,21 +204,22 @@ public class DashBoardController {
 
     @FXML
     public void handleAuctionApproval(ActionEvent event) {
-
         try {
-
             setActiveMenu(btnAuctionApproval);
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/view/AdminAuctionApprovalView.fxml"
-                    )
-            );
+            // Chỉ load FXML lần đầu
+            if (adminApprovalView == null) {
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource("/view/AdminAuctionApprovalView.fxml")
+                );
+                adminApprovalView = loader.load();
+                adminApprovalController = loader.getController();
+            } else {
+                // Lần sau chỉ refresh data, không load lại FXML
+                adminApprovalController.handleRefresh();
+            }
 
-            Parent view = loader.load();
-
-            // chỉ đổi CENTER
-            rootPane.setCenter(view);
+            rootPane.setCenter(adminApprovalView);
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -145,22 +145,21 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     private void loadPendingRequests() {
+        new Thread(() -> {
+            GetPendingAuctionRequestsRequest request = new GetPendingAuctionRequestsRequest();
+            GetPendingAuctionRequestsResponse response =
+                    SocketClient.getInstance().getPendingAuctionRequests(request);
 
-        GetPendingAuctionRequestsRequest request = new GetPendingAuctionRequestsRequest();
-
-
-        GetPendingAuctionRequestsResponse response =
-                SocketClient.getInstance().getPendingAuctionRequests(request);
-        if (response == null || response.getRequests() == null) {
-            tblAuctionRequests.setItems(FXCollections.observableArrayList());
-            return;
-        }
-        List<AdminAuctionRequestDTO> requests =
-                response.getRequests() != null ? response.getRequests() : List.of();
-
-        ObservableList<AdminAuctionRequestDTO> list =
-                FXCollections.observableArrayList(requests);
-        tblAuctionRequests.setItems(list);
+            javafx.application.Platform.runLater(() -> {
+                if (response == null || response.getRequests() == null) {
+                    tblAuctionRequests.setItems(FXCollections.observableArrayList());
+                    return;
+                }
+                ObservableList<AdminAuctionRequestDTO> list =
+                        FXCollections.observableArrayList(response.getRequests());
+                tblAuctionRequests.setItems(list);
+            });
+        }, "load-pending-thread").start();
     }
 
     // =====================================================
@@ -355,7 +354,7 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleRefresh(){
+    void handleRefresh(){
         loadPendingRequests();
     }
 
