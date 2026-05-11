@@ -271,10 +271,12 @@ public class AdminAuctionApprovalController implements Initializable {
 
                 if (response.isSuccess()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
-                    // Đợi 500ms rồi mới load lại
+                    tblAuctionRequests.getItems().remove(selected);
+                    tblAuctionRequests.getSelectionModel().clearSelection();
+                    // Đợi 1500ms rồi mới load lại
                     javafx.animation.PauseTransition pause =
                             new javafx.animation.PauseTransition(
-                                    javafx.util.Duration.millis(500));
+                                    javafx.util.Duration.millis(1500));
                     pause.setOnFinished(ev -> loadPendingRequests());
                     pause.play();
                 } else {
@@ -323,10 +325,12 @@ public class AdminAuctionApprovalController implements Initializable {
                 }
                 if (response.isSuccess()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+                    tblAuctionRequests.getItems().remove(selected);
+                    tblAuctionRequests.getSelectionModel().clearSelection();
                     //  Đợi 500ms rồi mới load lại
                     javafx.animation.PauseTransition pause =
                             new javafx.animation.PauseTransition(
-                                    javafx.util.Duration.millis(500));
+                                    javafx.util.Duration.millis(1500));
                     pause.setOnFinished(ev -> loadPendingRequests());
                     pause.play();
                 } else {
