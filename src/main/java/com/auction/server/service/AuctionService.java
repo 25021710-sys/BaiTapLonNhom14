@@ -535,6 +535,10 @@ public class AuctionService {
         return auctionDAO.findPendingAuctions();
     }
 
+    public List<Auction> getAuctionsBySeller(int sellerId) {
+        return auctionDAO.findBySeller(sellerId);
+    }
+
     // ── PRIVATE HELPERS ───────────────────────────────────────────────────────
 
     /**

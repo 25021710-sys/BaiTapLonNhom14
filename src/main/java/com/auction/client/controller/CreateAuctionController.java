@@ -64,7 +64,8 @@ public class CreateAuctionController {
     cbCategory.getItems().addAll(
             "ART",
             "ELECTRONICS",
-            "VEHICLE"
+            "VEHICLE",
+            "OTHER"
     );
 
     // Setup hours

@@ -336,4 +336,15 @@ public class SocketClient {
             return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
+
+    public synchronized AuctionListResponse getMyAuctions() {
+        try {
+            ensureConnected();
+            out.writeObject("AUCTION_GET_MY");
+            out.flush();
+            return readResponse();
+        } catch (Exception e) {
+            return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        }
+    }
 }

@@ -87,6 +87,7 @@ public class AuctionController {
             case "AUCTION_GET_BIDS"             -> handleGetBidHistory(in, out);
             case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out);
             case "AUTOBID_CANCEL"               -> handleCancelAutoBid(in, out);
+            case "AUCTION_GET_MY"               -> handleGetMyAuctions(out);
             default -> {
                 log.warn("Action không hỗ trợ: {}", action);
                 send(out, new SimpleResponse(false, "Action không hỗ trợ: " + action));
@@ -556,4 +557,28 @@ public class AuctionController {
             default -> throw new IllegalArgumentException("Danh mục không hợp lệ: " + category);
         };
     }
-}
+
+    /**
+     * AUCTION_GET_MY – lấy danh sách phiên đấu giá của seller đang đăng nhập.
+     * Yêu cầu: đã đăng nhập.
+     */
+    private void handleGetMyAuctions(ObjectOutputStream out) {
+        if (!requireLogin(out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        try {
+            int sellerId = session.getUserId();
+            List<Auction> auctions = auctionService.getAuctionsBySeller(sellerId);
+            List<AuctionDTO> dtos = new ArrayList<>(auctions.size());
+            for (Auction a : auctions) {
+                Item item = itemDAO.findById(a.getItemId());
+                AuctionDTO dto = mapToDTO(a, item, session.getUsername());
+                if (a.getHighestBidderId() != 0) {
+                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
+                }
+                dtos.add(dto);
+            }
+            send(out, new AuctionListResponse(true, "OK", dtos));
+        } catch (Exception e) {
+            log.error("Lỗi AUCTION_GET_MY: {}", e.getMessage(), e);
+            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
+        }
+    }}
