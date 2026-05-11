@@ -35,6 +35,7 @@ public class AuctionCardController {
 
   private Timeline countdown;
   private int auctionId;
+  private String auctionCode;
   private AuctionDTO currentDto;
   private Consumer<AuctionDTO> onJoinCallback;
 
@@ -55,14 +56,31 @@ public class AuctionCardController {
             dto.getHighestBidderUsername() != null
                     && !dto.getHighestBidderUsername().isEmpty()
                     ? dto.getHighestBidderUsername() : "Chưa có"));
+    // =========================
+    // STATUS TEXT
+    // =========================
 
+    String displayStatus;
+
+    switch (dto.getStatus()) {
+
+      case "OPEN" -> displayStatus = "SẮP DIỄN RA";
+
+      case "RUNNING" -> displayStatus = "ĐANG DIỄN RA";
+
+      case "ENDED" -> displayStatus = "ĐÃ KẾT THÚC";
+
+      default -> displayStatus = dto.getStatus();
+    }
+
+    lblStatus.setText(displayStatus);
     // Màu status
     switch (dto.getStatus()) {
-      case "RUNNING", "ĐANG DIỄN RA" -> lblStatus.setStyle(
+      case "RUNNING"-> lblStatus.setStyle(
               "-fx-font-size: 12px; -fx-font-weight: bold;" +
                       "-fx-padding: 6 12; -fx-background-radius: 10;" +
                       "-fx-background-color: #d1fae5; -fx-text-fill: #047857;");
-      case "OPEN", "SẮP DIỄN RA" -> lblStatus.setStyle(
+      case "OPEN"-> lblStatus.setStyle(
               "-fx-font-size: 12px; -fx-font-weight: bold;" +
                       "-fx-padding: 6 12; -fx-background-radius: 10;" +
                       "-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8;");
@@ -86,57 +104,6 @@ public class AuctionCardController {
     rootCard.setOnMouseClicked(e -> {
       if (onJoinCallback != null && currentDto != null)
         onJoinCallback.accept(currentDto);
-    });
-  }
-
-  // Giữ nguyên method cũ cho MyAuctionController
-  public void setData(String productName,
-                      int auctionId,
-                      String status,
-                      String currentPrice,
-                      String leader,
-                      String timeLeft,
-                      String imageUrl) {
-
-    this.auctionId = auctionId;
-
-    lblProductName.setText(productName);
-    lblAuctionCode.setText("Mã: " + auctionId);
-    lblCurrentPrice.setText(currentPrice);
-    lblLeader.setText("Dẫn đầu: " + leader);
-    lblStatus.setText(status);
-    lblTimeLeft.setText(timeLeft);
-
-    try {
-      if (imageUrl != null && !imageUrl.isEmpty()) {
-        imgProduct.setImage(new Image(imageUrl, true));
-      }
-    } catch (Exception e) {
-      System.out.println("Không load được ảnh: " + imageUrl);
-    }
-
-    // Màu status
-    switch (status) {
-      case "RUNNING" -> lblStatus.setStyle(
-              "-fx-font-size: 12px; -fx-font-weight: bold;" +
-                      "-fx-padding: 6 12; -fx-background-radius: 10;" +
-                      "-fx-background-color: #d1fae5; -fx-text-fill: #047857;");
-      case "OPEN" -> lblStatus.setStyle(
-              "-fx-font-size: 12px; -fx-font-weight: bold;" +
-                      "-fx-padding: 6 12; -fx-background-radius: 10;" +
-                      "-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8;");
-      default -> lblStatus.setStyle(
-              "-fx-font-size: 12px; -fx-font-weight: bold;" +
-                      "-fx-padding: 6 12; -fx-background-radius: 10;" +
-                      "-fx-background-color: #fee2e2; -fx-text-fill: #b91c1c;");
-    }
-
-    // Click card → chuyển sang AuctionRoom nếu có callback + dto
-    rootCard.setOnMouseClicked(e -> {
-      if (onJoinCallback != null && currentDto != null)
-        onJoinCallback.accept(currentDto);
-      else
-        System.out.println("Open auction detail: " + this.auctionId);
     });
   }
 
