@@ -1,6 +1,9 @@
 package com.auction.client.controller;
+import com.auction.client.network.SocketClient;
+import com.auction.common.dto.AuctionDTO;
 import com.auction.common.dto.UserDTO;
 import com.auction.client.session.ClientSession;
+import com.auction.common.response.AuctionListResponse;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -96,13 +99,30 @@ public class DashBoardController {
     }
 
     public void renderCards() {
-        try {
-            renderSection(pnlBidsJoined, 10);
-            renderSection(pnlFeaturedProducts, 10);
-            renderSection(pnlFavoriteProducts, 10);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        new Thread(() -> {
+            AuctionListResponse response =
+                    SocketClient.getInstance().getActiveAuctions();
+
+            javafx.application.Platform.runLater(() -> {
+                if (response == null || response.getAuctions() == null
+                        || response.getAuctions().isEmpty()) return;
+
+                pnlFeaturedProducts.getChildren().clear();
+
+                for (AuctionDTO dto : response.getAuctions()) {
+                    try {
+                        FXMLLoader loader = new FXMLLoader(
+                                getClass().getResource("/view/AuctionCard.fxml"));
+                        Parent card = loader.load();
+                        AuctionCardController ctrl = loader.getController();
+                        ctrl.setData(dto);
+                        pnlFeaturedProducts.getChildren().add(card);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }, "load-auctions-thread").start();
     }
 
     private void renderSection(HBox panel, int count) throws IOException {
