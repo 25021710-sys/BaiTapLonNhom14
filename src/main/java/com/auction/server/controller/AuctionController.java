@@ -4,6 +4,7 @@ import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.common.request.*;
 import com.auction.common.response.*;
+import com.auction.server.dao.AuctionDAO;
 import com.auction.server.dao.BidDAO;
 import com.auction.server.dao.ItemDAO;
 import com.auction.server.dao.UserDAO;
@@ -64,6 +65,7 @@ public class AuctionController {
     private final ItemDAO        itemDAO          = new ItemDAO();
     private final UserDAO        userDAO          = new UserDAO();
     private final BidDAO         bidDAO           = new BidDAO();
+    private final AuctionDAO auctionDAO = new AuctionDAO();
 
     // Session được set mỗi request (mutable field — giống bản gốc)
     private ServerSession session;
@@ -237,51 +239,20 @@ public class AuctionController {
                 "ADMIN")) return;
         try {
             in.readObject();
+
+            // Kiểm tra cache
             long now = System.currentTimeMillis();
             if (pendingDtoCache != null && (now - pendingCacheTimeMs) < CACHE_TTL) {
                 send(out, new GetPendingAuctionRequestsResponse(true, "OK", pendingDtoCache));
                 return;
             }
 
-            List<Auction> auctions = auctionService.getPendingAuctions();
+            // ✅ 1 query JOIN thay vì N+1 query
+            List<AdminAuctionRequestDTO> dtos = auctionDAO.findPendingWithDetails();
 
-            // Cache username - tránh query lặp lại cùng 1 user
-            Map<Integer, String> usernameCache = new java.util.HashMap<>();
-
-            List<AdminAuctionRequestDTO> dtos = new ArrayList<>(auctions.size());
-
-            for (Auction a : auctions) {
-                Item item = itemDAO.findById(a.getItemId());
-                if (item == null) continue;
-
-                AdminAuctionRequestDTO dto = new AdminAuctionRequestDTO();
-                dto.setRequestId(a.getId());
-                dto.setItemName(item.getName());
-                dto.setItemDescription(item.getDescription());
-                dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
-
-                // Dùng cache thay vì query DB mỗi lần
-                String sellerName = usernameCache.computeIfAbsent(
-                        a.getSellerId(), id -> resolveUsername(id)
-                );
-                dto.setSellerUsername(sellerName);
-
-                dto.setStartingPrice(a.getStartingPrice());
-                dto.setStartTime(a.getStartTime());
-                dto.setEndTime(a.getEndTime());
-                dto.setCreatedAt(a.getCreatedAt());
-                dto.setApprovalStatus(a.getStatus().name());
-
-                String imagePath = "images/" + a.getId() + ".jpg";
-                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
-                } else {
-                    dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200");
-                }
-                dtos.add(dto);
-            }
             pendingDtoCache = dtos;
             pendingCacheTimeMs = System.currentTimeMillis();
+
             send(out, new GetPendingAuctionRequestsResponse(true, "OK", dtos));
         } catch (Exception e) {
             log.error("Lỗi AUCTION_GET_PENDING_REQUESTS: {}", e.getMessage(), e);
