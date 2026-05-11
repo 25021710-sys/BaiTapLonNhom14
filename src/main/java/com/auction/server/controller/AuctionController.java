@@ -531,6 +531,13 @@ public class AuctionController {
         dto.setStatus(a.getStatus() != null ? a.getStatus().name() : "");
         dto.setExtensionCount(a.getExtensionCount());
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
+
+        String imagePath = "images/" + a.getId() + ".jpg";
+        if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
+            dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
+        } else {
+            dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200");
+        }
         return dto;
     }
 

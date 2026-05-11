@@ -41,7 +41,7 @@ public class MyAuctionController {
 
     addAuctionCard(
         "Rolex Submariner 2024",
-        "AUC-2026-001",
+        1,
         "ĐANG DIỄN RA",
         "12,500,000 VNĐ",
         "duyanh",
@@ -51,8 +51,8 @@ public class MyAuctionController {
 
     addAuctionCard(
         "Macbook Pro M3 Max",
-        "AUC-2026-002",
-        "KẾT THÚC",
+        2,
+        "SẮP DIỄN RA",
         "38,000,000 VNĐ",
         "minh123",
         "00:00:00",
@@ -61,7 +61,7 @@ public class MyAuctionController {
   }
 
   private void addAuctionCard(String productName,
-                              String auctionCode,
+                              int auctionId,
                               String status,
                               String currentPrice,
                               String leader,
@@ -73,7 +73,7 @@ public class MyAuctionController {
       Parent cardNode = loader.load();
 
       AuctionCardController controller = loader.getController();
-      controller.setData(productName, auctionCode, status, currentPrice, leader, timeLeft, imageUrl);
+      controller.setData(productName, auctionId, status, currentPrice, leader, timeLeft, imageUrl);
 
       auctionListContainer.getChildren().add(cardNode);
 
