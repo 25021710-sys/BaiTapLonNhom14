@@ -68,32 +68,41 @@ public class SocketClient {
 
     // ── Kết nối ───────────────────────────────────────────────────────────────
 
-    public synchronized void connect() throws IOException {
-        if (isConnected()) return;
-        socket = new Socket(host, port);
-        out = new ObjectOutputStream(socket.getOutputStream());
-        out.flush();
-        in  = new ObjectInputStream(socket.getInputStream());
-        startPushListener();
-        System.out.println("[SocketClient] Đã kết nối đến " + host + ":" + port);
+    public void connect() throws IOException {
+        synchronized (requestLock) {
+            if (isConnected()) return;
+            socket = new Socket(host, port);
+            out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
+            in  = new ObjectInputStream(socket.getInputStream());
+            startPushListener();
+            System.out.println("[SocketClient] Đã kết nối đến " + host + ":" + port);
+        }
     }
 
-    public synchronized void disconnect() {
-        try { if (in != null) in.close();     } catch (Exception ignored) {}
-        try { if (out != null) out.close();   } catch (Exception ignored) {}
-        try { if (socket != null) socket.close(); } catch (Exception ignored) {}
-        in = null; out = null; socket = null;
-        responseQueue.clear();
+    public void disconnect() {
+        synchronized (requestLock) {
+            try { if (in != null) in.close();     } catch (Exception ignored) {}
+            try { if (out != null) out.close();   } catch (Exception ignored) {}
+            try { if (socket != null) socket.close(); } catch (Exception ignored) {}
+            in = null; out = null; socket = null;
+            responseQueue.clear();
+        }
     }
 
     public boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
-    private synchronized void ensureConnected() throws IOException {
+    private void ensureConnected() throws IOException {
+        // Gọi trong requestLock nên không cần synchronized riêng
         if (!isConnected()) {
             System.out.println("[SocketClient] Mất kết nối — đang kết nối lại...");
-            connect();
+            socket = new Socket(host, port);
+            out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
+            in  = new ObjectInputStream(socket.getInputStream());
+            startPushListener();
         }
     }
 
@@ -116,6 +125,7 @@ public class SocketClient {
             while (isConnected()) {
                 try {
                     Object obj = in.readObject();
+                    System.out.println("CLIENT RECEIVED: " + obj);
                     if ("AUCTION_PUSH_UPDATE".equals(obj)) {
                         AuctionUpdateDTO update = (AuctionUpdateDTO) in.readObject();
                         Consumer<AuctionUpdateDTO> cb = pushCallback;
@@ -130,9 +140,8 @@ public class SocketClient {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
-                    if (isConnected()) {
-                        System.err.println("[SocketClient] Push listener lỗi: " + e.getMessage());
-                    }
+                    System.err.println("=== PUSH LISTENER CRASH ===");
+                    e.printStackTrace();
                     break;
                 }
             }
