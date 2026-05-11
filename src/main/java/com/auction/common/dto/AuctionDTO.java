@@ -12,6 +12,7 @@ public class AuctionDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private int auctionId;
+    private String auctionCode;
     private int itemId;
     private String itemName;
     private String itemDescription;
@@ -27,6 +28,7 @@ public class AuctionDTO implements Serializable {
     private String status;
     private int extensionCount;
     private int totalBids;
+    private String imageUrl;
 
     public AuctionDTO() {}
 
@@ -78,4 +80,10 @@ public class AuctionDTO implements Serializable {
 
     public int getTotalBids() { return totalBids; }
     public void setTotalBids(int totalBids) { this.totalBids = totalBids; }
+
+    public String getImageUrl() {return imageUrl;}
+    public void setImageUrl(String imageUrl) {this.imageUrl = imageUrl;}
+
+    public String getAuctionCode() {return auctionCode;}
+    public void setAuctionCode(String auctionCode) {this.auctionCode = auctionCode;}
 }

@@ -1,0 +1,568 @@
+/* ================================================================
+   AuctionRoomStyle.css  – Phòng đấu giá trực tiếp
+   Palette: Deep navy #1B2A3B · Amber #E67E22 · Mint #27AE60
+   ================================================================ */
+
+/* ── ROOT ───────────────────────────────────────────────────────── */
+.root {
+    -fx-background-color: #F0F2F5;
+    -fx-font-family: "Segoe UI", "SF Pro Display", Helvetica, sans-serif;
+}
+
+/* ── HEADER BAR ─────────────────────────────────────────────────── */
+.header-bar {
+    -fx-background-color: #1B2A3B;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.30), 8, 0, 0, 3);
+    -fx-min-height: 60;
+}
+
+.header-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ECEFF1;
+    -fx-max-width: 400;
+}
+
+/* ── STATUS BADGES ──────────────────────────────────────────────── */
+.badge-running {
+    -fx-background-color: #2ECC71;
+    -fx-text-fill: white;
+    -fx-padding: 4 12 4 12;
+    -fx-background-radius: 20;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.badge-ended {
+    -fx-background-color: #E74C3C;
+    -fx-text-fill: white;
+    -fx-padding: 4 12 4 12;
+    -fx-background-radius: 20;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.badge-pending {
+    -fx-background-color: #F39C12;
+    -fx-text-fill: white;
+    -fx-padding: 4 12 4 12;
+    -fx-background-radius: 20;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.badge-open {
+    -fx-background-color: #3498DB;
+    -fx-text-fill: white;
+    -fx-padding: 4 12 4 12;
+    -fx-background-radius: 20;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+/* ── HEADER STATS ───────────────────────────────────────────────── */
+.stat-label {
+    -fx-text-fill: #78909C;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+}
+
+.stat-value {
+    -fx-text-fill: #ECEFF1;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.stat-value-price {
+    -fx-text-fill: #F39C12;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ── SCROLL AREAS ───────────────────────────────────────────────── */
+.main-scroll,
+.right-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.main-scroll > .viewport,
+.right-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.main-content {
+    -fx-background-color: transparent;
+}
+
+/* ── IMAGE AREA ─────────────────────────────────────────────────── */
+.image-container {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E0E4E8;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 4, 0, 0, 2);
+}
+
+.image-placeholder {
+    -fx-text-fill: #B0BEC5;
+    -fx-font-size: 13px;
+}
+
+.thumb-container {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E0E4E8;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+.thumb-container:hover {
+    -fx-border-color: #2196F3;
+    -fx-effect: dropshadow(three-pass-box, rgba(33,150,243,0.25), 4, 0, 0, 0);
+}
+
+/* ── INFO CARDS ─────────────────────────────────────────────────── */
+.info-card {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E8ECF0;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.06), 4, 0, 0, 2);
+}
+
+.card-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2C3E50;
+    -fx-padding: 11 14 11 14;
+}
+
+.card-divider {
+    -fx-background-color: #EEF0F3;
+}
+
+.info-key {
+    -fx-text-fill: #78909C;
+    -fx-font-size: 12px;
+    -fx-min-width: 130;
+}
+
+.info-val {
+    -fx-text-fill: #2C3E50;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.info-val-link {
+    -fx-text-fill: #2196F3;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.info-val-winner {
+    -fx-text-fill: #E67E22;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.info-val-mono {
+    -fx-text-fill: #607D8B;
+    -fx-font-size: 12px;
+    -fx-font-family: "Consolas", monospace;
+}
+
+.desc-area {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 10 12 10 12;
+    -fx-font-size: 12px;
+    -fx-text-fill: #546E7A;
+}
+.desc-area .content {
+    -fx-background-color: transparent;
+}
+
+/* ── TABS ────────────────────────────────────────────────────────── */
+.main-tabs {
+    -fx-tab-max-height: 36;
+    -fx-background-color: transparent;
+}
+
+.main-tabs .tab-header-area .tab-header-background {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E8ECF0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.main-tabs .tab {
+    -fx-background-color: transparent;
+    -fx-padding: 6 14 6 14;
+    -fx-font-size: 12px;
+    -fx-text-fill: #78909C;
+}
+
+.main-tabs .tab:selected {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #1976D2;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent transparent #1976D2 transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.main-tabs .tab-content-area {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E8ECF0;
+    -fx-border-width: 0 1 1 1;
+}
+
+/* ── BID HISTORY TABLE ───────────────────────────────────────────── */
+.bid-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.bid-table .column-header-background {
+    -fx-background-color: #F5F7FA;
+}
+
+.bid-table .column-header {
+    -fx-background-color: #F5F7FA;
+    -fx-border-color: #E0E4E8;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-text-fill: #546E7A;
+}
+
+.bid-table .table-row-cell {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent transparent #F0F2F5 transparent;
+    -fx-font-size: 12px;
+}
+
+.bid-table .table-row-cell:odd {
+    -fx-background-color: #FAFBFC;
+}
+
+.bid-table .table-row-cell:selected {
+    -fx-background-color: #E3F2FD;
+}
+
+.bid-table .table-row-cell:hover {
+    -fx-background-color: #EEF3FD;
+}
+
+.filter-label {
+    -fx-text-fill: #546E7A;
+    -fx-font-size: 12px;
+}
+
+.filter-combo {
+    -fx-font-size: 12px;
+}
+
+/* ── PRICE CHART ─────────────────────────────────────────────────── */
+.price-chart {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.price-chart .chart-plot-background {
+    -fx-background-color: #FAFBFD;
+}
+.price-chart .chart-vertical-grid-lines {
+    -fx-stroke: #E8ECF0;
+}
+.price-chart .chart-horizontal-grid-lines {
+    -fx-stroke: #E8ECF0;
+}
+.price-chart .default-color0.chart-series-line {
+    -fx-stroke: #E67E22;
+    -fx-stroke-width: 2.5px;
+}
+.price-chart .default-color0.chart-line-symbol {
+    -fx-background-color: #E67E22, white;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+.price-chart .axis {
+    -fx-font-size: 11px;
+    -fx-text-fill: #78909C;
+}
+.price-chart .axis-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #90A4AE;
+}
+
+/* ── CHAT ────────────────────────────────────────────────────────── */
+.chat-list {
+    -fx-background-color: #FAFBFC;
+    -fx-border-color: transparent;
+    -fx-font-size: 12px;
+}
+
+.chat-list .list-cell {
+    -fx-padding: 6 10 6 10;
+    -fx-text-fill: #37474F;
+    -fx-border-color: transparent transparent #F0F2F5 transparent;
+    -fx-background-color: transparent;
+}
+
+.chat-list .list-cell:odd {
+    -fx-background-color: #F5F7FA;
+}
+
+.chat-input {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CFD8DC;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-padding: 8 14 8 14;
+    -fx-font-size: 12px;
+}
+
+.chat-input:focused {
+    -fx-border-color: #2196F3;
+}
+
+.btn-chat-send {
+    -fx-background-color: #1976D2;
+    -fx-text-fill: white;
+    -fx-background-radius: 20;
+    -fx-padding: 8 18 8 18;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+.btn-chat-send:hover {
+    -fx-background-color: #1565C0;
+}
+
+/* ── RIGHT BID PANEL ─────────────────────────────────────────────── */
+.bid-panel {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E0E4E8;
+    -fx-border-width: 0 0 0 1;
+}
+
+.panel-section {
+    -fx-padding: 16 16 16 16;
+}
+
+.panel-sep {
+    -fx-background-color: #EEF0F3;
+}
+
+.panel-section-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #37474F;
+}
+
+/* ── COUNTDOWN ───────────────────────────────────────────────────── */
+.countdown-label {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2C3E50;
+}
+
+/* FIX 7: cảnh báo dưới 5 phút */
+.countdown-warning {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #E67E22;
+}
+
+/* FIX 7: khẩn cấp dưới 1 phút */
+.countdown-critical {
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #C0392B;
+    -fx-effect: dropshadow(three-pass-box, rgba(192,57,43,0.3), 5, 0, 0, 0);
+}
+
+.countdown-sub {
+    -fx-font-size: 11px;
+    -fx-text-fill: #90A4AE;
+}
+
+/* ── CURRENT PRICE ───────────────────────────────────────────────── */
+.current-price-big {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #E67E22;
+}
+
+/* ── STATUS LABELS ───────────────────────────────────────────────── */
+.status-winning {
+    -fx-text-fill: #27AE60;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+.status-losing {
+    -fx-text-fill: #E74C3C;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+.status-neutral {
+    -fx-text-fill: #7F8C8D;
+    -fx-font-size: 12px;
+}
+
+/* ── BID INPUT ───────────────────────────────────────────────────── */
+.bid-input {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CFD8DC;
+    -fx-border-width: 2;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10 12 10 12;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+.bid-input:focused {
+    -fx-border-color: #E67E22;
+    -fx-effect: dropshadow(three-pass-box, rgba(230,126,34,0.20), 6, 0, 0, 0);
+}
+
+.btn-quick {
+    -fx-background-color: #FFF3E0;
+    -fx-text-fill: #E67E22;
+    -fx-border-color: #FFCC80;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 7 0 7 0;
+}
+.btn-quick:hover {
+    -fx-background-color: #FFE0B2;
+}
+
+.btn-bid-primary {
+    -fx-background-color: linear-gradient(to bottom, #27AE60, #219A52);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(39,174,96,0.35), 6, 0, 0, 2);
+}
+.btn-bid-primary:hover {
+    -fx-background-color: linear-gradient(to bottom, #2ECC71, #27AE60);
+    -fx-effect: dropshadow(three-pass-box, rgba(39,174,96,0.5), 10, 0, 0, 3);
+}
+.btn-bid-primary:pressed {
+    -fx-background-color: #1E8449;
+}
+.btn-bid-primary:disabled {
+    -fx-background-color: #BDC3C7;
+    -fx-effect: none;
+}
+
+.bid-error-label {
+    -fx-text-fill: #C0392B;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 10 6 10;
+    -fx-background-color: #FDEDEC;
+    -fx-background-radius: 6;
+    -fx-border-color: #F1948A;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-wrap-text: true;
+}
+
+/* ── AUTO BID ────────────────────────────────────────────────────── */
+.auto-bid-check {
+    -fx-font-size: 13px;
+    -fx-text-fill: #37474F;
+}
+
+.auto-bid-input {
+    -fx-background-color: #F5F7FA;
+    -fx-border-color: #CFD8DC;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 10 8 10;
+    -fx-font-size: 12px;
+}
+.auto-bid-input:focused {
+    -fx-border-color: #1976D2;
+    -fx-background-color: #FFFFFF;
+}
+.auto-bid-input:disabled {
+    -fx-opacity: 0.5;
+}
+
+.btn-auto-on {
+    -fx-background-color: #1976D2;
+    -fx-text-fill: white;
+    -fx-background-radius: 7;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+    -fx-padding: 8 0 8 0;
+}
+.btn-auto-on:hover {
+    -fx-background-color: #1565C0;
+}
+
+.btn-auto-off {
+    -fx-background-color: #ECEFF1;
+    -fx-text-fill: #546E7A;
+    -fx-background-radius: 7;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+    -fx-padding: 8 0 8 0;
+    -fx-border-color: #CFD8DC;
+    -fx-border-width: 1;
+}
+.btn-auto-off:hover {
+    -fx-background-color: #E0E4E8;
+}
+
+.auto-bid-hint {
+    -fx-text-fill: #90A4AE;
+    -fx-font-size: 10px;
+    -fx-font-style: italic;
+}
+
+/* ── SELLER INFO ─────────────────────────────────────────────────── */
+.seller-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2C3E50;
+}
+.seller-rating {
+    -fx-font-size: 12px;
+    -fx-text-fill: #F39C12;
+}
+.seller-meta {
+    -fx-font-size: 11px;
+    -fx-text-fill: #7F8C8D;
+}
+
+/* ── COMMON BUTTONS ──────────────────────────────────────────────── */
+.btn-secondary {
+    -fx-background-color: #F5F7FA;
+    -fx-text-fill: #37474F;
+    -fx-border-color: #CFD8DC;
+    -fx-border-width: 1;
+    -fx-border-radius: 7;
+    -fx-background-radius: 7;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+    -fx-padding: 7 12 7 12;
+}
+.btn-secondary:hover {
+    -fx-background-color: #E8ECF0;
+}
+
+/* ── SEPARATOR ───────────────────────────────────────────────────── */
+.separator .line {
+    -fx-border-color: #EEF0F3;
+    -fx-border-width: 1 0 0 0;
+}

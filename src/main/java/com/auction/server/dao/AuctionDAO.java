@@ -287,19 +287,4 @@ public class AuctionDAO {
 
         return list;
     }
-
-    /** Lấy tất cả phiên đấu giá của một seller */
-    public List<Auction> findBySeller(int sellerId) {
-        String sql = "SELECT * FROM auctions WHERE seller_id = ? ORDER BY created_at DESC";
-        List<Auction> list = new ArrayList<>();
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, sellerId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) list.add(mapRow(rs));
-        } catch (Exception e) {
-            logger.error("Lỗi findBySeller", e);
-        }
-        return list;
-    }
 }

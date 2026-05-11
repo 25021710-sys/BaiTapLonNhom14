@@ -4,6 +4,7 @@ import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.common.request.*;
 import com.auction.common.response.*;
+import com.auction.server.dao.AuctionDAO;
 import com.auction.server.dao.BidDAO;
 import com.auction.server.dao.ItemDAO;
 import com.auction.server.dao.UserDAO;
@@ -21,6 +22,7 @@ import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * AuctionController – xử lý tất cả request liên quan đến đấu giá từ client.
@@ -51,6 +53,10 @@ import java.util.List;
 public class AuctionController {
 
     private static final Logger log = LoggerFactory.getLogger(AuctionController.class);
+    // AuctionController.java - thêm field
+    private static List<AdminAuctionRequestDTO> pendingDtoCache = null;
+    private static long pendingCacheTimeMs = 0;
+    private static final long CACHE_TTL = 5_000; // 5 giây
 
     // ── Dependencies ──────────────────────────────────────────────────────────
     private final AuctionManager auctionManager = AuctionManager.getInstance();
@@ -59,6 +65,7 @@ public class AuctionController {
     private final ItemDAO        itemDAO          = new ItemDAO();
     private final UserDAO        userDAO          = new UserDAO();
     private final BidDAO         bidDAO           = new BidDAO();
+    private final AuctionDAO auctionDAO = new AuctionDAO();
 
     // Session được set mỗi request (mutable field — giống bản gốc)
     private ServerSession session;
@@ -232,38 +239,21 @@ public class AuctionController {
         if (!requireRole(out, new GetPendingAuctionRequestsResponse(false, "Không có quyền truy cập.", null),
                 "ADMIN")) return;
         try {
-            in.readObject(); // đọc request object (GetPendingAuctionRequestsRequest) – bắt buộc để giải phóng stream
+            in.readObject();
 
-            List<Auction> auctions = auctionService.getPendingAuctions();
-            // THÊM 2 DÒNG NÀY
-            log.info("=== DEBUG: session role = {}", session.getLoggedInUser().getRole());
-            log.info("=== DEBUG: pending auctions count = {}", auctions.size());
-            List<AdminAuctionRequestDTO> dtos = new ArrayList<>(auctions.size());
-
-            for (Auction a : auctions) {
-                Item item = itemDAO.findById(a.getItemId());
-                if (item == null) continue; // bỏ qua nếu item bị xóa
-
-                AdminAuctionRequestDTO dto = new AdminAuctionRequestDTO();
-                dto.setRequestId(a.getId());
-                dto.setItemName(item.getName());
-                dto.setItemDescription(item.getDescription());
-                dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
-                dto.setSellerUsername(resolveUsername(a.getSellerId()));
-                dto.setStartingPrice(a.getStartingPrice());
-                dto.setStartTime(a.getStartTime());
-                dto.setEndTime(a.getEndTime());
-                dto.setCreatedAt(a.getCreatedAt());
-                dto.setApprovalStatus(a.getStatus().name());
-                // ảnh real cho chất
-                String imagePath = "images/" + a.getId() + ".jpg";
-                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
-                } else {
-                    dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200"); // fallback
-                }
-                dtos.add(dto);
+            // Kiểm tra cache
+            long now = System.currentTimeMillis();
+            if (pendingDtoCache != null && (now - pendingCacheTimeMs) < CACHE_TTL) {
+                send(out, new GetPendingAuctionRequestsResponse(true, "OK", pendingDtoCache));
+                return;
             }
+
+            // ✅ 1 query JOIN thay vì N+1 query
+            List<AdminAuctionRequestDTO> dtos = auctionDAO.findPendingWithDetails();
+
+            pendingDtoCache = dtos;
+            pendingCacheTimeMs = System.currentTimeMillis();
+
             send(out, new GetPendingAuctionRequestsResponse(true, "OK", dtos));
         } catch (Exception e) {
             log.error("Lỗi AUCTION_GET_PENDING_REQUESTS: {}", e.getMessage(), e);
@@ -542,6 +532,13 @@ public class AuctionController {
         dto.setStatus(a.getStatus() != null ? a.getStatus().name() : "");
         dto.setExtensionCount(a.getExtensionCount());
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
+
+        String imagePath = "images/" + a.getId() + ".jpg";
+        if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
+            dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
+        } else {
+            dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200");
+        }
         return dto;
     }
 

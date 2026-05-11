@@ -1,9 +1,5 @@
 package com.auction.client.controller;
 
-import com.auction.client.network.SocketClient;
-import com.auction.common.dto.AuctionDTO;
-import com.auction.common.response.AuctionListResponse;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,97 +8,78 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 public class MyAuctionController {
 
-  @FXML private ComboBox<String> cbStatus;
-  @FXML private VBox auctionListContainer;
+  @FXML
+  private ComboBox<String> cbStatus;
+
+  @FXML
+  private VBox auctionListContainer;
 
   @FXML
   public void initialize() {
-    cbStatus.getItems().addAll("Tat ca", "Dang dien ra", "Da ket thuc");
-    cbStatus.setValue("Tat ca");
+
+    cbStatus.getItems().addAll(
+        "Tất cả",
+        "Đang diễn ra",
+        "Đã kết thúc"
+    );
+
+    cbStatus.setValue("Tất cả");
+
     cbStatus.setOnAction(e -> loadMyAuction());
+
     loadMyAuction();
   }
 
   private void loadMyAuction() {
+
     auctionListContainer.getChildren().clear();
 
-    new Thread(() -> {
-      AuctionListResponse response = SocketClient.getInstance().getMyAuctions();
+    // DEMO DATA (sau này thay bằng data từ server)
 
-      Platform.runLater(() -> {
-        if (response == null || !response.isSuccess() || response.getAuctions() == null) {
-          System.out.println("Khong lay duoc danh sach: "
-              + (response != null ? response.getMessage() : "null"));
-          return;
-        }
+    addAuctionCard(
+        "Rolex Submariner 2024",
+        "AUC-2026-001",
+        "ĐANG DIỄN RA",
+        "12,500,000 VNĐ",
+        "duyanh",
+        "00:12:35",
+        "https://i.imgur.com/2nCt3Sbl.jpg"
+    );
 
-        String filter = cbStatus.getValue();
-
-        for (AuctionDTO dto : response.getAuctions()) {
-          boolean isRunning = "OPEN".equals(dto.getStatus())
-              || "RUNNING".equals(dto.getStatus());
-
-          if ("Dang dien ra".equals(filter) && !isRunning) continue;
-          if ("Da ket thuc".equals(filter) && isRunning) continue;
-
-          addAuctionCard(dto);
-        }
-      });
-    }, "load-my-auctions-thread").start();
+    addAuctionCard(
+        "Macbook Pro M3 Max",
+        "AUC-2026-002",
+        "KẾT THÚC",
+        "38,000,000 VNĐ",
+        "minh123",
+        "00:00:00",
+        "https://i.imgur.com/5ZQ0Gzfl.jpg"
+    );
   }
 
-  private void addAuctionCard(AuctionDTO dto) {
+  private void addAuctionCard(String productName,
+                              String auctionCode,
+                              String status,
+                              String currentPrice,
+                              String leader,
+                              String timeLeft,
+                              String imageUrl) {
+
     try {
-      FXMLLoader loader = new FXMLLoader(
-          getClass().getResource("/view/AuctionCard.fxml"));
+      FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/AuctionCard.fxml"));
       Parent cardNode = loader.load();
 
       AuctionCardController controller = loader.getController();
-
-      boolean isRunning = "OPEN".equals(dto.getStatus())
-          || "RUNNING".equals(dto.getStatus());
-      String statusLabel = isRunning ? "DANG DIEN RA" : dto.getStatus();
-      String timeLeft    = formatTimeLeft(dto.getEndTime());
-      String imageUrl    = "https://picsum.photos/seed/" + dto.getAuctionId() + "/300/200";
-      String price       = dto.getCurrentPrice() != null
-          ? dto.getCurrentPrice() + " VND" : "---";
-      String leader      = dto.getHighestBidderUsername() != null
-          && !dto.getHighestBidderUsername().isEmpty()
-          ? dto.getHighestBidderUsername() : "Chua co";
-
-      controller.setData(
-          dto.getItemName(),
-          "AUC-" + dto.getAuctionId(),
-          statusLabel,
-          price,
-          leader,
-          timeLeft,
-          imageUrl
-      );
-
-      // Truyen DTO de khi click mo duoc AuctionRoom dung thong tin
-      controller.setAuctionDTO(dto);
+      controller.setData(productName, auctionCode, status, currentPrice, leader, timeLeft, imageUrl);
 
       auctionListContainer.getChildren().add(cardNode);
 
     } catch (IOException e) {
-      System.out.println("Loi load AuctionCard: " + e.getMessage());
+      e.printStackTrace();
     }
-  }
-
-  private String formatTimeLeft(LocalDateTime endTime) {
-    if (endTime == null) return "--:--:--";
-    Duration d = Duration.between(LocalDateTime.now(), endTime);
-    if (d.isNegative()) return "Da ket thuc";
-    long h = d.toHours();
-    long m = d.toMinutesPart();
-    long s = d.toSecondsPart();
-    return String.format("%02d:%02d:%02d", h, m, s);
   }
 
   @FXML
