@@ -271,7 +271,7 @@ public class AdminAuctionApprovalController implements Initializable {
 
                 if (response.isSuccess()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
-                    // ✅ Đợi 500ms rồi mới load lại
+                    // Đợi 500ms rồi mới load lại
                     javafx.animation.PauseTransition pause =
                             new javafx.animation.PauseTransition(
                                     javafx.util.Duration.millis(500));
@@ -323,7 +323,7 @@ public class AdminAuctionApprovalController implements Initializable {
                 }
                 if (response.isSuccess()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
-                    // ✅ Đợi 500ms rồi mới load lại
+                    //  Đợi 500ms rồi mới load lại
                     javafx.animation.PauseTransition pause =
                             new javafx.animation.PauseTransition(
                                     javafx.util.Duration.millis(500));
