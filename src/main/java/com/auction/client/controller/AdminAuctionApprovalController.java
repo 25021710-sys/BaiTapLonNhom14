@@ -256,13 +256,27 @@ public class AdminAuctionApprovalController implements Initializable {
         request.setRequestId(selected.getRequestId());
         request.setAdminId(ClientSession.getCurrentUser().getId());
 
+        btnApprove.setDisable(true);
+        btnReject.setDisable(true);
+        btnRefresh.setDisable(true);
+
         new Thread(() -> {
             ApproveAuctionResponse response =
                     SocketClient.getInstance().approveAuction(request);
+
             javafx.application.Platform.runLater(() -> {
+                btnApprove.setDisable(false);
+                btnReject.setDisable(false);
+                btnRefresh.setDisable(false);
+
                 if (response.isSuccess()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
-                    loadPendingRequests();
+                    // ✅ Đợi 500ms rồi mới load lại
+                    javafx.animation.PauseTransition pause =
+                            new javafx.animation.PauseTransition(
+                                    javafx.util.Duration.millis(500));
+                    pause.setOnFinished(ev -> loadPendingRequests());
+                    pause.play();
                 } else {
                     showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
                 }
@@ -290,20 +304,34 @@ public class AdminAuctionApprovalController implements Initializable {
         request.setAdminId(ClientSession.getCurrentUser().getId());
         request.setRejectReason(reason);
 
+        btnApprove.setDisable(true);
+        btnReject.setDisable(true);
+        btnRefresh.setDisable(true);
+
         new Thread(() -> {
             RejectAuctionResponse response =
                     SocketClient.getInstance().rejectAuction(request);
+
             javafx.application.Platform.runLater(() -> {
+                btnApprove.setDisable(false);
+                btnReject.setDisable(false);
+                btnRefresh.setDisable(false);
+
                 if (response == null) {
                     showAlert(Alert.AlertType.ERROR, "Error", "Server error");
                     return;
                 }
                 if (response.isSuccess()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+                    // ✅ Đợi 500ms rồi mới load lại
+                    javafx.animation.PauseTransition pause =
+                            new javafx.animation.PauseTransition(
+                                    javafx.util.Duration.millis(500));
+                    pause.setOnFinished(ev -> loadPendingRequests());
+                    pause.play();
                 } else {
                     showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
                 }
-                loadPendingRequests();
             });
         }, "reject-thread").start();
     }
