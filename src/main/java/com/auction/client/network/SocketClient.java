@@ -36,7 +36,7 @@ public class SocketClient {
 
     // ── Singleton ─────────────────────────────────────────────────────────────
     private static volatile SocketClient instance;
-
+    private final Object requestLock = new Object();
     public static SocketClient getInstance() {
         if (instance == null) {
             synchronized (SocketClient.class) {
@@ -154,186 +154,212 @@ public class SocketClient {
 
     // ── USER ──────────────────────────────────────────────────────────────────
 
-    public synchronized LoginResponse login(LoginRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_LOGIN");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new LoginResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+    public LoginResponse login(LoginRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("USER_LOGIN");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new LoginResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized RegisterResponse register(RegisterRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_REGISTER");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new RegisterResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+    public RegisterResponse register(RegisterRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("USER_REGISTER");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new RegisterResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized UpdateProfileResponse updateProfile(UpdateProfileRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_UPDATE_PROFILE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new UpdateProfileResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+    public UpdateProfileResponse updateProfile(UpdateProfileRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("USER_UPDATE_PROFILE");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new UpdateProfileResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized BalanceResponse updateBalance(BalanceRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_BALANCE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new BalanceResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+    public BalanceResponse updateBalance(BalanceRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("USER_BALANCE");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new BalanceResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
+            }
         }
     }
 
-    // ── AUCTION ───────────────────────────────────────────────────────────────
-
-    public synchronized CreateAuctionResponse createAuction(CreateAuctionRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_CREATE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+    public CreateAuctionResponse createAuction(CreateAuctionRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_CREATE");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized AuctionListResponse getActiveAuctions() {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_ACTIVE");
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+    public AuctionListResponse getActiveAuctions() {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_GET_ACTIVE");
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized GetPendingAuctionRequestsResponse getPendingAuctionRequests(
+    public GetPendingAuctionRequestsResponse getPendingAuctionRequests(
             GetPendingAuctionRequestsRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_PENDING_REQUESTS");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new GetPendingAuctionRequestsResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_GET_PENDING_REQUESTS");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new GetPendingAuctionRequestsResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized ApproveAuctionResponse approveAuction(ApproveAuctionRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_APPROVE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new ApproveAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
+    public ApproveAuctionResponse approveAuction(ApproveAuctionRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_APPROVE");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new ApproveAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
+            }
         }
     }
 
-    public synchronized RejectAuctionResponse rejectAuction(RejectAuctionRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_REJECT");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new RejectAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
+    public RejectAuctionResponse rejectAuction(RejectAuctionRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_REJECT");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new RejectAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
+            }
         }
     }
 
-    public synchronized CreateAuctionResponse subscribeAuction(int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_SUBSCRIBE");
-            out.writeInt(auctionId);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+    public CreateAuctionResponse subscribeAuction(int auctionId) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_SUBSCRIBE");
+                out.writeInt(auctionId);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized void unsubscribeAuction(int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_UNSUBSCRIBE");
-            out.writeInt(auctionId);
-            out.flush();
-            readResponse(); // đọc SimpleResponse
-        } catch (Exception ignored) {}
-    }
-
-    public synchronized BidResponse placeBid(BidRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("BID_PLACE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new BidResponse(false, "Lỗi kết nối: " + e.getMessage(), java.math.BigDecimal.ZERO);
+    public void unsubscribeAuction(int auctionId) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_UNSUBSCRIBE");
+                out.writeInt(auctionId);
+                out.flush();
+                readResponse();
+            } catch (Exception ignored) {}
         }
     }
 
-    public synchronized BidHistoryResponse getBidHistory(int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_BIDS");
-            out.writeInt(auctionId);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new BidHistoryResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+    public BidResponse placeBid(BidRequest request) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("BID_PLACE");
+                out.writeObject(request);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new BidResponse(false, "Lỗi kết nối: " + e.getMessage(), java.math.BigDecimal.ZERO);
+            }
         }
     }
 
-    // ── AUTO BID ──────────────────────────────────────────────────────────────
-
-    public synchronized SimpleResponse registerAutoBid(AutoBidConfig config) {
-        try {
-            ensureConnected();
-            out.writeObject("AUTOBID_REGISTER");
-            out.writeObject(config);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+    public BidHistoryResponse getBidHistory(int auctionId) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUCTION_GET_BIDS");
+                out.writeInt(auctionId);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new BidHistoryResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+            }
         }
     }
 
-    public synchronized SimpleResponse cancelAutoBid(int bidderId, int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUTOBID_CANCEL");
-            out.writeInt(bidderId);
-            out.writeInt(auctionId);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+    public SimpleResponse registerAutoBid(AutoBidConfig config) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUTOBID_REGISTER");
+                out.writeObject(config);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+            }
+        }
+    }
+
+    public SimpleResponse cancelAutoBid(int bidderId, int auctionId) {
+        synchronized (requestLock) {
+            try {
+                ensureConnected();
+                out.writeObject("AUTOBID_CANCEL");
+                out.writeInt(bidderId);
+                out.writeInt(auctionId);
+                out.flush();
+                return readResponse();
+            } catch (Exception e) {
+                return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+            }
         }
     }
 }
