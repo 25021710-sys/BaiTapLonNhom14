@@ -12,6 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.util.Duration;
 
 import java.time.LocalDateTime;
+import java.util.function.Consumer;
 
 public class AuctionCardController {
 
@@ -34,9 +35,17 @@ public class AuctionCardController {
 
   private Timeline countdown;
   private int auctionId;
+  private AuctionDTO currentDto;
+  private Consumer<AuctionDTO> onJoinCallback;
+
+  /** DashBoard / JoinedAuction truyền callback để mở AuctionRoom */
+  public void setOnJoinCallback(Consumer<AuctionDTO> callback) {
+    this.onJoinCallback = callback;
+  }
 
   public void setData(AuctionDTO dto) {
-    this.auctionId = dto.getAuctionId();
+    this.auctionId  = dto.getAuctionId();
+    this.currentDto = dto;
 
     lblProductName.setText(dto.getItemName());
     lblAuctionCode.setText(String.format("Mã: AUC-%04d", dto.getAuctionId()));
@@ -73,10 +82,10 @@ public class AuctionCardController {
 
     // Countdown thật từ endTime
     startCountdown(dto.getEndTime());
-    // Click card
+    // Click card → mở AuctionRoom qua callback
     rootCard.setOnMouseClicked(e -> {
-      System.out.println("Open auction: " + auctionId);
-      // TODO: chuyển sang AuctionRoom với auctionId
+      if (onJoinCallback != null && currentDto != null)
+        onJoinCallback.accept(currentDto);
     });
   }
 
@@ -122,10 +131,12 @@ public class AuctionCardController {
                       "-fx-background-color: #fee2e2; -fx-text-fill: #b91c1c;");
     }
 
-    // Click card
+    // Click card → chuyển sang AuctionRoom nếu có callback + dto
     rootCard.setOnMouseClicked(e -> {
-      System.out.println("Open auction detail: " + this.auctionId);
-      // TODO: chuyển sang AuctionRoom
+      if (onJoinCallback != null && currentDto != null)
+        onJoinCallback.accept(currentDto);
+      else
+        System.out.println("Open auction detail: " + this.auctionId);
     });
   }
 
@@ -151,4 +162,3 @@ public class AuctionCardController {
     countdown.play();
   }
 }
-

@@ -51,7 +51,7 @@ public class SocketClient {
     private final String host;
     private final int    port;
 
-    private Socket             socket;
+    private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream  in;
 
