@@ -244,113 +244,68 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleApprove(){
-
+    private void handleApprove() {
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
-
-            showAlert(
-                    Alert.AlertType.WARNING,
-                    "Warning",
-                    "Vui lòng chọn yêu cầu."
-            );
-
+            showAlert(Alert.AlertType.WARNING, "Warning", "Vui lòng chọn yêu cầu.");
             return;
         }
 
         ApproveAuctionRequest request = new ApproveAuctionRequest();
-
-        request.setRequestId(
-                selected.getRequestId()
-        );
-
+        request.setRequestId(selected.getRequestId());
         request.setAdminId(ClientSession.getCurrentUser().getId());
 
-        ApproveAuctionResponse response =
-                SocketClient.getInstance().approveAuction(request);
-        if (response.isSuccess()) {
-
-            showAlert(
-                    Alert.AlertType.INFORMATION,
-                    "Success",
-                    response.getMessage()
-            );
-
-            loadPendingRequests();
-
-        } else {
-
-            showAlert(
-                    Alert.AlertType.ERROR,
-                    "Error",
-                    response.getMessage()
-            );
-        }
+        new Thread(() -> {
+            ApproveAuctionResponse response =
+                    SocketClient.getInstance().approveAuction(request);
+            javafx.application.Platform.runLater(() -> {
+                if (response.isSuccess()) {
+                    showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+                    loadPendingRequests();
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
+                }
+            });
+        }, "approve-thread").start();
     }
 
-    // =====================================================
-    // REJECT
-    // =====================================================
-
     @FXML
-    private void handleReject() throws SQLException {
-
+    private void handleReject() {
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
-
-            showAlert(
-                    Alert.AlertType.WARNING,
-                    "Warning",
-                    "Vui lòng chọn yêu cầu."
-            );
-
+            showAlert(Alert.AlertType.WARNING, "Warning", "Vui lòng chọn yêu cầu.");
             return;
         }
 
-        String reason =
-                txtRejectReason.getText();
-
+        String reason = txtRejectReason.getText();
         if (reason == null || reason.isBlank()) {
-
-            showAlert(
-                    Alert.AlertType.WARNING,
-                    "Warning",
-                    "Vui lòng nhập lý do."
-            );
-
+            showAlert(Alert.AlertType.WARNING, "Warning", "Vui lòng nhập lý do.");
             return;
         }
 
-        RejectAuctionRequest request =
-                new RejectAuctionRequest();
-
-        request.setRequestId(
-                selected.getRequestId()
-        );
-
+        RejectAuctionRequest request = new RejectAuctionRequest();
+        request.setRequestId(selected.getRequestId());
         request.setAdminId(ClientSession.getCurrentUser().getId());
-
         request.setRejectReason(reason);
 
-        RejectAuctionResponse response =
-                SocketClient.getInstance().rejectAuction(request);
-
-        if (response == null) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Server error");
-            return;
-        }
-
-        if (response.isSuccess()) {
-            showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
-        } else {
-            showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
-        }
-
-        loadPendingRequests();
+        new Thread(() -> {
+            RejectAuctionResponse response =
+                    SocketClient.getInstance().rejectAuction(request);
+            javafx.application.Platform.runLater(() -> {
+                if (response == null) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Server error");
+                    return;
+                }
+                if (response.isSuccess()) {
+                    showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
+                }
+                loadPendingRequests();
+            });
+        }, "reject-thread").start();
     }
 
     // =====================================================
