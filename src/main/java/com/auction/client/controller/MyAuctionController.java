@@ -3,6 +3,7 @@ package com.auction.client.controller;
 import com.auction.client.network.SocketClient;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.common.response.AuctionListResponse;
+import com.auction.server.model.AuctionStatus;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -45,7 +46,7 @@ public class MyAuctionController {
 
       AuctionListResponse response =
               SocketClient.getInstance()
-                      .getActiveAuctions();
+                      .getMyAuctions();
 
       if (!response.isSuccess()) {
 
@@ -69,7 +70,7 @@ public class MyAuctionController {
 
       for (AuctionDTO dto : response.getAuctions()) {
 
-        String status = dto.getStatus();
+        AuctionStatus status = dto.getStatus();
 
         // FILTER STATUS
         if (selected != null) {
@@ -78,27 +79,21 @@ public class MyAuctionController {
 
             case "Sắp diễn ra" -> {
 
-              if (!"OPEN".equalsIgnoreCase(status)
-                      &&
-                      !"SẮP DIỄN RA".equalsIgnoreCase(status)) {
+              if (status != AuctionStatus.OPEN) {
                 continue;
               }
             }
 
             case "Đang diễn ra" -> {
 
-              if (!"RUNNING".equalsIgnoreCase(status)
-                      &&
-                      !"ĐANG DIỄN RA".equalsIgnoreCase(status)) {
+              if (status != AuctionStatus.RUNNING) {
                 continue;
               }
             }
 
             case "Đã kết thúc" -> {
 
-              if (!"ENDED".equalsIgnoreCase(status)
-                      &&
-                      !"ĐÃ KẾT THÚC".equalsIgnoreCase(status)) {
+              if (status != AuctionStatus.FINISHED) {
                 continue;
               }
             }
