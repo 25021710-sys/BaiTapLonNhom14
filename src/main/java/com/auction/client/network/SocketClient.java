@@ -294,12 +294,10 @@ public class SocketClient {
         }
     }
 
-    public synchronized AuctionListResponse getMyAuctions() {
+    public AuctionListResponse getMyAuctions() {
         try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_MY");
-            out.flush();
-            return readResponse();
+            sendRequest("AUCTION_GET_MY");
+            return readTypedResponse(AuctionListResponse.class);
         } catch (Exception e) {
             return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
         }
