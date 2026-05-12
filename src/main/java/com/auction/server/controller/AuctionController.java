@@ -248,7 +248,7 @@ public class AuctionController {
                 return;
             }
 
-            // ✅ 1 query JOIN thay vì N+1 query
+            // 1 query JOIN thay vì N+1 query
             List<AdminAuctionRequestDTO> dtos = auctionDAO.findPendingWithDetails();
 
             pendingDtoCache = dtos;

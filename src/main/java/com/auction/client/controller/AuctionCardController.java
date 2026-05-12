@@ -99,7 +99,7 @@ public class AuctionCardController {
     }
 
     // Countdown thật từ endTime
-    startCountdown(dto.getEndTime());
+    startCountdown(dto.getStartTime(), dto.getEndTime(), dto.getStatus());
     // Click card → mở AuctionRoom qua callback
     rootCard.setOnMouseClicked(e -> {
       if (onJoinCallback != null && currentDto != null)
@@ -107,25 +107,45 @@ public class AuctionCardController {
     });
   }
 
-  private void startCountdown(LocalDateTime endTime) {
+  private void startCountdown(LocalDateTime startTime,
+                              LocalDateTime endTime,
+                              String status) {
     if (endTime == null) return;
     if (countdown != null) countdown.stop();
 
     countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-      long secondsLeft = java.time.Duration.between(
-              LocalDateTime.now(), endTime).getSeconds();
+      LocalDateTime now = LocalDateTime.now();
 
-      if (secondsLeft <= 0) {
-        lblTimeLeft.setText("Đã kết thúc");
-        countdown.stop();
-      } else {
-        long h = secondsLeft / 3600;
-        long m = (secondsLeft % 3600) / 60;
-        long s = secondsLeft % 60;
-        lblTimeLeft.setText(String.format("%02d:%02d:%02d", h, m, s));
+      // Chưa bắt đầu → đếm đến startTime
+      if ("OPEN".equals(status) && startTime != null && now.isBefore(startTime)) {
+        long secondsLeft = java.time.Duration.between(now, startTime).getSeconds();
+        lblTimeLeft.setText("Bắt đầu sau: " + formatTime(secondsLeft));
+      }
+      // Đang diễn ra → đếm đến endTime
+      else {
+        long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
+        if (secondsLeft <= 0) {
+          lblTimeLeft.setText("Đã kết thúc");
+          countdown.stop();
+        } else {
+          lblTimeLeft.setText(formatTime(secondsLeft));
+        }
       }
     }));
     countdown.setCycleCount(Animation.INDEFINITE);
     countdown.play();
+  }
+
+  private String formatTime(long secondsLeft) {
+    long days = secondsLeft / 86400;
+    long hours = (secondsLeft % 86400) / 3600;
+    long mins  = (secondsLeft % 3600) / 60;
+    long secs  = secondsLeft % 60;
+
+    if (days > 0) {
+      return String.format("%dd %02d:%02d:%02d", days, hours, mins, secs);
+    } else {
+      return String.format("%02d:%02d:%02d", hours, mins, secs);
+    }
   }
 }
