@@ -287,4 +287,18 @@ public class AuctionDAO {
 
         return list;
     }
+    public List<Auction> findBySeller(int sellerId) {
+        String sql = "SELECT * FROM auctions WHERE seller_id = ? ORDER BY created_at DESC";
+        List<Auction> list = new ArrayList<>();
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, sellerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi findBySeller sellerId={}", sellerId, e);
+        }
+        return list;
+    }
 }
