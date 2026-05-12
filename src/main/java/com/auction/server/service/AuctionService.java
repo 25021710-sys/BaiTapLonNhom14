@@ -607,5 +607,13 @@ public class AuctionService {
             return "";
         }
     }
+
+    public List<Auction> getRunningAuctionsExcludeSeller(int sellerId) {
+        return auctionDAO.findByStatusExcludeSeller("RUNNING", sellerId);
+    }
+
+    public List<Auction> getOpenAuctionsExcludeSeller(int sellerId) {
+        return auctionDAO.findByStatusExcludeSeller("OPEN", sellerId);
+    }
 }
 

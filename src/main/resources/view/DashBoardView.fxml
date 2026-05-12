@@ -199,18 +199,18 @@
                            <children>
                               <HBox alignment="CENTER_LEFT" spacing="10.0">
                                  <children>
-                                    <Label text="Những bid bạn đang tham gia"
+                                    <Label text="Phiên đang mở"
                                            style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnLeftBids"
+                                    <Button fx:id="btnLeftOpenBids"
                                             text="◀"
                                             style="-fx-background-color: transparent; -fx-font-size: 16px; -fx-cursor: hand;"/>
-                                    <Button fx:id="btnRightBids"
+                                    <Button fx:id="btnRightOpenBids"
                                             text="▶"
                                             style="-fx-background-color: transparent; -fx-font-size: 16px; -fx-cursor: hand;"/>
                                  </children>
                               </HBox>
-                              <ScrollPane fx:id="spBidsJoined"
+                              <ScrollPane fx:id="spOpenBids"
                                           fitToHeight="true"
                                           hbarPolicy="NEVER"
                                           vbarPolicy="NEVER"
@@ -218,7 +218,7 @@
                                           prefHeight="300.0"
                                           style="-fx-background-color: transparent; -fx-border-color: transparent;">
                                  <content>
-                                    <HBox fx:id="pnlBidsJoined"
+                                    <HBox fx:id="pnlOpenBids"
                                           spacing="15.0"
                                           alignment="CENTER_LEFT"
                                           style="-fx-padding: 10;"/>
@@ -233,18 +233,18 @@
                            <children>
                               <HBox alignment="CENTER_LEFT" spacing="10.0">
                                  <children>
-                                    <Label text="Sản phẩm nổi bật"
+                                    <Label text="Phiên sắp bắt đầu"
                                            style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnLeftFeatured"
+                                    <Button fx:id="btnLeftUpComingBids"
                                             text="◀"
                                             style="-fx-background-color: transparent; -fx-font-size: 16px; -fx-cursor: hand;"/>
-                                    <Button fx:id="btnRightFeatured"
+                                    <Button fx:id="btnRightUpComingBids"
                                             text="▶"
                                             style="-fx-background-color: transparent; -fx-font-size: 16px; -fx-cursor: hand;"/>
                                  </children>
                               </HBox>
-                              <ScrollPane fx:id="spFeaturedProducts"
+                              <ScrollPane fx:id="spUpComingBids"
                                           fitToHeight="true"
                                           hbarPolicy="NEVER"
                                           vbarPolicy="NEVER"
@@ -252,7 +252,7 @@
                                           prefHeight="300.0"
                                           style="-fx-background-color: transparent; -fx-border-color: transparent;">
                                  <content>
-                                    <HBox fx:id="pnlFeaturedProducts"
+                                    <HBox fx:id="pnlUpComingBids"
                                           spacing="15.0"
                                           alignment="CENTER_LEFT"
                                           style="-fx-padding: 10;"/>
@@ -261,39 +261,6 @@
                            </children>
                         </VBox>
 
-                        <!-- SECTION 3 -->
-                        <VBox spacing="12.0"
-                              style="-fx-background-color: white; -fx-padding: 18; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #e0e0e0;">
-                           <children>
-                              <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                 <children>
-                                    <Label text="Những sản phẩm bạn quan tâm"
-                                           style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnLeftFavorite"
-                                            text="◀"
-                                            style="-fx-background-color: transparent; -fx-font-size: 16px; -fx-cursor: hand;"/>
-                                    <Button fx:id="btnRightFavorite"
-                                            text="▶"
-                                            style="-fx-background-color: transparent; -fx-font-size: 16px; -fx-cursor: hand;"/>
-                                 </children>
-                              </HBox>
-                              <ScrollPane fx:id="spFavoriteProducts"
-                                          fitToHeight="true"
-                                          hbarPolicy="NEVER"
-                                          vbarPolicy="NEVER"
-                                          pannable="true"
-                                          prefHeight="300.0"
-                                          style="-fx-background-color: transparent; -fx-border-color: transparent;">
-                                 <content>
-                                    <HBox fx:id="pnlFavoriteProducts"
-                                          spacing="15.0"
-                                          alignment="CENTER_LEFT"
-                                          style="-fx-padding: 10;"/>
-                                 </content>
-                              </ScrollPane>
-                           </children>
-                        </VBox>
                      </children>
                   </VBox>
                </content>

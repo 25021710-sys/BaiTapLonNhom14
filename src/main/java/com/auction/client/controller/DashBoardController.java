@@ -39,18 +39,14 @@ public class DashBoardController {
     @FXML private Button btnCreateAuction;
     @FXML private Circle profileCircle;
     @FXML private Label lblUsername;
-    @FXML private ScrollPane spBidsJoined;
-    @FXML private ScrollPane spFeaturedProducts;
-    @FXML private ScrollPane spFavoriteProducts;
-    @FXML private HBox pnlBidsJoined;
-    @FXML private HBox pnlFeaturedProducts;
-    @FXML private HBox pnlFavoriteProducts;
-    @FXML private Button btnLeftBids;
-    @FXML private Button btnRightBids;
-    @FXML private Button btnLeftFeatured;
-    @FXML private Button btnRightFeatured;
-    @FXML private Button btnLeftFavorite;
-    @FXML private Button btnRightFavorite;
+    @FXML private ScrollPane spOpenBids;
+    @FXML private ScrollPane spUpComingBids;
+    @FXML private HBox pnlOpenBids;
+    @FXML private HBox pnlUpComingBids;
+    @FXML private Button btnLeftOpenBids;
+    @FXML private Button btnRightOpenBids;
+    @FXML private Button btnLeftUpComingBids;
+    @FXML private Button btnRightUpComingBids;
     @FXML private BorderPane rootPane;
 
     private Parent adminApprovalView;
@@ -74,9 +70,8 @@ public class DashBoardController {
             adminSection.setManaged(false);
         }
 
-        setupArrowButtons(spBidsJoined,       btnLeftBids,     btnRightBids);
-        setupArrowButtons(spFeaturedProducts, btnLeftFeatured, btnRightFeatured);
-        setupArrowButtons(spFavoriteProducts, btnLeftFavorite, btnRightFavorite);
+        setupArrowButtons(spOpenBids,       btnLeftOpenBids,     btnRightOpenBids);
+        setupArrowButtons(spUpComingBids, btnLeftUpComingBids, btnRightUpComingBids);
         setActiveMenu(btnHome);
 
         // Load data thật từ server (background thread)
@@ -88,15 +83,14 @@ public class DashBoardController {
     private void loadAuctionDataFromServer() {
         new Thread(() -> {
             try {
-                AuctionListResponse response = SocketClient.getInstance().getActiveAuctions();
+                AuctionListResponse response = SocketClient.getInstance().getDashboardAuctions();
                 if (response != null && response.isSuccess() && response.getAuctions() != null) {
-                    List<AuctionDTO> auctions = response.getAuctions();
-                    Platform.runLater(() -> renderCardsFromData(auctions));
+                    Platform.runLater(() -> renderCardsFromData(response.getAuctions()));
                 } else {
                     Platform.runLater(this::renderPlaceholderCards);
                 }
             } catch (Exception e) {
-                System.err.println("Lỗi load auctions từ server: " + e.getMessage());
+                System.err.println("Lỗi load auctions: " + e.getMessage());
                 Platform.runLater(this::renderPlaceholderCards);
             }
         }, "load-auctions-thread").start();
@@ -104,17 +98,15 @@ public class DashBoardController {
 
     /** Render card với AuctionDTO thật – hiển thị tất cả auctions ở cả 2 section */
     private void renderCardsFromData(List<AuctionDTO> auctions) {
-        clear(pnlBidsJoined);
-        clear(pnlFeaturedProducts);
-        clear(pnlFavoriteProducts);
+        if (pnlOpenBids    != null) pnlOpenBids.getChildren().clear();
+        if (pnlUpComingBids != null) pnlUpComingBids.getChildren().clear();
 
-        // "Những bid bạn đang tham gia": tất cả auction đang RUNNING
-        // "Sản phẩm nổi bật": tất cả auction
         for (AuctionDTO dto : auctions) {
-            if ("RUNNING".equals(dto.getStatus()) || "OPEN".equals(dto.getStatus())) {
-                addAuctionCard(pnlBidsJoined, dto);
+            String status = dto.getStatus() != null ? dto.getStatus().name() : "";
+            switch (status) {
+                case "RUNNING" -> addAuctionCard(pnlOpenBids, dto);
+                case "OPEN"    -> addAuctionCard(pnlUpComingBids, dto);
             }
-            addAuctionCard(pnlFeaturedProducts, dto);
         }
     }
 
@@ -122,31 +114,28 @@ public class DashBoardController {
         addAuctionCard(panel, dto);
     }
 
+    // SAU
     private void addAuctionCard(HBox panel, AuctionDTO dto) {
         if (panel == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/AuctionCard.fxml"));
+                getClass().getResource("/view/ProductCard.fxml"));
             Node card = loader.load();
-            AuctionCardController ctrl = loader.getController();
+            ProductCardController ctrl = loader.getController();
             ctrl.setData(dto);
             ctrl.setOnJoinCallback(this::openAuctionRoom);
             panel.getChildren().add(card);
         } catch (IOException e) {
-            System.err.println("Lỗi load AuctionCard: " + e.getMessage());
+            System.err.println("Lỗi load ProductCard: " + e.getMessage());
         }
     }
 
 
 
+    // SAU — để trống thay vì hiện placeholder
     private void renderPlaceholderCards() {
-        try {
-            renderSection(pnlBidsJoined,       5);
-            renderSection(pnlFeaturedProducts, 5);
-            renderSection(pnlFavoriteProducts, 5);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        if (pnlOpenBids    != null) pnlOpenBids.getChildren().clear();
+        if (pnlUpComingBids != null) pnlUpComingBids.getChildren().clear();
     }
 
 

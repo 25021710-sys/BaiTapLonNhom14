@@ -302,4 +302,13 @@ public class SocketClient {
             return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
         }
     }
+
+    public synchronized AuctionListResponse getDashboardAuctions() {
+        try {
+            sendRequest("AUCTION_GET_DASHBOARD");
+            return readResponse();
+        } catch (Exception e) {
+            return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        }
+    }
 }

@@ -95,6 +95,7 @@ public class AuctionController {
             case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out);
             case "AUTOBID_CANCEL"               -> handleCancelAutoBid(in, out);
             case "AUCTION_GET_MY"               -> handleGetMyAuctions(out);
+            case "AUCTION_GET_DASHBOARD"        -> handleGetDashboard(out);
             default -> {
                 log.warn("Action không hỗ trợ: {}", action);
                 send(out, new SimpleResponse(false, "Action không hỗ trợ: " + action));
@@ -585,4 +586,35 @@ public class AuctionController {
             log.error("Lỗi AUCTION_GET_MY: {}", e.getMessage(), e);
             send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
         }
-    }}
+    }
+
+    private void handleGetDashboard(ObjectOutputStream out) {
+        try {
+            // Nếu chưa đăng nhập thì excludeSellerId = 0 (không loại trừ ai)
+            int excludeId = (session != null && session.isLoggedIn()) ? session.getUserId() : 0;
+
+            List<Auction> running = auctionService.getRunningAuctionsExcludeSeller(excludeId);
+            List<Auction> open    = auctionService.getOpenAuctionsExcludeSeller(excludeId);
+
+            List<AuctionDTO> allDtos = new ArrayList<>();
+            for (Auction a : running) {
+                Item item = itemDAO.findById(a.getItemId());
+                AuctionDTO dto = mapToDTO(a, item, resolveUsername(a.getSellerId()));
+                if (a.getHighestBidderId() != 0)
+                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
+                allDtos.add(dto);
+            }
+            for (Auction a : open) {
+                Item item = itemDAO.findById(a.getItemId());
+                AuctionDTO dto = mapToDTO(a, item, resolveUsername(a.getSellerId()));
+                if (a.getHighestBidderId() != 0)
+                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
+                allDtos.add(dto);
+            }
+            send(out, new AuctionListResponse(true, "OK", allDtos));
+        } catch (Exception e) {
+            log.error("Lỗi AUCTION_GET_DASHBOARD: {}", e.getMessage(), e);
+            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
+        }
+    }
+}
