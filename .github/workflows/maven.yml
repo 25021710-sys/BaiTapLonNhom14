@@ -22,7 +22,6 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: maven
 
       # 5. Chạy lệnh Maven để đóng gói và tự động chạy các file unit test
       - name: Build and Test with Maven
