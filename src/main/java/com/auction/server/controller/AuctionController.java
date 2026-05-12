@@ -592,7 +592,7 @@ public class AuctionController {
         try {
             // Nếu chưa đăng nhập thì excludeSellerId = 0 (không loại trừ ai)
             int excludeId = (session != null && session.isLoggedIn()) ? session.getUserId() : 0;
-
+            log.info("AUCTION_GET_DASHBOARD: excludeId={}", excludeId);
             List<Auction> running = auctionService.getRunningAuctionsExcludeSeller(excludeId);
             List<Auction> open    = auctionService.getOpenAuctionsExcludeSeller(excludeId);
 
