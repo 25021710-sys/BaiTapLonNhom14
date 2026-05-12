@@ -120,29 +120,18 @@ public class MyAuctionController {
 
 
   private void addAuctionCard(AuctionDTO dto) {
-
     try {
-
       FXMLLoader loader = new FXMLLoader(
-              getClass().getResource(
-                      "/view/AuctionCard.fxml"
-              )
+              getClass().getResource("/view/AuctionCard.fxml")
       );
-
       Parent cardNode = loader.load();
 
-      AuctionCardController controller =
-              loader.getController();
-      controller.setOnJoinCallback(
-              this::handleOpenRoom
-      );
+      AuctionCardController controller = loader.getController();
+      controller.setData(dto);
+      controller.setOnJoinCallback(this::handleOpenRoom);
 
-      auctionListContainer
-              .getChildren()
-              .add(cardNode);
-
+      auctionListContainer.getChildren().add(cardNode);
     } catch (IOException e) {
-
       e.printStackTrace();
     }
   }
