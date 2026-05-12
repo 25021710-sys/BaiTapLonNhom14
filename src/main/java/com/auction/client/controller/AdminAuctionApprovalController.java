@@ -244,113 +244,100 @@ public class AdminAuctionApprovalController implements Initializable {
     // =====================================================
 
     @FXML
-    private void handleApprove() throws SQLException {
-
+    private void handleApprove() {
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
-
-            showAlert(
-                    Alert.AlertType.WARNING,
-                    "Warning",
-                    "Vui lòng chọn yêu cầu."
-            );
-
+            showAlert(Alert.AlertType.WARNING, "Warning", "Vui lòng chọn yêu cầu.");
             return;
         }
 
         ApproveAuctionRequest request = new ApproveAuctionRequest();
-
-        request.setRequestId(
-                selected.getRequestId()
-        );
-
+        request.setRequestId(selected.getRequestId());
         request.setAdminId(ClientSession.getCurrentUser().getId());
 
-        ApproveAuctionResponse response =
-                SocketClient.getInstance().approveAuction(request);
-        if (response.isSuccess()) {
+        btnApprove.setDisable(true);
+        btnReject.setDisable(true);
+        btnRefresh.setDisable(true);
 
-            showAlert(
-                    Alert.AlertType.INFORMATION,
-                    "Success",
-                    response.getMessage()
-            );
+        new Thread(() -> {
+            ApproveAuctionResponse response =
+                    SocketClient.getInstance().approveAuction(request);
 
-            loadPendingRequests();
+            javafx.application.Platform.runLater(() -> {
+                btnApprove.setDisable(false);
+                btnReject.setDisable(false);
+                btnRefresh.setDisable(false);
 
-        } else {
-
-            showAlert(
-                    Alert.AlertType.ERROR,
-                    "Error",
-                    response.getMessage()
-            );
-        }
+                if (response.isSuccess()) {
+                    showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+                    tblAuctionRequests.getItems().remove(selected);
+                    tblAuctionRequests.getSelectionModel().clearSelection();
+                    // Đợi 1500ms rồi mới load lại
+                    javafx.animation.PauseTransition pause =
+                            new javafx.animation.PauseTransition(
+                                    javafx.util.Duration.millis(1500));
+                    pause.setOnFinished(ev -> loadPendingRequests());
+                    pause.play();
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
+                }
+            });
+        }, "approve-thread").start();
     }
 
-    // =====================================================
-    // REJECT
-    // =====================================================
-
     @FXML
-    private void handleReject() throws SQLException {
-
+    private void handleReject() {
         AdminAuctionRequestDTO selected =
                 tblAuctionRequests.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
-
-            showAlert(
-                    Alert.AlertType.WARNING,
-                    "Warning",
-                    "Vui lòng chọn yêu cầu."
-            );
-
+            showAlert(Alert.AlertType.WARNING, "Warning", "Vui lòng chọn yêu cầu.");
             return;
         }
 
-        String reason =
-                txtRejectReason.getText();
-
+        String reason = txtRejectReason.getText();
         if (reason == null || reason.isBlank()) {
-
-            showAlert(
-                    Alert.AlertType.WARNING,
-                    "Warning",
-                    "Vui lòng nhập lý do."
-            );
-
+            showAlert(Alert.AlertType.WARNING, "Warning", "Vui lòng nhập lý do.");
             return;
         }
 
-        RejectAuctionRequest request =
-                new RejectAuctionRequest();
-
-        request.setRequestId(
-                selected.getRequestId()
-        );
-
+        RejectAuctionRequest request = new RejectAuctionRequest();
+        request.setRequestId(selected.getRequestId());
         request.setAdminId(ClientSession.getCurrentUser().getId());
-
         request.setRejectReason(reason);
 
-        RejectAuctionResponse response =
-                SocketClient.getInstance().rejectAuction(request);
+        btnApprove.setDisable(true);
+        btnReject.setDisable(true);
+        btnRefresh.setDisable(true);
 
-        if (response == null) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Server error");
-            return;
-        }
+        new Thread(() -> {
+            RejectAuctionResponse response =
+                    SocketClient.getInstance().rejectAuction(request);
 
-        if (response.isSuccess()) {
-            showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
-        } else {
-            showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
-        }
+            javafx.application.Platform.runLater(() -> {
+                btnApprove.setDisable(false);
+                btnReject.setDisable(false);
+                btnRefresh.setDisable(false);
 
-        loadPendingRequests();
+                if (response == null) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Server error");
+                    return;
+                }
+                if (response.isSuccess()) {
+                    showAlert(Alert.AlertType.INFORMATION, "Success", response.getMessage());
+                    tblAuctionRequests.getItems().remove(selected);
+                    tblAuctionRequests.getSelectionModel().clearSelection();
+                    //  Đợi 500ms rồi mới load lại
+                    javafx.animation.PauseTransition pause =
+                            new javafx.animation.PauseTransition(
+                                    javafx.util.Duration.millis(1500));
+                    pause.setOnFinished(ev -> loadPendingRequests());
+                    pause.play();
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", response.getMessage());
+                }
+            });
+        }, "reject-thread").start();
     }
 
     // =====================================================

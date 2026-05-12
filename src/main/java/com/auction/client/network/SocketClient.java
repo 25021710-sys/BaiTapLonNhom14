@@ -11,28 +11,26 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
- * SocketClient - Singleton quản lý kết nối socket từ Client đến Server.
+ * SocketClient – Singleton quản lý kết nối socket từ Client đến Server.
  *
- * Giao thức:
- *   1. Client gửi action (String)
- *   2. Client gửi request object (nếu cần)
- *   3. Client nhận response object
+ * FIX 1 – DEADLOCK (Timeout 10s):
+ *   Dùng writeLock thay synchronized trên method.
+ *   Lock chỉ giữ khi GHI ra `out`, thả trước khi chờ response.
+ *   Push listener đọc từ `in` hoàn toàn độc lập, không bao giờ bị block.
  *
- * FIX RACE CONDITION:
- *   - Push listener là LUỒNG DUY NHẤT đọc từ `in`.
- *   - Các response thông thường được route vào `responseQueue`.
- *   - Các method request/response đọc từ `responseQueue` thay vì đọc `in` trực tiếp.
- *   - AUCTION_PUSH_UPDATE được route đến `pushCallback`.
- *   Điều này ngăn push listener và request/response cùng tranh nhau đọc `in`.
+ * FIX 2 – ClassCastException (AuctionListResponse cannot be cast to CreateAuctionResponse):
+ *   Dùng readTypedResponse(Class<T>) để lọc đúng kiểu từ queue.
+ *   Nếu queue có response sai kiểu (stale từ request khác), bỏ qua và đọc tiếp.
  */
 public class SocketClient {
 
-    private static final String DEFAULT_HOST = "localhost";
-    private static final int    DEFAULT_PORT = 8080;
-    private static final int    RESPONSE_TIMEOUT_MS = 10_000; // 10 giây
+    private static final String DEFAULT_HOST        = "localhost";
+    private static final int    DEFAULT_PORT        = 8080;
+    private static final int    RESPONSE_TIMEOUT_MS = 10_000;
 
     // ── Singleton ─────────────────────────────────────────────────────────────
     private static volatile SocketClient instance;
@@ -40,9 +38,7 @@ public class SocketClient {
     public static SocketClient getInstance() {
         if (instance == null) {
             synchronized (SocketClient.class) {
-                if (instance == null) {
-                    instance = new SocketClient(DEFAULT_HOST, DEFAULT_PORT);
-                }
+                if (instance == null) instance = new SocketClient(DEFAULT_HOST, DEFAULT_PORT);
             }
         }
         return instance;
@@ -55,10 +51,12 @@ public class SocketClient {
     private ObjectOutputStream out;
     private ObjectInputStream  in;
 
-    // Hàng đợi chứa response thông thường (không phải push update)
+    // Lock CHỈ cho phần ghi ra `out` – push listener đọc `in` không cần lock này
+    private final ReentrantLock writeLock = new ReentrantLock();
+
+    // Queue nhận mọi response từ server (trừ PUSH_UPDATE đã tách riêng)
     private final LinkedBlockingQueue<Object> responseQueue = new LinkedBlockingQueue<>();
 
-    // Callback nhận realtime update từ server (được set bởi AuctionRoomController)
     private volatile Consumer<AuctionUpdateDTO> pushCallback;
 
     private SocketClient(String host, int port) {
@@ -71,16 +69,17 @@ public class SocketClient {
     public synchronized void connect() throws IOException {
         if (isConnected()) return;
         socket = new Socket(host, port);
-        out = new ObjectOutputStream(socket.getOutputStream());
+        out    = new ObjectOutputStream(socket.getOutputStream());
         out.flush();
-        in  = new ObjectInputStream(socket.getInputStream());
+        in     = new ObjectInputStream(socket.getInputStream());
+        responseQueue.clear();
         startPushListener();
         System.out.println("[SocketClient] Đã kết nối đến " + host + ":" + port);
     }
 
     public synchronized void disconnect() {
-        try { if (in != null) in.close();     } catch (Exception ignored) {}
-        try { if (out != null) out.close();   } catch (Exception ignored) {}
+        try { if (in     != null) in.close();     } catch (Exception ignored) {}
+        try { if (out    != null) out.close();    } catch (Exception ignored) {}
         try { if (socket != null) socket.close(); } catch (Exception ignored) {}
         in = null; out = null; socket = null;
         responseQueue.clear();
@@ -97,19 +96,16 @@ public class SocketClient {
         }
     }
 
-    /**
-     * Đăng ký callback nhận push update từ server (realtime bid updates).
-     */
     public void setPushCallback(Consumer<AuctionUpdateDTO> callback) {
         this.pushCallback = callback;
     }
 
+    // ── Push listener ─────────────────────────────────────────────────────────
+
     /**
-     * Luồng lắng nghe tất cả dữ liệu từ server.
-     * Là LUỒNG DUY NHẤT được phép đọc từ `in`.
-     *
-     * - AUCTION_PUSH_UPDATE → gọi pushCallback
-     * - Mọi object khác      → đẩy vào responseQueue để các method request/response lấy
+     * Luồng DUY NHẤT đọc từ `in`. Không giữ writeLock.
+     * PUSH_UPDATE → gọi callback trên FX thread.
+     * Response thường → đẩy vào responseQueue.
      */
     private void startPushListener() {
         Thread t = new Thread(() -> {
@@ -123,16 +119,14 @@ public class SocketClient {
                             javafx.application.Platform.runLater(() -> cb.accept(update));
                         }
                     } else {
-                        // Response thông thường → đưa vào queue cho method đang chờ
                         responseQueue.put(obj);
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
-                    if (isConnected()) {
+                    if (isConnected())
                         System.err.println("[SocketClient] Push listener lỗi: " + e.getMessage());
-                    }
                     break;
                 }
             }
@@ -141,199 +135,171 @@ public class SocketClient {
         t.start();
     }
 
+    // ── Read helpers ──────────────────────────────────────────────────────────
+
     /**
-     * Đọc response từ queue thay vì đọc trực tiếp `in`.
-     * Giải quyết race condition: push listener là reader duy nhất của `in`.
+     * FIX 2: Đọc response đúng kiểu expectedType, bỏ qua object sai kiểu.
+     * Ngăn ClassCastException khi nhiều request đồng thời đưa response vào queue.
      */
+    @SuppressWarnings("unchecked")
+    private <T> T readTypedResponse(Class<T> expectedType) throws Exception {
+        long deadline = System.currentTimeMillis() + RESPONSE_TIMEOUT_MS;
+        while (true) {
+            long remaining = deadline - System.currentTimeMillis();
+            if (remaining <= 0)
+                throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
+            Object resp = responseQueue.poll(remaining, TimeUnit.MILLISECONDS);
+            if (resp == null)
+                throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
+            if (expectedType.isInstance(resp))
+                return (T) resp;
+            // Sai kiểu → bỏ qua, đọc tiếp trong deadline còn lại
+            System.err.println("[SocketClient] Bỏ qua response sai kiểu: "
+                    + resp.getClass().getSimpleName()
+                    + " (cần " + expectedType.getSimpleName() + ")");
+        }
+    }
+
+    /** Đọc không lọc kiểu – dùng cho unsubscribe, cancelAutoBid. */
     @SuppressWarnings("unchecked")
     private <T> T readResponse() throws Exception {
         Object resp = responseQueue.poll(RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        if (resp == null) throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
+        if (resp == null)
+            throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
         return (T) resp;
+    }
+
+    // ── Send helpers ──────────────────────────────────────────────────────────
+
+    /** Ghi action + payload. Lock CHỈ khi ghi, thả trước khi đọc response. */
+    private void sendRequest(String action, Object payload) throws Exception {
+        ensureConnected();
+        writeLock.lock();
+        try {
+            out.writeObject(action);
+            if (payload != null) out.writeObject(payload);
+            out.flush();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private void sendRequestWithInt(String action, int value) throws Exception {
+        ensureConnected();
+        writeLock.lock();
+        try {
+            out.writeObject(action);
+            out.writeInt(value);
+            out.flush();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private void sendRequest(String action) throws Exception {
+        sendRequest(action, null);
     }
 
     // ── USER ──────────────────────────────────────────────────────────────────
 
-    public synchronized LoginResponse login(LoginRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_LOGIN");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new LoginResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
-        }
+    public LoginResponse login(LoginRequest request) {
+        try { sendRequest("USER_LOGIN", request); return readTypedResponse(LoginResponse.class); }
+        catch (Exception e) { return new LoginResponse(false, "Không thể kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized RegisterResponse register(RegisterRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_REGISTER");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new RegisterResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
-        }
+    public RegisterResponse register(RegisterRequest request) {
+        try { sendRequest("USER_REGISTER", request); return readTypedResponse(RegisterResponse.class); }
+        catch (Exception e) { return new RegisterResponse(false, "Không thể kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized UpdateProfileResponse updateProfile(UpdateProfileRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_UPDATE_PROFILE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new UpdateProfileResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
-        }
+    public UpdateProfileResponse updateProfile(UpdateProfileRequest request) {
+        try { sendRequest("USER_UPDATE_PROFILE", request); return readTypedResponse(UpdateProfileResponse.class); }
+        catch (Exception e) { return new UpdateProfileResponse(false, "Không thể kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized BalanceResponse updateBalance(BalanceRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("USER_BALANCE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new BalanceResponse(false, "Không thể kết nối đến máy chủ: " + e.getMessage(), null);
-        }
+    public BalanceResponse updateBalance(BalanceRequest request) {
+        try { sendRequest("USER_BALANCE", request); return readTypedResponse(BalanceResponse.class); }
+        catch (Exception e) { return new BalanceResponse(false, "Không thể kết nối: " + e.getMessage(), null); }
     }
 
     // ── AUCTION ───────────────────────────────────────────────────────────────
 
-    public synchronized CreateAuctionResponse createAuction(CreateAuctionRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_CREATE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
-        }
+    public CreateAuctionResponse createAuction(CreateAuctionRequest request) {
+        try { sendRequest("AUCTION_CREATE", request); return readTypedResponse(CreateAuctionResponse.class); }
+        catch (Exception e) { return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized AuctionListResponse getActiveAuctions() {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_ACTIVE");
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
-        }
+    public AuctionListResponse getActiveAuctions() {
+        try { sendRequest("AUCTION_GET_ACTIVE"); return readTypedResponse(AuctionListResponse.class); }
+        catch (Exception e) { return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized GetPendingAuctionRequestsResponse getPendingAuctionRequests(
-            GetPendingAuctionRequestsRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_PENDING_REQUESTS");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new GetPendingAuctionRequestsResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
-        }
+    public GetPendingAuctionRequestsResponse getPendingAuctionRequests(GetPendingAuctionRequestsRequest request) {
+        try { sendRequest("AUCTION_GET_PENDING_REQUESTS", request); return readTypedResponse(GetPendingAuctionRequestsResponse.class); }
+        catch (Exception e) { return new GetPendingAuctionRequestsResponse(false, "Lỗi kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized ApproveAuctionResponse approveAuction(ApproveAuctionRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_APPROVE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new ApproveAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
+    public ApproveAuctionResponse approveAuction(ApproveAuctionRequest request) {
+        try { sendRequest("AUCTION_APPROVE", request); return readTypedResponse(ApproveAuctionResponse.class); }
+        catch (Exception e) { return new ApproveAuctionResponse(false, "Lỗi kết nối: " + e.getMessage()); }
     }
 
-    public synchronized RejectAuctionResponse rejectAuction(RejectAuctionRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_REJECT");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new RejectAuctionResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
+    public RejectAuctionResponse rejectAuction(RejectAuctionRequest request) {
+        try { sendRequest("AUCTION_REJECT", request); return readTypedResponse(RejectAuctionResponse.class); }
+        catch (Exception e) { return new RejectAuctionResponse(false, "Lỗi kết nối: " + e.getMessage()); }
     }
 
-    public synchronized CreateAuctionResponse subscribeAuction(int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_SUBSCRIBE");
-            out.writeInt(auctionId);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
-        }
+    public CreateAuctionResponse subscribeAuction(int auctionId) {
+        try { sendRequestWithInt("AUCTION_SUBSCRIBE", auctionId); return readTypedResponse(CreateAuctionResponse.class); }
+        catch (Exception e) { return new CreateAuctionResponse(false, "Lỗi kết nối: " + e.getMessage(), null); }
     }
 
-    public synchronized void unsubscribeAuction(int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_UNSUBSCRIBE");
-            out.writeInt(auctionId);
-            out.flush();
-            readResponse(); // đọc SimpleResponse
-        } catch (Exception ignored) {}
+    public void unsubscribeAuction(int auctionId) {
+        try { sendRequestWithInt("AUCTION_UNSUBSCRIBE", auctionId); readResponse(); }
+        catch (Exception ignored) {}
     }
 
-    public synchronized BidResponse placeBid(BidRequest request) {
-        try {
-            ensureConnected();
-            out.writeObject("BID_PLACE");
-            out.writeObject(request);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new BidResponse(false, "Lỗi kết nối: " + e.getMessage(), java.math.BigDecimal.ZERO);
-        }
+    public BidResponse placeBid(BidRequest request) {
+        try { sendRequest("BID_PLACE", request); return readTypedResponse(BidResponse.class); }
+        catch (Exception e) { return new BidResponse(false, "Lỗi kết nối: " + e.getMessage(), java.math.BigDecimal.ZERO); }
     }
 
-    public synchronized BidHistoryResponse getBidHistory(int auctionId) {
-        try {
-            ensureConnected();
-            out.writeObject("AUCTION_GET_BIDS");
-            out.writeInt(auctionId);
-            out.flush();
-            return readResponse();
-        } catch (Exception e) {
-            return new BidHistoryResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
-        }
+    public BidHistoryResponse getBidHistory(int auctionId) {
+        try { sendRequestWithInt("AUCTION_GET_BIDS", auctionId); return readTypedResponse(BidHistoryResponse.class); }
+        catch (Exception e) { return new BidHistoryResponse(false, "Lỗi kết nối: " + e.getMessage(), null); }
     }
 
     // ── AUTO BID ──────────────────────────────────────────────────────────────
 
-    public synchronized SimpleResponse registerAutoBid(AutoBidConfig config) {
+    public SimpleResponse registerAutoBid(AutoBidConfig config) {
+        try { sendRequest("AUTOBID_REGISTER", config); return readTypedResponse(SimpleResponse.class); }
+        catch (Exception e) { return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage()); }
+    }
+
+    public SimpleResponse cancelAutoBid(int bidderId, int auctionId) {
         try {
             ensureConnected();
-            out.writeObject("AUTOBID_REGISTER");
-            out.writeObject(config);
-            out.flush();
+            writeLock.lock();
+            try {
+                out.writeObject("AUTOBID_CANCEL");
+                out.writeInt(bidderId);
+                out.writeInt(auctionId);
+                out.flush();
+            } finally {
+                writeLock.unlock();
+            }
             return readResponse();
         } catch (Exception e) {
             return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
 
-    public synchronized SimpleResponse cancelAutoBid(int bidderId, int auctionId) {
+    public AuctionListResponse getMyAuctions() {
         try {
-            ensureConnected();
-            out.writeObject("AUTOBID_CANCEL");
-            out.writeInt(bidderId);
-            out.writeInt(auctionId);
-            out.flush();
-            return readResponse();
+            sendRequest("AUCTION_GET_MY");
+            return readTypedResponse(AuctionListResponse.class);
         } catch (Exception e) {
-            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+            return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
         }
     }
 }

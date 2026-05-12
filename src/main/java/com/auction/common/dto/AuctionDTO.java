@@ -1,5 +1,7 @@
 package com.auction.common.dto;
 
+import com.auction.server.model.AuctionStatus;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,11 +14,13 @@ public class AuctionDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private int auctionId;
+    private String auctionCode;
     private int itemId;
     private String itemName;
     private String itemDescription;
     private String itemCategory;
     private String sellerName;
+    private int sellerId;
     private BigDecimal startingPrice;
     private BigDecimal currentPrice;
     private BigDecimal reservePrice;
@@ -24,9 +28,10 @@ public class AuctionDTO implements Serializable {
     private String highestBidderUsername;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private String status;
+    private AuctionStatus status;
     private int extensionCount;
     private int totalBids;
+    private String imageUrl;
 
     public AuctionDTO() {}
 
@@ -70,12 +75,21 @@ public class AuctionDTO implements Serializable {
     public LocalDateTime getEndTime() { return endTime; }
     public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public AuctionStatus getStatus() { return status; }
+    public void setStatus(AuctionStatus status) { this.status = status; }
 
     public int getExtensionCount() { return extensionCount; }
     public void setExtensionCount(int extensionCount) { this.extensionCount = extensionCount; }
 
     public int getTotalBids() { return totalBids; }
     public void setTotalBids(int totalBids) { this.totalBids = totalBids; }
+
+    public String getImageUrl() {return imageUrl;}
+    public void setImageUrl(String imageUrl) {this.imageUrl = imageUrl;}
+
+    public String getAuctionCode() {return auctionCode;}
+    public void setAuctionCode(String auctionCode) {this.auctionCode = auctionCode;}
+
+    public int getSellerId() {return sellerId;}
+    public void setSellerId(int sellerId) {this.sellerId = sellerId;}
 }
