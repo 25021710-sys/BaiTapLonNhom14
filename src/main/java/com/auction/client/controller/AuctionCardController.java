@@ -99,89 +99,47 @@ public class AuctionCardController {
     });
   }
 
-  private void startCountdown(
-          LocalDateTime startTime,
-          LocalDateTime endTime,
-          AuctionStatus status
-  ) {
+  private void startCountdown(LocalDateTime startTime,
+                              LocalDateTime endTime,
+                              AuctionStatus status) {
+    if (countdown != null) countdown.stop();
 
-    if (endTime == null) {
-      return;
-    }
+    countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+      LocalDateTime now = LocalDateTime.now();
 
-    if (countdown != null) {
-      countdown.stop();
-    }
+      // ── OPEN & chưa tới startTime → đếm ngược đến khi bắt đầu ──
+      if (status == AuctionStatus.OPEN && startTime != null && now.isBefore(startTime)) {
+        long secondsLeft = java.time.Duration.between(now, startTime).getSeconds();
+        lblTimeLeft.setText("🕐 Sắp diễn ra: " + formatTime(secondsLeft));
+        lblTimeLeft.setStyle(
+                "-fx-text-fill: #1d4ed8; -fx-font-weight: bold;"
+        );
 
-    countdown = new Timeline(
+        // ── RUNNING hoặc OPEN đã qua startTime → đếm ngược đến endTime ──
+      } else if (endTime != null) {
+        long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
+        if (secondsLeft <= 0) {
+          lblTimeLeft.setText("Đã kết thúc");
+          lblTimeLeft.setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
+          countdown.stop();
+        } else {
+          lblTimeLeft.setText("⏳ Còn lại: " + formatTime(secondsLeft));
+          lblTimeLeft.setStyle(
+                  secondsLeft <= 300  // dưới 5 phút → đỏ cảnh báo
+                          ? "-fx-text-fill: #dc2626; -fx-font-weight: bold;"
+                          : "-fx-text-fill: #047857; -fx-font-weight: bold;"
+          );
+        }
 
-            new KeyFrame(
+        // ── Không có thông tin thời gian ──
+      } else {
+        lblTimeLeft.setText("--:--:--");
+      }
+    }));
 
-                    Duration.seconds(1),
-
-                    e -> {
-
-                      LocalDateTime now =
-                              LocalDateTime.now();
-
-                      // =========================
-                      // CHƯA BẮT ĐẦU
-                      // =========================
-
-                      if (status == AuctionStatus.OPEN
-                              &&
-                              startTime != null
-                              &&
-                              now.isBefore(startTime)) {
-
-                        long secondsLeft =
-                                java.time.Duration
-                                        .between(now, startTime)
-                                        .getSeconds();
-
-                        lblTimeLeft.setText(
-                                "Bắt đầu sau: "
-                                        + formatTime(secondsLeft)
-                        );
-                      }
-
-                      // =========================
-                      // ĐANG / ĐÃ DIỄN RA
-                      // =========================
-
-                      else {
-
-                        long secondsLeft =
-                                java.time.Duration
-                                        .between(now, endTime)
-                                        .getSeconds();
-
-                        if (secondsLeft <= 0) {
-
-                          lblTimeLeft.setText(
-                                  "Đã kết thúc"
-                          );
-
-                          countdown.stop();
-
-                        } else {
-
-                          lblTimeLeft.setText(
-                                  formatTime(secondsLeft)
-                          );
-                        }
-                      }
-                    }
-            )
-    );
-
-    countdown.setCycleCount(
-            Animation.INDEFINITE
-    );
-
+    countdown.setCycleCount(Animation.INDEFINITE);
     countdown.play();
   }
-
   private String formatTime(long secondsLeft) {
     long days = secondsLeft / 86400;
     long hours = (secondsLeft % 86400) / 3600;
