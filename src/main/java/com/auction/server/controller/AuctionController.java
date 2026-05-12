@@ -534,7 +534,7 @@ public class AuctionController {
         dto.setHighestBidderId(a.getHighestBidderId());
         dto.setStartTime(a.getStartTime());
         dto.setEndTime(a.getEndTime());
-        dto.setStatus(a.getStatus() != null ? a.getStatus().name() : "");
+        dto.setStatus(a.getStatus());
         dto.setExtensionCount(a.getExtensionCount());
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
 

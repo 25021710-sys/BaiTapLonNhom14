@@ -1,6 +1,7 @@
 package com.auction.client.controller;
 
 import com.auction.common.dto.AuctionDTO;
+import com.auction.server.model.AuctionStatus;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -60,27 +61,18 @@ public class AuctionCardController {
     // STATUS TEXT
     // =========================
 
-    String displayStatus;
+    AuctionStatus status = dto.getStatus();
 
-    switch (dto.getStatus()) {
-
-      case "OPEN" -> displayStatus = "SẮP DIỄN RA";
-
-      case "RUNNING" -> displayStatus = "ĐANG DIỄN RA";
-
-      case "ENDED" -> displayStatus = "ĐÃ KẾT THÚC";
-
-      default -> displayStatus = dto.getStatus();
-    }
-
-    lblStatus.setText(displayStatus);
+    lblStatus.setText(
+            status.getDisplay()
+    );
     // Màu status
     switch (dto.getStatus()) {
-      case "RUNNING"-> lblStatus.setStyle(
+      case AuctionStatus.RUNNING -> lblStatus.setStyle(
               "-fx-font-size: 12px; -fx-font-weight: bold;" +
                       "-fx-padding: 6 12; -fx-background-radius: 10;" +
                       "-fx-background-color: #d1fae5; -fx-text-fill: #047857;");
-      case "OPEN"-> lblStatus.setStyle(
+      case AuctionStatus.OPEN-> lblStatus.setStyle(
               "-fx-font-size: 12px; -fx-font-weight: bold;" +
                       "-fx-padding: 6 12; -fx-background-radius: 10;" +
                       "-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8;");
@@ -107,32 +99,86 @@ public class AuctionCardController {
     });
   }
 
-  private void startCountdown(LocalDateTime startTime,
-                              LocalDateTime endTime,
-                              String status) {
-    if (endTime == null) return;
-    if (countdown != null) countdown.stop();
+  private void startCountdown(
+          LocalDateTime startTime,
+          LocalDateTime endTime,
+          AuctionStatus status
+  ) {
 
-    countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-      LocalDateTime now = LocalDateTime.now();
+    if (endTime == null) {
+      return;
+    }
 
-      // Chưa bắt đầu → đếm đến startTime
-      if ("OPEN".equals(status) && startTime != null && now.isBefore(startTime)) {
-        long secondsLeft = java.time.Duration.between(now, startTime).getSeconds();
-        lblTimeLeft.setText("Bắt đầu sau: " + formatTime(secondsLeft));
-      }
-      // Đang diễn ra → đếm đến endTime
-      else {
-        long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
-        if (secondsLeft <= 0) {
-          lblTimeLeft.setText("Đã kết thúc");
-          countdown.stop();
-        } else {
-          lblTimeLeft.setText(formatTime(secondsLeft));
-        }
-      }
-    }));
-    countdown.setCycleCount(Animation.INDEFINITE);
+    if (countdown != null) {
+      countdown.stop();
+    }
+
+    countdown = new Timeline(
+
+            new KeyFrame(
+
+                    Duration.seconds(1),
+
+                    e -> {
+
+                      LocalDateTime now =
+                              LocalDateTime.now();
+
+                      // =========================
+                      // CHƯA BẮT ĐẦU
+                      // =========================
+
+                      if (status == AuctionStatus.OPEN
+                              &&
+                              startTime != null
+                              &&
+                              now.isBefore(startTime)) {
+
+                        long secondsLeft =
+                                java.time.Duration
+                                        .between(now, startTime)
+                                        .getSeconds();
+
+                        lblTimeLeft.setText(
+                                "Bắt đầu sau: "
+                                        + formatTime(secondsLeft)
+                        );
+                      }
+
+                      // =========================
+                      // ĐANG / ĐÃ DIỄN RA
+                      // =========================
+
+                      else {
+
+                        long secondsLeft =
+                                java.time.Duration
+                                        .between(now, endTime)
+                                        .getSeconds();
+
+                        if (secondsLeft <= 0) {
+
+                          lblTimeLeft.setText(
+                                  "Đã kết thúc"
+                          );
+
+                          countdown.stop();
+
+                        } else {
+
+                          lblTimeLeft.setText(
+                                  formatTime(secondsLeft)
+                          );
+                        }
+                      }
+                    }
+            )
+    );
+
+    countdown.setCycleCount(
+            Animation.INDEFINITE
+    );
+
     countdown.play();
   }
 

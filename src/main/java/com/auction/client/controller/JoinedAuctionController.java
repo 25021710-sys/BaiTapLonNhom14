@@ -4,6 +4,7 @@ import com.auction.client.network.SocketClient;
 import com.auction.client.session.ClientSession;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.common.response.AuctionListResponse;
+import com.auction.server.model.AuctionStatus;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -75,47 +76,51 @@ public class JoinedAuctionController {
   }
 
   private void applyFilter() {
+
     clear();
-    if (allAuctions == null || allAuctions.isEmpty()) {
-      showEmpty("Bạn chưa tham gia phiên đấu giá nào.");
+
+    if (allAuctions == null
+            || allAuctions.isEmpty()) {
+
+      showEmpty(
+              "Bạn chưa tham gia phiên đấu giá nào."
+      );
+
       return;
     }
 
-    String filter = cbStatus.getValue();
+    String filter =
+            cbStatus.getValue();
+
     List<AuctionDTO> filtered;
 
-    switch (filter == null ? "Tất cả" : filter) {
+    switch (filter == null
+            ? "Tất cả"
+            : filter) {
+
       case "Đang diễn ra" ->
-              filtered = allAuctions.stream()
-                      .filter(a -> "RUNNING".equalsIgnoreCase(a.getStatus())
-                              || "ĐANG DIỄN RA".equalsIgnoreCase(a.getStatus()))
-                      .collect(Collectors.toList());
+              filtered = allAuctions.stream().filter(a ->
+                      a.getStatus() == AuctionStatus.RUNNING).collect(Collectors.toList());
       case "Đã kết thúc" ->
-              filtered = allAuctions.stream()
-                      .filter(a -> "FINISHED".equalsIgnoreCase(a.getStatus())
-                              || "ENDED".equalsIgnoreCase(a.getStatus()))
+              filtered = allAuctions.stream().filter(a -> a.getStatus() == AuctionStatus.FINISHED)
+
                       .collect(Collectors.toList());
       case "Bạn thắng" -> {
         int myId = myId();
-        filtered = allAuctions.stream()
-                .filter(a -> a.getHighestBidderId() == myId
-                        && ("FINISHED".equalsIgnoreCase(a.getStatus())
-                        || "ENDED".equalsIgnoreCase(a.getStatus())))
-                .collect(Collectors.toList());
+        filtered = allAuctions.stream().filter(a ->
+                        a.getHighestBidderId() == myId && a.getStatus() == AuctionStatus.FINISHED
+                ).collect(Collectors.toList());
       }
       case "Bạn thua" -> {
         int myId = myId();
         filtered = allAuctions.stream()
-                .filter(a -> a.getHighestBidderId() != myId
-                        && ("FINISHED".equalsIgnoreCase(a.getStatus())
-                        || "ENDED".equalsIgnoreCase(a.getStatus())))
+                .filter(a -> a.getHighestBidderId() != myId && a.getStatus() == AuctionStatus.FINISHED)
                 .collect(Collectors.toList());
       }
       default -> filtered = allAuctions;
     }
 
-    if (filtered.isEmpty()) {
-      showEmpty("Không có phiên nào trong danh mục này.");
+    if (filtered.isEmpty()) {showEmpty("Không có phiên nào trong danh mục này.");
       return;
     }
 

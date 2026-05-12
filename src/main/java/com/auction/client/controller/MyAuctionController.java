@@ -12,6 +12,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 public class MyAuctionController {
 
@@ -20,6 +21,10 @@ public class MyAuctionController {
 
   @FXML
   private VBox auctionListContainer;
+  private Consumer<AuctionDTO> openRoomCallback;
+  public void setOpenRoomCallback(Consumer<AuctionDTO> callback) {
+    this.openRoomCallback = callback;
+  }
 
   @FXML
   public void initialize() {
@@ -128,8 +133,9 @@ public class MyAuctionController {
 
       AuctionCardController controller =
               loader.getController();
-
-      controller.setData(dto);
+      controller.setOnJoinCallback(
+              this::handleOpenRoom
+      );
 
       auctionListContainer
               .getChildren()
@@ -144,5 +150,9 @@ public class MyAuctionController {
   @FXML
   private void handleRefresh(ActionEvent event) {
     loadMyAuction();
+  }
+
+  private void handleOpenRoom(AuctionDTO dto) {
+    if (openRoomCallback != null) openRoomCallback.accept(dto);
   }
 }
