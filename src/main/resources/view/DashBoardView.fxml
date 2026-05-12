@@ -57,7 +57,7 @@
                  styleClass="menu-button"
                  prefHeight="35.0"
                  prefWidth="180.0"
-                 text="Phiên đấu giá đang tham gia"/>
+                 text="Phiên đấu giá tham gia"/>
 
          <Button fx:id="btnMyAuction"
                  mnemonicParsing="false"

@@ -1,6 +1,5 @@
 package com.auction.server.dao;
 
-import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.server.config.DatabaseConnection;
 import com.auction.server.model.Auction;
 import com.auction.server.model.AuctionStatus;
@@ -286,60 +285,6 @@ public class AuctionDAO {
 
         }
 
-        return list;
-    }
-    public List<AdminAuctionRequestDTO> findPendingWithDetails() {
-        String sql = """
-        SELECT 
-            a.id, a.starting_price, a.start_time, a.end_time, 
-            a.created_at, a.status,
-            i.name as item_name, i.description as item_desc,
-            i.category as item_category,
-            u.username as seller_name,
-            a.seller_id
-        FROM auctions a
-        JOIN items i ON a.item_id = i.id
-        JOIN users u ON a.seller_id = u.id
-        WHERE a.status = 'PENDING'
-        ORDER BY a.created_at DESC
-    """;
-
-        List<AdminAuctionRequestDTO> list = new ArrayList<>();
-
-        try (Connection c = getConn();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                AdminAuctionRequestDTO dto = new AdminAuctionRequestDTO();
-                dto.setRequestId(rs.getInt("id"));
-                dto.setItemName(rs.getString("item_name"));
-                dto.setItemDescription(rs.getString("item_desc"));
-                dto.setItemCategory(rs.getString("item_category"));
-                dto.setSellerUsername(rs.getString("seller_name"));
-                dto.setStartingPrice(rs.getBigDecimal("starting_price"));
-
-                if (rs.getTimestamp("start_time") != null)
-                    dto.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
-                if (rs.getTimestamp("end_time") != null)
-                    dto.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
-                if (rs.getTimestamp("created_at") != null)
-                    dto.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-
-                dto.setApprovalStatus(rs.getString("status"));
-
-                String imagePath = "images/" + rs.getInt("id") + ".jpg";
-                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
-                } else {
-                    dto.setImageUrl("https://picsum.photos/seed/" + rs.getInt("id") + "/300/200");
-                }
-
-                list.add(dto);
-            }
-        } catch (Exception e) {
-            logger.error("Lỗi findPendingWithDetails", e);
-        }
         return list;
     }
 }
