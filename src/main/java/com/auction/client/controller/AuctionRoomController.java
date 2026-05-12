@@ -142,7 +142,7 @@ public class AuctionRoomController {
     // Hiển thị thông tin
     Platform.runLater(() -> {
       lblAuctionTitle.setText("Đấu giá: " + auction.getItemName());
-      lblAuctionStatus.setText(auction.getStatus());
+      lblAuctionStatus.setText(String.valueOf(auction.getStatus()));
       lblCategory.setText(auction.getItemCategory());
       lblStartPrice.setText(formatMoney(auction.getStartingPrice()) + " VNĐ");
       lblStepPrice.setText(formatMoney(stepPrice) + " VNĐ");

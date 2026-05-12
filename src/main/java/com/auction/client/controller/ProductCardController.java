@@ -74,7 +74,7 @@ public class ProductCardController {
         }
 
         // Màu nút theo trạng thái
-        styleJoinButton(dto.getStatus());
+        styleJoinButton(String.valueOf(dto.getStatus()));
 
         // Countdown
         startCountdown(dto.getEndTime());
