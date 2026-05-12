@@ -1,6 +1,5 @@
 package com.auction.server.dao;
 
-import com.auction.common.dto.AdminAuctionRequestDTO;
 import com.auction.server.config.DatabaseConnection;
 import com.auction.server.model.Auction;
 import com.auction.server.model.AuctionStatus;
@@ -288,71 +287,90 @@ public class AuctionDAO {
 
         return list;
     }
+
+    /**
+     * Lấy danh sách phiên PENDING kèm thông tin item và seller (JOIN 1 query thay vì N+1).
+     * Được dùng bởi AuctionController.handleGetPendingAuctions() để gửi cho Admin.
+     */
+    public List<com.auction.common.dto.AdminAuctionRequestDTO> findPendingWithDetails() {
+        String sql = """
+            SELECT
+                a.id            AS auction_id,
+                a.seller_id,
+                a.item_id,
+                a.starting_price,
+                a.reserve_price,
+                a.start_time,
+                a.end_time,
+                a.created_at    AS auction_created_at,
+                a.status,
+                i.name          AS item_name,
+                i.description   AS item_description,
+                i.category      AS item_category,
+                u.username      AS seller_username
+            FROM auctions a
+            LEFT JOIN items   i ON i.id = a.item_id
+            LEFT JOIN users   u ON u.id = a.seller_id
+            WHERE a.status = 'PENDING'
+            ORDER BY a.created_at DESC
+            """;
+
+        List<com.auction.common.dto.AdminAuctionRequestDTO> list = new ArrayList<>();
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                com.auction.common.dto.AdminAuctionRequestDTO dto =
+                        new com.auction.common.dto.AdminAuctionRequestDTO();
+
+                dto.setRequestId(rs.getInt("auction_id"));
+                dto.setApprovalStatus("PENDING");
+                dto.setSellerId(rs.getInt("seller_id"));
+                dto.setSellerUsername(rs.getString("seller_username"));
+                dto.setItemId(rs.getInt("item_id"));
+                dto.setItemName(rs.getString("item_name"));
+                dto.setItemDescription(rs.getString("item_description"));
+                dto.setItemCategory(rs.getString("item_category"));
+                dto.setStartingPrice(rs.getBigDecimal("starting_price"));
+                dto.setReservePrice(rs.getBigDecimal("reserve_price"));
+
+                if (rs.getTimestamp("start_time") != null)
+                    dto.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
+                if (rs.getTimestamp("end_time") != null)
+                    dto.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
+                if (rs.getTimestamp("auction_created_at") != null)
+                    dto.setCreatedAt(rs.getTimestamp("auction_created_at").toLocalDateTime());
+
+                // Ảnh: thử đọc file theo quy ước images/<auctionId>.jpg
+                String imagePath = "images/" + dto.getRequestId() + ".jpg";
+                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
+                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
+                } else {
+                    dto.setImageUrl("https://picsum.photos/seed/" + dto.getRequestId() + "/300/200");
+                }
+
+                list.add(dto);
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi findPendingWithDetails", e);
+        }
+        return list;
+    }
+
+    /**
+     * Lấy tất cả phiên đấu giá của một seller (dùng cho trang "My Auctions").
+     */
     public List<Auction> findBySeller(int sellerId) {
         String sql = "SELECT * FROM auctions WHERE seller_id = ? ORDER BY created_at DESC";
         List<Auction> list = new ArrayList<>();
-        try (Connection c = getConn();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, sellerId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
             }
         } catch (SQLException e) {
             logger.error("Lỗi findBySeller sellerId={}", sellerId, e);
-        }
-        return list;
-    }
-    public List<AdminAuctionRequestDTO> findPendingWithDetails() {
-        String sql = """
-        SELECT 
-            a.id, a.starting_price, a.start_time, a.end_time, 
-            a.created_at, a.status,
-            i.name as item_name, i.description as item_desc,
-            i.category as item_category,
-            u.username as seller_name,
-            a.seller_id
-        FROM auctions a
-        JOIN items i ON a.item_id = i.id
-        JOIN users u ON a.seller_id = u.id
-        WHERE a.status = 'PENDING'
-        ORDER BY a.created_at DESC
-    """;
-
-        List<AdminAuctionRequestDTO> list = new ArrayList<>();
-
-        try (Connection c = getConn();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                AdminAuctionRequestDTO dto = new AdminAuctionRequestDTO();
-                dto.setRequestId(rs.getInt("id"));
-                dto.setItemName(rs.getString("item_name"));
-                dto.setItemDescription(rs.getString("item_desc"));
-                dto.setItemCategory(rs.getString("item_category"));
-                dto.setSellerUsername(rs.getString("seller_name"));
-                dto.setStartingPrice(rs.getBigDecimal("starting_price"));
-
-                if (rs.getTimestamp("start_time") != null)
-                    dto.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
-                if (rs.getTimestamp("end_time") != null)
-                    dto.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
-                if (rs.getTimestamp("created_at") != null)
-                    dto.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-
-                dto.setApprovalStatus(rs.getString("status"));
-
-                String imagePath = "images/" + rs.getInt("id") + ".jpg";
-                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
-                } else {
-                    dto.setImageUrl("https://picsum.photos/seed/" + rs.getInt("id") + "/300/200");
-                }
-
-                list.add(dto);
-            }
-        } catch (Exception e) {
-            logger.error("Lỗi findPendingWithDetails", e);
         }
         return list;
     }

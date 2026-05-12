@@ -80,74 +80,64 @@ public class DashBoardController {
         setActiveMenu(btnHome);
 
         // Load data thật từ server (background thread)
-//        loadAuctionDataFromServer();
+        loadAuctionDataFromServer();
     }
 
     // ── LOAD DATA TỪ SERVER ───────────────────────────────────────────────────
 
-//    private void loadAuctionDataFromServer() {
-//        new Thread(() -> {
-//            try {
-//                AuctionListResponse response = SocketClient.getInstance().getActiveAuctions();
-//                if (response != null && response.isSuccess() && response.getAuctions() != null) {
-//                    List<AuctionDTO> auctions = response.getAuctions();
-//                    Platform.runLater(() -> renderCardsFromData(auctions));
-//                } else {
-//                    Platform.runLater(this::renderPlaceholderCards);
-//                }
-//            } catch (Exception e) {
-//                System.err.println("Lỗi load auctions từ server: " + e.getMessage());
-//                Platform.runLater(this::renderPlaceholderCards);
-//            }
-//        }, "load-auctions-thread").start();
-//    }
+    private void loadAuctionDataFromServer() {
+        new Thread(() -> {
+            try {
+                AuctionListResponse response = SocketClient.getInstance().getActiveAuctions();
+                if (response != null && response.isSuccess() && response.getAuctions() != null) {
+                    List<AuctionDTO> auctions = response.getAuctions();
+                    Platform.runLater(() -> renderCardsFromData(auctions));
+                } else {
+                    Platform.runLater(this::renderPlaceholderCards);
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi load auctions từ server: " + e.getMessage());
+                Platform.runLater(this::renderPlaceholderCards);
+            }
+        }, "load-auctions-thread").start();
+    }
 
-    /** Render card với AuctionDTO thật – mỗi 3 section chia đều */
+    /** Render card với AuctionDTO thật – hiển thị tất cả auctions ở cả 2 section */
     private void renderCardsFromData(List<AuctionDTO> auctions) {
         clear(pnlBidsJoined);
         clear(pnlFeaturedProducts);
         clear(pnlFavoriteProducts);
 
-        for (int i = 0; i < auctions.size(); i++) {
-            HBox panel = (i % 3 == 0) ? pnlBidsJoined
-                    : (i % 3 == 1) ? pnlFeaturedProducts
-                    : pnlFavoriteProducts;
-            addProductCard(panel, auctions.get(i));
+        // "Những bid bạn đang tham gia": tất cả auction đang RUNNING
+        // "Sản phẩm nổi bật": tất cả auction
+        for (AuctionDTO dto : auctions) {
+            if ("RUNNING".equals(dto.getStatus()) || "OPEN".equals(dto.getStatus())) {
+                addAuctionCard(pnlBidsJoined, dto);
+            }
+            addAuctionCard(pnlFeaturedProducts, dto);
         }
-        // Bổ sung placeholder nếu chưa đủ 3 card/section
-        ensureMinCards(pnlBidsJoined,       3);
-        ensureMinCards(pnlFeaturedProducts, 3);
-        ensureMinCards(pnlFavoriteProducts, 3);
     }
 
     private void addProductCard(HBox panel, AuctionDTO dto) {
+        addAuctionCard(panel, dto);
+    }
+
+    private void addAuctionCard(HBox panel, AuctionDTO dto) {
         if (panel == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/ProductCard.fxml"));
+                    getClass().getResource("/view/AuctionCard.fxml"));
             Node card = loader.load();
-            ProductCardController ctrl = loader.getController();
+            AuctionCardController ctrl = loader.getController();
             ctrl.setData(dto);
             ctrl.setOnJoinCallback(this::openAuctionRoom);
             panel.getChildren().add(card);
         } catch (IOException e) {
-            System.err.println("Lỗi load ProductCard: " + e.getMessage());
+            System.err.println("Lỗi load AuctionCard: " + e.getMessage());
         }
     }
 
-    private void ensureMinCards(HBox panel, int min) {
-        if (panel == null) return;
-        int missing = min - panel.getChildren().size();
-        for (int i = 0; i < missing; i++) {
-            try {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/view/ProductCard.fxml"));
-                panel.getChildren().add(loader.load());
-            } catch (IOException e) {
-                System.err.println("Lỗi load placeholder: " + e.getMessage());
-            }
-        }
-    }
+
 
     private void renderPlaceholderCards() {
         try {
@@ -159,31 +149,7 @@ public class DashBoardController {
         }
     }
 
-    public void renderCards() {
-        new Thread(() -> {
-        AuctionListResponse response =
-                SocketClient.getInstance().getActiveAuctions();
 
-        javafx.application.Platform.runLater(() -> {
-            if (response == null || response.getAuctions() == null
-                    || response.getAuctions().isEmpty()) return;
-
-            pnlFeaturedProducts.getChildren().clear();
-
-            for (AuctionDTO dto : response.getAuctions()) {
-                try {
-                    FXMLLoader loader = new FXMLLoader(
-                            getClass().getResource("/view/AuctionCard.fxml"));
-                    Parent card = loader.load();
-                    AuctionCardController ctrl = loader.getController();
-                    ctrl.setData(dto);
-                    pnlFeaturedProducts.getChildren().add(card);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }, "load-auctions-thread").start(); }
 
     private void renderSection(HBox panel, int count) throws IOException {
         if (panel == null) return;

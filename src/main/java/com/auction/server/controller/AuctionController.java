@@ -272,8 +272,10 @@ public class AuctionController {
         try {
             ApproveAuctionRequest req = (ApproveAuctionRequest) in.readObject();
 
-            // adminId luôn lấy từ session
             boolean ok = auctionService.approveAuction(req.getRequestId(), session.getUserId());
+
+            // Xóa cache pending để lần sau Admin load lại danh sách mới
+            if (ok) { pendingDtoCache = null; pendingCacheTimeMs = 0; }
 
             send(out, new ApproveAuctionResponse(ok,
                     ok ? "Phiên đấu giá đã được duyệt thành công."
@@ -302,6 +304,9 @@ public class AuctionController {
                     session.getUserId(),
                     req.getRejectReason()
             );
+
+            // Xóa cache pending để lần sau Admin load lại danh sách mới
+            if (ok) { pendingDtoCache = null; pendingCacheTimeMs = 0; }
 
             send(out, new RejectAuctionResponse(ok,
                     ok ? "Phiên đấu giá đã bị từ chối."
