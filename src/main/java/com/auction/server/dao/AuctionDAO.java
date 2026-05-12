@@ -362,8 +362,7 @@ public class AuctionDAO {
      * Lấy tất cả phiên đấu giá của một seller (dùng cho trang "My Auctions").
      */
     public List<Auction> findBySeller(int sellerId) {
-        String sql = "SELECT * FROM auctions WHERE seller_id = ? ORDER BY created_at DESC";
-        List<Auction> list = new ArrayList<>();
+        String sql = "SELECT * FROM auctions WHERE seller_id = ? AND status IN ('OPEN','RUNNING','FINISHED') ORDER BY created_at DESC";        List<Auction> list = new ArrayList<>();
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, sellerId);
             try (ResultSet rs = ps.executeQuery()) {

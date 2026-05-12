@@ -167,18 +167,23 @@ public class DashBoardController {
      * Mở AuctionRoomView trong CENTER của BorderPane.
      * Được gọi bởi ProductCardController / AuctionCardController qua callback.
      */
+    // SAU
     public void openAuctionRoom(AuctionDTO dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/AuctionRoomView.fxml"));
+                getClass().getResource("/view/AuctionRoomView.fxml"));
             Parent roomView = loader.load();
             AuctionRoomController roomCtrl = loader.getController();
             roomCtrl.loadAuction(dto);
-            rootPane.setCenter(roomView);
+
+            Stage stage = new Stage();
+            stage.setTitle("Phiên đấu giá: " + dto.getItemName());
+            stage.setScene(new Scene(roomView));
+            stage.show();
         } catch (IOException e) {
             e.printStackTrace();
             Alert alert = new Alert(Alert.AlertType.ERROR,
-                    "Không thể mở phòng đấu giá:\n" + e.getMessage());
+                "Không thể mở phòng đấu giá:\n" + e.getMessage());
             alert.setHeaderText("Lỗi");
             alert.showAndWait();
         }
@@ -295,12 +300,17 @@ public class DashBoardController {
         }
     }
 
+    // SAU
     @FXML
     public void handleMyAuctionView() {
         try {
             setActiveMenu(btnMyAuction);
-            rootPane.setCenter(new FXMLLoader(
-                    getClass().getResource("/view/MyAuctionView.fxml")).load());
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/view/MyAuctionView.fxml"));
+            Parent view = loader.load();
+            MyAuctionController ctrl = loader.getController();
+            ctrl.setOpenRoomCallback(this::openAuctionRoom);
+            rootPane.setCenter(view);
         } catch (IOException e) {
             System.out.println("Lỗi load MyAuction: " + e.getMessage());
         }
