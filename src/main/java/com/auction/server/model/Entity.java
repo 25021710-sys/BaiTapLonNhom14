@@ -1,9 +1,13 @@
-    package com.auction.server.model;
+package com.auction.server.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 // Lớp cha cao nhất, cung cấp id và thời gian tạo cho TẤT CẢ các lớp khác
-public abstract class Entity {
+// Implements Serializable để có thể truyền qua ObjectOutputStream (socket)
+public abstract class Entity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     protected int id;
     protected LocalDateTime createdAt;
 
