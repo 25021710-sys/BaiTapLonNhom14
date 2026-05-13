@@ -32,6 +32,7 @@ public class MyAuctionController {
 
     cbStatus.getItems().addAll(
             "Tất cả",
+            "Chờ duyệt",
             "Sắp diễn ra",
             "Đang diễn ra",
             "Đã kết thúc"
@@ -67,6 +68,7 @@ public class MyAuctionController {
             AuctionStatus status = dto.getStatus();
             if (selected != null) {
               switch (selected) {
+                case "Chờ duyệt"    -> { if (status != AuctionStatus.PENDING)  continue; }
                 case "Sắp diễn ra"  -> { if (status != AuctionStatus.OPEN)     continue; }
                 case "Đang diễn ra" -> { if (status != AuctionStatus.RUNNING)  continue; }
                 case "Đã kết thúc"  -> { if (status != AuctionStatus.FINISHED) continue; }

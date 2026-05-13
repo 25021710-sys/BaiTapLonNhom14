@@ -89,6 +89,7 @@ public class AuctionController {
             case "AUCTION_GET_BIDS"             -> handleGetBidHistory(in, out);
             case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out);
             case "AUTOBID_CANCEL"               -> handleCancelAutoBid(in, out);
+            case "AUCTION_GET_JOINED"          -> handleGetJoinedAuctions(out);
             case "AUCTION_GET_MY"               -> handleGetMyAuctions(out);
             case "AUCTION_GET_DASHBOARD"        -> handleGetDashboard(out);
             default -> {
@@ -327,6 +328,18 @@ public class AuctionController {
         } catch (Exception e) {
             log.error("Lỗi AUTOBID_CANCEL: {}", e.getMessage(), e);
             send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
+        }
+    }
+
+    private void handleGetJoinedAuctions(ObjectOutputStream out) {
+        if (!requireLogin(out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        try {
+            List<Auction> auctions = auctionService.getJoinedAuctions(session.getUserId());
+            List<AuctionDTO> dtos = buildAuctionDTOs(auctions);
+            send(out, new AuctionListResponse(true, "OK", dtos));
+        } catch (Exception e) {
+            log.error("Lỗi AUCTION_GET_JOINED: {}", e.getMessage(), e);
+            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
         }
     }
 

@@ -303,6 +303,15 @@ public class SocketClient {
         }
     }
 
+    public AuctionListResponse getJoinedAuctions() {
+        try {
+            sendRequest("AUCTION_GET_JOINED");
+            return readTypedResponse(AuctionListResponse.class);
+        } catch (Exception e) {
+            return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        }
+    }
+
     public synchronized AuctionListResponse getDashboardAuctions() {
         try {
             sendRequest("AUCTION_GET_DASHBOARD");

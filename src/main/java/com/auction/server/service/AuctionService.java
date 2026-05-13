@@ -608,6 +608,10 @@ public class AuctionService {
         }
     }
 
+    public List<Auction> getJoinedAuctions(int bidderId) {
+        return auctionDAO.findJoinedByBidder(bidderId);
+    }
+
     public List<Auction> getRunningAuctionsExcludeSeller(int sellerId) {
         return auctionDAO.findByStatusExcludeSeller("RUNNING", sellerId);
     }
@@ -616,4 +620,3 @@ public class AuctionService {
         return auctionDAO.findByStatusExcludeSeller("OPEN", sellerId);
     }
 }
-

@@ -55,14 +55,9 @@ public class JoinedAuctionController {
     showLoading();
     new Thread(() -> {
       try {
-        AuctionListResponse res = SocketClient.getInstance().getActiveAuctions();
+        AuctionListResponse res = SocketClient.getInstance().getJoinedAuctions();
         if (res != null && res.isSuccess() && res.getAuctions() != null) {
           List<AuctionDTO> all = res.getAuctions();
-          // Lọc chỉ các phiên user đã join (dựa vào highestBidderId hoặc participated)
-          int myId = ClientSession.getCurrentUser() != null
-                  ? ClientSession.getCurrentUser().getId() : -1;
-          // Nếu server không trả về danh sách tham gia riêng,
-          // tạm thời hiển thị tất cả phiên đang chạy để demo
           allAuctions = all;
           Platform.runLater(this::applyFilter);
         } else {
@@ -108,8 +103,8 @@ public class JoinedAuctionController {
       case "Bạn thắng" -> {
         int myId = myId();
         filtered = allAuctions.stream().filter(a ->
-                        a.getHighestBidderId() == myId && a.getStatus() == AuctionStatus.FINISHED
-                ).collect(Collectors.toList());
+                a.getHighestBidderId() == myId && a.getStatus() == AuctionStatus.FINISHED
+        ).collect(Collectors.toList());
       }
       case "Bạn thua" -> {
         int myId = myId();

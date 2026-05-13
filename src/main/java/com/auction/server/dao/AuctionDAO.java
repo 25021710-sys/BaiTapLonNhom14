@@ -362,7 +362,7 @@ public class AuctionDAO {
      * Lấy tất cả phiên đấu giá của một seller (dùng cho trang "My Auctions").
      */
     public List<Auction> findBySeller(int sellerId) {
-        String sql = "SELECT * FROM auctions WHERE seller_id = ? AND status IN ('OPEN','RUNNING','FINISHED') ORDER BY created_at DESC";        List<Auction> list = new ArrayList<>();
+        String sql = "SELECT * FROM auctions WHERE seller_id = ? AND status IN ('PENDING','OPEN','RUNNING','FINISHED') ORDER BY created_at DESC";        List<Auction> list = new ArrayList<>();
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, sellerId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -374,9 +374,33 @@ public class AuctionDAO {
         return list;
     }
 
+    /**
+     * Lấy danh sách auction mà user đã từng đặt giá (dùng cho màn "Phiên tham gia").
+     * JOIN với bid_transactions để xác định user có bid hay không.
+     */
+    public List<Auction> findJoinedByBidder(int bidderId) {
+        String sql = """
+            SELECT DISTINCT a.*
+            FROM auctions a
+            INNER JOIN bid_transactions bt ON bt.auction_id = a.id
+            WHERE bt.bidder_id = ?
+            ORDER BY a.created_at DESC
+            """;
+        List<Auction> list = new ArrayList<>();
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, bidderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi findJoinedByBidder bidderId={}", bidderId, e);
+        }
+        return list;
+    }
+
     public List<Auction> findByStatusExcludeSeller(String status, int excludeSellerId) {
         String sql = "SELECT * FROM auctions WHERE status = ? AND seller_id != ? " +
-            "ORDER BY created_at DESC";
+                "ORDER BY created_at DESC";
         List<Auction> list = new ArrayList<>();
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, status);
