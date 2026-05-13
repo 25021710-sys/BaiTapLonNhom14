@@ -22,6 +22,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
@@ -157,6 +158,7 @@ public class AuctionRoomController {
       lblSellerName.setText("Seller: " + auction.getSellerName());
       updateCurrentPriceUI();
       updateYourStatus();
+      loadProductImage(auction.getImageUrl());
     });
 
     // Subscribe realtime
@@ -423,6 +425,31 @@ public class AuctionRoomController {
   @FXML public void handleMessageSeller() {}
 
   // ── SETUP HELPERS ─────────────────────────────────────────────────────────
+
+  private void loadProductImage(String imageUrl) {
+    if (imageUrl == null || imageUrl.isBlank()) return;
+    new Thread(() -> {
+      try {
+        Image img = new Image(imageUrl, true); // background loading
+        Platform.runLater(() -> {
+          if (imgMainProduct != null) {
+            imgMainProduct.setImage(img);
+            imgMainProduct.setPreserveRatio(true);
+            imgMainProduct.setSmooth(true);
+          }
+          // Hiển thị cùng ảnh cho các thumbnail (hiện chỉ có 1 ảnh)
+          Image thumb = new Image(imageUrl, 80, 80, true, true, true);
+          if (imgThumb1 != null) imgThumb1.setImage(thumb);
+          if (imgThumb2 != null) imgThumb2.setImage(thumb);
+          if (imgThumb3 != null) imgThumb3.setImage(thumb);
+          if (imgThumb4 != null) imgThumb4.setImage(thumb);
+        });
+      } catch (Exception e) {
+        // Ảnh lỗi → giữ placeholder, không crash app
+        System.err.println("[AuctionRoom] Không tải được ảnh: " + imageUrl);
+      }
+    }, "load-product-image").start();
+  }
 
   private void setupBidHistoryTable() {
     tblBidHistory.setItems(bidHistoryList);
