@@ -15,16 +15,18 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- * ClientHandler - xử lý kết nối của MỘT client trên một luồng riêng.
+ * ClientHandler – xử lý kết nối của MỘT client trên một luồng riêng.
  *
- * Luồng hoạt động:
- *   1. Tạo ObjectOutputStream / ObjectInputStream
- *   2. Vòng lặp đọc action (String) từ client
- *   3. Phân loại theo tiền tố (USER_, ITEM_, BID_, AUCTION_)
- *   4. Chuyển đến controller tương ứng để xử lý tiếp
+ * FIX 1 – out.reset() sau mỗi response thông thường:
+ *   ObjectOutputStream cache reference các object đã ghi. Nếu không reset(),
+ *   lần sau ghi cùng object (ví dụ AuctionDTO với id giống) sẽ chỉ ghi
+ *   "reference đến object cũ" → client nhận dữ liệu cũ (stale).
+ *   onAuctionUpdate() đã có reset() — giờ thêm vào send() luồng thường.
  *
- * Mỗi ClientHandler giữ một ServerSession riêng, theo dõi
- * user đã đăng nhập trong suốt vòng đời kết nối này.
+ * FIX 2 – AuctionController, ItemController dùng shared instance từ SocketServer:
+ *   Bản cũ: new AuctionController() trong constructor → mỗi client có instance riêng
+ *   → pendingDtoCache không được share giữa các client.
+ *   Fix: nhận controller từ bên ngoài (dependency injection qua constructor).
  */
 public class ClientHandler implements Runnable, AuctionObserver {
 
@@ -32,21 +34,27 @@ public class ClientHandler implements Runnable, AuctionObserver {
 
     private final Socket socket;
     private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private ObjectInputStream  in;
 
-    /** Session riêng của kết nối này - lưu user đã đăng nhập */
-    private final ServerSession session = new ServerSession();
+    private final ServerSession     session           = new ServerSession();
+    // Controllers được inject từ SocketServer (shared instances)
+    private final UserController    userController;
+    private final ItemController    itemController;
+    private final AuctionController auctionController;
 
-    public ServerSession getSession() {
-        return session;
-    }
+    public ServerSession getSession() { return session; }
 
-    private final UserController    userController    = new UserController(session);
-    private final ItemController    itemController    = new ItemController();
-    private final AuctionController auctionController = new AuctionController();
-
-    public ClientHandler(Socket socket) {
-        this.socket = socket;
+    /**
+     * FIX 2: Constructor nhận shared controller thay vì tự tạo mới.
+     * UserController vẫn tạo riêng vì nó giữ ServerSession của kết nối này.
+     */
+    public ClientHandler(Socket socket,
+                         ItemController itemController,
+                         AuctionController auctionController) {
+        this.socket            = socket;
+        this.userController    = new UserController(session);  // per-connection (cần session)
+        this.itemController    = itemController;               // shared
+        this.auctionController = auctionController;            // shared
     }
 
     @Override
@@ -63,23 +71,24 @@ public class ClientHandler implements Runnable, AuctionObserver {
                 Object obj = in.readObject();
 
                 if (obj instanceof String action) {
-
                     log.info("[{}] Yêu cầu: {}", clientAddr, action);
 
                     String prefix = action.contains("_") ? action.split("_")[0] : action;
 
                     switch (prefix) {
-                        case "USER" -> userController.processRequest(action, in, out);
-                        case "ITEM" -> itemController.processRequest(action, in, out);
+                        case "USER"                -> userController.processRequest(action, in, out);
+                        case "ITEM"                -> itemController.processRequest(action, in, out);
                         case "BID", "AUCTION", "AUTOBID" ->
                                 auctionController.processRequest(action, in, out, session, this);
                         default -> {
                             log.warn("[{}] Action không xác định: {}", clientAddr, action);
-                            out.writeObject("ERROR_UNKNOWN_ACTION");
-                            out.flush();
+                            synchronized (this) {
+                                out.writeObject("ERROR_UNKNOWN_ACTION");
+                                out.flush();
+                                out.reset(); // FIX 1
+                            }
                         }
                     }
-
                 }
             }
 
@@ -94,9 +103,8 @@ public class ClientHandler implements Runnable, AuctionObserver {
     }
 
     /**
-     * Observer callback: được gọi bởi AuctionManager khi có update.
-     * Push AuctionUpdateDTO về client qua socket.
-     * synchronized để tránh nhiều thread cùng ghi vào out stream.
+     * Observer callback: push AuctionUpdateDTO về client.
+     * FIX 1: out.reset() đã có ở đây — giữ nguyên.
      */
     @Override
     public synchronized void onAuctionUpdate(AuctionUpdateDTO update) {
@@ -105,19 +113,19 @@ public class ClientHandler implements Runnable, AuctionObserver {
                 out.writeObject("AUCTION_PUSH_UPDATE");
                 out.writeObject(update);
                 out.flush();
-                out.reset();
+                out.reset(); // xóa object cache sau push
             }
         } catch (Exception e) {
             log.warn("Không thể push update đến client: {}", e.getMessage());
         }
     }
 
-    /** Push raw JSON notification (backward compat) */
     public synchronized void sendNotification(String jsonPayload) throws Exception {
         if (out != null && !socket.isClosed()) {
             out.writeObject("PUSH_NOTIFICATION");
             out.writeObject(jsonPayload);
             out.flush();
+            out.reset(); // FIX 1
         }
     }
 
@@ -127,3 +135,4 @@ public class ClientHandler implements Runnable, AuctionObserver {
         try { if (socket != null && !socket.isClosed()) socket.close();} catch (Exception ignored) {}
     }
 }
+ 

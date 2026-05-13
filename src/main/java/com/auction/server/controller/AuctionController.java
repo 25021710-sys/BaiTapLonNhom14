@@ -20,9 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * AuctionController – xử lý tất cả request liên quan đến đấu giá từ client.
@@ -41,7 +39,7 @@ import java.util.Map;
  *   AUTOBID_CANCEL              – hủy đấu giá tự động
  *
  * Các fix so với phiên bản cũ:
- *   1. Phân quyền đầy đủ: APPROVE/REJECT yêu cầu ADMIN, CREATE yêu cầu SELLER/ADMIN
+ *   1. Phân quyền đầy đủ: APPROVE/REJECT yêu cầu ADMIN
  *   2. AUTOBID_REGISTER/CANCEL dùng AuctionManager.getAutoBidEngine() thay vì tạo instance mới
  *      (bản cũ tạo AutoBidEngine mới → không share state với engine đang chạy thực)
  *   3. handleRegisterAutoBid kiểm tra phiên tồn tại và đang mở trước khi đăng ký
@@ -53,10 +51,12 @@ import java.util.Map;
 public class AuctionController {
 
     private static final Logger log = LoggerFactory.getLogger(AuctionController.class);
-    // AuctionController.java - thêm field
-    private static List<AdminAuctionRequestDTO> pendingDtoCache = null;
-    private static long pendingCacheTimeMs = 0;
+
+    // FIX 2: cache dùng volatile + synchronized đúng cách thay vì static field thô
+    private volatile List<AdminAuctionRequestDTO> pendingDtoCache = null;
+    private volatile long pendingCacheTimeMs = 0;
     private static final long CACHE_TTL = 5_000; // 5 giây
+    private final Object cacheLock = new Object();
 
     // ── Dependencies ──────────────────────────────────────────────────────────
     private final AuctionManager auctionManager = AuctionManager.getInstance();
@@ -65,17 +65,12 @@ public class AuctionController {
     private final ItemDAO        itemDAO          = new ItemDAO();
     private final UserDAO        userDAO          = new UserDAO();
     private final BidDAO         bidDAO           = new BidDAO();
-    private final AuctionDAO auctionDAO = new AuctionDAO();
+    private final AuctionDAO     auctionDAO       = new AuctionDAO();
 
-    // Session được set mỗi request (mutable field — giống bản gốc)
     private ServerSession session;
 
     // ── Entry point ───────────────────────────────────────────────────────────
 
-    /**
-     * Phân loại action và gọi handler tương ứng.
-     * session và handler được truyền từ ClientHandler.
-     */
     public void processRequest(String action,
                                ObjectInputStream in,
                                ObjectOutputStream out,
@@ -103,28 +98,17 @@ public class AuctionController {
         }
     }
 
-    /** Overload không có handler (backward compatibility). */
-    public void processRequest(String action,
-                               ObjectInputStream in,
-                               ObjectOutputStream out) throws Exception {
+    public void processRequest(String action, ObjectInputStream in, ObjectOutputStream out) throws Exception {
         processRequest(action, in, out, null, null);
     }
 
     // ── HANDLERS ──────────────────────────────────────────────────────────────
 
-    /**
-     * BID_PLACE – đặt giá thủ công.
-     * Yêu cầu: đã đăng nhập.
-     * userId luôn lấy từ session, không tin tưởng giá trị client gửi lên.
-     */
     private void handlePlaceBid(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new BidResponse(false, "Bạn chưa đăng nhập.", BigDecimal.ZERO))) return;
         try {
             BidRequest request = (BidRequest) in.readObject();
-
-            // Override userId bằng session để tránh giả mạo
             request.setUserId(session.getUserId());
-
             BidResponse response = auctionService.placeBid(request);
             send(out, response);
         } catch (Exception e) {
@@ -133,22 +117,14 @@ public class AuctionController {
         }
     }
 
-    /**
-     * AUCTION_CREATE – tạo phiên đấu giá mới.
-     * Yêu cầu: đăng nhập + role SELLER hoặc ADMIN.
-     * sellerId luôn lấy từ session.
-     */
     private void handleCreateAuction(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new CreateAuctionResponse(false, "Bạn chưa đăng nhập.", null))) return;
         if (!requireRole(out, new CreateAuctionResponse(false, "Chỉ SELLER mới được tạo phiên đấu giá.", null),
                 "SELLER", "ADMIN")) return;
         try {
             CreateAuctionRequest req = (CreateAuctionRequest) in.readObject();
-
-            // sellerId luôn lấy từ session, không tin client
             int sellerId = session.getUserId();
 
-            // Tạo Item đúng loại theo category
             Item item = createItemByCategory(req.getItemCategory());
             item.setName(req.getItemName());
             item.setDescription(req.getItemDescription());
@@ -167,38 +143,26 @@ public class AuctionController {
                     : req.getStartingPrice();
 
             Auction auction = auctionService.createAuction(
-                    item.getId(),
-                    sellerId,
-                    req.getStartingPrice(),
-                    reservePrice,
-                    req.getStartTime(),
-                    req.getEndTime()
-            );
+                    item.getId(), sellerId,
+                    req.getStartingPrice(), reservePrice,
+                    req.getStartTime(), req.getEndTime());
+
             if (req.getImageBase64() != null && !req.getImageBase64().isEmpty()) {
                 try {
                     byte[] bytes = java.util.Base64.getDecoder().decode(req.getImageBase64());
                     java.nio.file.Path dir = java.nio.file.Paths.get("images");
-                    if (!java.nio.file.Files.exists(dir)) {
-                        java.nio.file.Files.createDirectories(dir);
-                    }
-                    java.nio.file.Files.write(
-                            java.nio.file.Paths.get("images/" + auction.getId() + ".jpg"),
-                            bytes
-                    );
+                    if (!java.nio.file.Files.exists(dir)) java.nio.file.Files.createDirectories(dir);
+                    java.nio.file.Files.write(java.nio.file.Paths.get("images/" + auction.getId() + ".jpg"), bytes);
                 } catch (Exception e) {
                     log.warn("Không lưu được ảnh cho auction {}: {}", auction.getId(), e.getMessage());
-                    // không return, vẫn tiếp tục bình thường
                 }
             }
 
             AuctionDTO dto = mapToDTO(auction, item, session.getUsername());
-            send(out, new CreateAuctionResponse(true,
-                    "Tạo phiên đấu giá thành công. Vui lòng chờ Admin duyệt.", dto));
-            log.info("Tạo auction: id={}, item='{}', seller={}",
-                    auction.getId(), item.getName(), session.getUsername());
+            send(out, new CreateAuctionResponse(true, "Tạo phiên đấu giá thành công. Vui lòng chờ Admin duyệt.", dto));
+            log.info("Tạo auction: id={}, item='{}', seller={}", auction.getId(), item.getName(), session.getUsername());
 
         } catch (IllegalArgumentException e) {
-            log.warn("AUCTION_CREATE – danh mục không hợp lệ: {}", e.getMessage());
             send(out, new CreateAuctionResponse(false, "Danh mục sản phẩm không hợp lệ: " + e.getMessage(), null));
         } catch (Exception e) {
             log.error("Lỗi AUCTION_CREATE: {}", e.getMessage(), e);
@@ -207,25 +171,12 @@ public class AuctionController {
     }
 
     /**
-     * AUCTION_GET_ACTIVE – lấy danh sách phiên đang mở/chạy.
-     * Không yêu cầu đăng nhập (ai cũng xem được).
+     * FIX 1 – Batch load items và users, không gọi DB trong vòng lặp.
      */
     private void handleGetActiveAuctions(ObjectOutputStream out) {
         try {
             List<Auction> auctions = auctionService.getActiveAuctions();
-            List<AuctionDTO> dtos = new ArrayList<>(auctions.size());
-
-            for (Auction a : auctions) {
-                Item item = itemDAO.findById(a.getItemId());
-                String sellerName = resolveUsername(a.getSellerId());
-                AuctionDTO dto = mapToDTO(a, item, sellerName);
-
-                // Điền username người dẫn đầu nếu có
-                if (a.getHighestBidderId() != 0) {
-                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-                }
-                dtos.add(dto);
-            }
+            List<AuctionDTO> dtos = buildAuctionDTOs(auctions);
             send(out, new AuctionListResponse(true, "OK", dtos));
         } catch (Exception e) {
             log.error("Lỗi AUCTION_GET_ACTIVE: {}", e.getMessage(), e);
@@ -234,126 +185,83 @@ public class AuctionController {
     }
 
     /**
-     * AUCTION_GET_PENDING_REQUESTS – lấy danh sách phiên chờ Admin duyệt.
-     * Yêu cầu: đăng nhập + ADMIN.
+     * FIX 2 – Cache thread-safe với synchronized block.
      */
     private void handleGetPendingAuctions(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new GetPendingAuctionRequestsResponse(false, "Bạn chưa đăng nhập.", null))) return;
-        if (!requireRole(out, new GetPendingAuctionRequestsResponse(false, "Không có quyền truy cập.", null),
-                "ADMIN")) return;
+        if (!requireRole(out, new GetPendingAuctionRequestsResponse(false, "Không có quyền truy cập.", null), "ADMIN")) return;
         try {
             in.readObject();
 
-            // Kiểm tra cache
             long now = System.currentTimeMillis();
-            if (pendingDtoCache != null && (now - pendingCacheTimeMs) < CACHE_TTL) {
-                send(out, new GetPendingAuctionRequestsResponse(true, "OK", pendingDtoCache));
-                return;
+            List<AdminAuctionRequestDTO> cached;
+            synchronized (cacheLock) {
+                if (pendingDtoCache != null && (now - pendingCacheTimeMs) < CACHE_TTL) {
+                    cached = pendingDtoCache;
+                } else {
+                    cached = auctionDAO.findPendingWithDetails();
+                    pendingDtoCache = cached;
+                    pendingCacheTimeMs = System.currentTimeMillis();
+                }
             }
-
-            // 1 query JOIN thay vì N+1 query
-            List<AdminAuctionRequestDTO> dtos = auctionDAO.findPendingWithDetails();
-
-            pendingDtoCache = dtos;
-            pendingCacheTimeMs = System.currentTimeMillis();
-
-            send(out, new GetPendingAuctionRequestsResponse(true, "OK", dtos));
+            send(out, new GetPendingAuctionRequestsResponse(true, "OK", cached));
         } catch (Exception e) {
             log.error("Lỗi AUCTION_GET_PENDING_REQUESTS: {}", e.getMessage(), e);
             send(out, new GetPendingAuctionRequestsResponse(false, "Lỗi server: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * AUCTION_APPROVE – Admin duyệt phiên đấu giá.
-     * Yêu cầu: đăng nhập + ADMIN.
-     */
     private void handleApproveAuction(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new ApproveAuctionResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(out, new ApproveAuctionResponse(false, "Chỉ ADMIN mới có thể duyệt phiên đấu giá."),
-                "ADMIN")) return;
+        if (!requireRole(out, new ApproveAuctionResponse(false, "Chỉ ADMIN mới có thể duyệt phiên đấu giá."), "ADMIN")) return;
         try {
             ApproveAuctionRequest req = (ApproveAuctionRequest) in.readObject();
-
             boolean ok = auctionService.approveAuction(req.getRequestId(), session.getUserId());
-
-            // Xóa cache pending để lần sau Admin load lại danh sách mới
-            if (ok) { pendingDtoCache = null; pendingCacheTimeMs = 0; }
-
+            if (ok) { synchronized (cacheLock) { pendingDtoCache = null; pendingCacheTimeMs = 0; } }
             send(out, new ApproveAuctionResponse(ok,
                     ok ? "Phiên đấu giá đã được duyệt thành công."
                             : "Không tìm thấy phiên đấu giá (id=" + req.getRequestId() + ")."));
             if (ok) log.info("Admin {} duyệt phiên {}", session.getUsername(), req.getRequestId());
-
         } catch (Exception e) {
             log.error("Lỗi AUCTION_APPROVE: {}", e.getMessage(), e);
             send(out, new ApproveAuctionResponse(false, "Lỗi server: " + e.getMessage()));
         }
     }
 
-    /**
-     * AUCTION_REJECT – Admin từ chối phiên đấu giá.
-     * Yêu cầu: đăng nhập + ADMIN.
-     */
     private void handleRejectAuction(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new RejectAuctionResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(out, new RejectAuctionResponse(false, "Chỉ ADMIN mới có thể từ chối phiên đấu giá."),
-                "ADMIN")) return;
+        if (!requireRole(out, new RejectAuctionResponse(false, "Chỉ ADMIN mới có thể từ chối phiên đấu giá."), "ADMIN")) return;
         try {
             RejectAuctionRequest req = (RejectAuctionRequest) in.readObject();
-
-            boolean ok = auctionService.rejectAuction(
-                    req.getRequestId(),
-                    session.getUserId(),
-                    req.getRejectReason()
-            );
-
-            // Xóa cache pending để lần sau Admin load lại danh sách mới
-            if (ok) { pendingDtoCache = null; pendingCacheTimeMs = 0; }
-
+            boolean ok = auctionService.rejectAuction(req.getRequestId(), session.getUserId(), req.getRejectReason());
+            if (ok) { synchronized (cacheLock) { pendingDtoCache = null; pendingCacheTimeMs = 0; } }
             send(out, new RejectAuctionResponse(ok,
                     ok ? "Phiên đấu giá đã bị từ chối."
                             : "Không tìm thấy phiên đấu giá (id=" + req.getRequestId() + ")."));
-            if (ok) log.info("Admin {} từ chối phiên {} | Lý do: {}",
-                    session.getUsername(), req.getRequestId(), req.getRejectReason());
-
+            if (ok) log.info("Admin {} từ chối phiên {} | Lý do: {}", session.getUsername(), req.getRequestId(), req.getRejectReason());
         } catch (Exception e) {
             log.error("Lỗi AUCTION_REJECT: {}", e.getMessage(), e);
             send(out, new RejectAuctionResponse(false, "Lỗi server: " + e.getMessage()));
         }
     }
 
-    /**
-     * AUCTION_SUBSCRIBE – đăng ký nhận realtime update của một phiên.
-     * Gửi lại snapshot hiện tại của phiên ngay sau khi subscribe thành công.
-     */
     private void handleSubscribe(ObjectInputStream in, ObjectOutputStream out, ClientHandler handler) {
         try {
             int auctionId = in.readInt();
+            if (handler != null) auctionManager.subscribe(auctionId, handler);
 
-            if (handler != null) {
-                auctionManager.subscribe(auctionId, handler);
-            }
-
-            // Trả về snapshot phiên hiện tại để client render ngay
             Auction a    = auctionService.getAuction(auctionId);
-            Item    item = itemDAO.findById(a.getItemId());
+            Item item = itemDAO.findById(a.getItemId());
             AuctionDTO dto = mapToDTO(a, item, resolveUsername(a.getSellerId()));
-            if (a.getHighestBidderId() != 0) {
-                dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-            }
+            if (a.getHighestBidderId() != 0) dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
             send(out, new CreateAuctionResponse(true, "Subscribed", dto));
             log.debug("Client subscribe auction={}", auctionId);
-
         } catch (Exception e) {
             log.error("Lỗi AUCTION_SUBSCRIBE: {}", e.getMessage(), e);
             send(out, new CreateAuctionResponse(false, "Lỗi subscribe: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * AUCTION_UNSUBSCRIBE – hủy đăng ký nhận realtime update.
-     */
     private void handleUnsubscribe(ObjectInputStream in, ObjectOutputStream out, ClientHandler handler) {
         try {
             int auctionId = in.readInt();
@@ -365,9 +273,6 @@ public class AuctionController {
         }
     }
 
-    /**
-     * AUCTION_GET_BIDS – lấy lịch sử đặt giá của một phiên.
-     */
     private void handleGetBidHistory(ObjectInputStream in, ObjectOutputStream out) {
         try {
             int auctionId = in.readInt();
@@ -379,77 +284,43 @@ public class AuctionController {
         }
     }
 
-    /**
-     * AUTOBID_REGISTER – đăng ký đấu giá tự động.
-     * Yêu cầu: đăng nhập.
-     *
-     * Fix so với bản cũ:
-     *  - Dùng autoBidEngine từ AuctionManager (shared instance), không tạo mới
-     *  - Override bidderId từ session
-     *  - Kiểm tra phiên tồn tại và đang mở trước khi đăng ký
-     */
     private void handleRegisterAutoBid(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
         try {
             AutoBidConfig config = (AutoBidConfig) in.readObject();
-
-            // Luôn dùng bidderId từ session (tránh client giả mạo)
             config.setBidderId(session.getUserId());
             config.setBidderUsername(session.getUsername());
 
-            // Kiểm tra phiên tồn tại và đang hoạt động
             Auction auction;
-            try {
-                auction = auctionService.getAuction(config.getAuctionId());
-            } catch (Exception e) {
-                send(out, new SimpleResponse(false, "Phiên đấu giá không tồn tại."));
-                return;
-            }
+            try { auction = auctionService.getAuction(config.getAuctionId()); }
+            catch (Exception e) { send(out, new SimpleResponse(false, "Phiên đấu giá không tồn tại.")); return; }
 
             AuctionStatus status = auction.getStatus();
             if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-                send(out, new SimpleResponse(false,
-                        "Không thể đăng ký auto-bid: phiên đang ở trạng thái " + status.getDisplay() + "."));
-                return;
+                send(out, new SimpleResponse(false, "Không thể đăng ký auto-bid: phiên đang ở trạng thái " + status.getDisplay() + ".")); return;
             }
-
-            // Kiểm tra seller không tự auto-bid auction của mình
             if (auction.getSellerId() == session.getUserId()) {
-                send(out, new SimpleResponse(false, "Người bán không thể tự đấu giá sản phẩm của mình."));
-                return;
+                send(out, new SimpleResponse(false, "Người bán không thể tự đấu giá sản phẩm của mình.")); return;
             }
-
-            // Validate maxBid > currentPrice
-            BigDecimal currentPrice = auction.getCurrentPrice() != null
-                    ? auction.getCurrentPrice()
-                    : auction.getStartingPrice();
+            BigDecimal currentPrice = auction.getCurrentPrice() != null ? auction.getCurrentPrice() : auction.getStartingPrice();
             if (config.getMaxBid().compareTo(currentPrice) <= 0) {
-                send(out, new SimpleResponse(false,
-                        "Giá tối đa phải cao hơn giá hiện tại (" + currentPrice + ")."));
-                return;
+                send(out, new SimpleResponse(false, "Giá tối đa phải cao hơn giá hiện tại (" + currentPrice + ").")); return;
             }
 
             autoBidEngine.registerAutoBid(config);
             send(out, new SimpleResponse(true, "Đăng ký auto-bid thành công."));
-            log.info("AutoBid đăng ký: user={} auction={} maxBid={}",
-                    session.getUsername(), config.getAuctionId(), config.getMaxBid());
-
+            log.info("AutoBid đăng ký: user={} auction={} maxBid={}", session.getUsername(), config.getAuctionId(), config.getMaxBid());
         } catch (Exception e) {
             log.error("Lỗi AUTOBID_REGISTER: {}", e.getMessage(), e);
             send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
         }
     }
 
-    /**
-     * AUTOBID_CANCEL – hủy đấu giá tự động.
-     * Yêu cầu: đăng nhập.
-     * bidderId luôn lấy từ session (user chỉ hủy được của chính mình).
-     */
     private void handleCancelAutoBid(ObjectInputStream in, ObjectOutputStream out) {
         if (!requireLogin(out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
         try {
+            in.readInt(); // bỏ qua bidderId client gửi lên
             int auctionId = in.readInt();
-            // Luôn dùng bidderId từ session — bỏ qua bất kỳ bidderId nào client gửi lên
             autoBidEngine.cancelAutoBid(session.getUserId(), auctionId);
             send(out, new SimpleResponse(true, "Đã hủy auto-bid thành công."));
             log.info("AutoBid hủy: user={} auction={}", session.getUsername(), auctionId);
@@ -459,66 +330,149 @@ public class AuctionController {
         }
     }
 
-    // ── HELPERS ───────────────────────────────────────────────────────────────
-
     /**
-     * Kiểm tra đăng nhập. Nếu chưa đăng nhập, gửi errorResponse và trả về false.
+     * FIX 1: batch load thay vì N+1.
      */
-    private boolean requireLogin(ObjectOutputStream out, Object errorResponse) {
-        if (session == null || !session.isLoggedIn()) {
-            send(out, errorResponse);
-            return false;
+    private void handleGetMyAuctions(ObjectOutputStream out) {
+        if (!requireLogin(out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        try {
+            List<Auction> auctions = auctionService.getAuctionsBySeller(session.getUserId());
+            List<AuctionDTO> dtos = buildAuctionDTOs(auctions);
+            send(out, new AuctionListResponse(true, "OK", dtos));
+        } catch (Exception e) {
+            log.error("Lỗi AUCTION_GET_MY: {}", e.getMessage(), e);
+            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
         }
-        return true;
     }
 
     /**
-     * Kiểm tra role. Nếu không đủ quyền, gửi errorResponse và trả về false.
-     * @param allowedRoles danh sách role được phép (case-insensitive)
+     * FIX 1: batch load thay vì N+1.
      */
+    private void handleGetDashboard(ObjectOutputStream out) {
+        try {
+            int excludeId = (session != null && session.isLoggedIn()) ? session.getUserId() : 0;
+            log.info("AUCTION_GET_DASHBOARD: excludeId={}", excludeId);
+
+            List<Auction> running = auctionService.getRunningAuctionsExcludeSeller(excludeId);
+            List<Auction> open    = auctionService.getOpenAuctionsExcludeSeller(excludeId);
+
+            List<Auction> all = new ArrayList<>(running.size() + open.size());
+            all.addAll(running);
+            all.addAll(open);
+
+            List<AuctionDTO> allDtos = buildAuctionDTOs(all);
+            send(out, new AuctionListResponse(true, "OK", allDtos));
+        } catch (Exception e) {
+            log.error("Lỗi AUCTION_GET_DASHBOARD: {}", e.getMessage(), e);
+            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
+        }
+    }
+
+    // ── BATCH LOAD HELPER (FIX 1) ─────────────────────────────────────────────
+
+    /**
+     * Chuyển danh sách Auction → List<AuctionDTO> bằng BATCH query thay vì N+1.
+     *
+     * Bản cũ: mỗi auction gọi itemDAO.findById() và userDAO.findById() riêng
+     *         → 20 auctions = 40 round-trip DB.
+     * Fix:    thu thập tất cả itemId + userId, batch load 1 lần, tra cứu từ Map.
+     *         → luôn chỉ 2 query DB thêm bất kể số lượng auction.
+     *
+     * Lưu ý: cần thêm itemDAO.findByIds(Set<Integer>) và userDAO.findByIds(Set<Integer>).
+     *        Nếu DAO chưa có method đó, fallback về resolveUsername/itemDAO.findById bình thường.
+     */
+    private List<AuctionDTO> buildAuctionDTOs(List<Auction> auctions) {
+        if (auctions == null || auctions.isEmpty()) return Collections.emptyList();
+
+        // Thu thập tất cả itemId và userId cần load
+        Set<Integer> itemIds = new HashSet<>();
+        Set<Integer> userIds = new HashSet<>();
+        for (Auction a : auctions) {
+            itemIds.add(a.getItemId());
+            userIds.add(a.getSellerId());
+            if (a.getHighestBidderId() != 0) userIds.add(a.getHighestBidderId());
+        }
+
+        // Batch load — fallback về per-item nếu DAO chưa implement findByIds
+        Map<Integer, Item> itemMap = batchLoadItems(itemIds);
+        Map<Integer, String> usernameMap = batchLoadUsernames(userIds);
+
+        List<AuctionDTO> dtos = new ArrayList<>(auctions.size());
+        for (Auction a : auctions) {
+            Item item = itemMap.get(a.getItemId());
+            String sellerName = usernameMap.getOrDefault(a.getSellerId(), "");
+            AuctionDTO dto = mapToDTO(a, item, sellerName);
+            if (a.getHighestBidderId() != 0) {
+                dto.setHighestBidderUsername(usernameMap.getOrDefault(a.getHighestBidderId(), ""));
+            }
+            dtos.add(dto);
+        }
+        return dtos;
+    }
+
+    /** Batch load items. Nếu DAO chưa có findByIds thì fallback per-item. */
+    private Map<Integer, Item> batchLoadItems(Set<Integer> ids) {
+        try {
+            // Thử gọi findByIds nếu ItemDAO đã có method này
+            return itemDAO.findByIds(ids);
+        } catch (Exception e) {
+            // Fallback: load từng cái (giống bản cũ, không tệ hơn)
+            Map<Integer, Item> map = new HashMap<>();
+            for (int id : ids) {
+                try { Item item = itemDAO.findById(id); if (item != null) map.put(id, item); }
+                catch (Exception ignored) {}
+            }
+            return map;
+        }
+    }
+
+    /** Batch load usernames. Nếu DAO chưa có findByIds thì fallback per-user. */
+    private Map<Integer, String> batchLoadUsernames(Set<Integer> ids) {
+        try {
+            return userDAO.findUsernamesByIds(ids);
+        } catch (Exception e) {
+            Map<Integer, String> map = new HashMap<>();
+            for (int id : ids) map.put(id, resolveUsername(id));
+            return map;
+        }
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+
+    private boolean requireLogin(ObjectOutputStream out, Object errorResponse) {
+        if (session == null || !session.isLoggedIn()) { send(out, errorResponse); return false; }
+        return true;
+    }
+
     private boolean requireRole(ObjectOutputStream out, Object errorResponse, String... allowedRoles) {
         if (session == null) { send(out, errorResponse); return false; }
-        String userRole = session.getLoggedInUser() != null
-                ? session.getLoggedInUser().getRole().toUpperCase()
-                : "";
-        for (String allowed : allowedRoles) {
-            if (allowed.equalsIgnoreCase(userRole)) return true;
-        }
+        String userRole = session.getLoggedInUser() != null ? session.getLoggedInUser().getRole().toUpperCase() : "";
+        for (String allowed : allowedRoles) { if (allowed.equalsIgnoreCase(userRole)) return true; }
         send(out, errorResponse);
-        log.warn("Phân quyền thất bại: user={} role={} cần {}",
-                session.getUsername(), userRole, String.join("/", allowedRoles));
+        log.warn("Phân quyền thất bại: user={} role={} cần {}", session.getUsername(), userRole, String.join("/", allowedRoles));
         return false;
     }
 
     /**
-     * Gửi object xuống stream, bắt exception không để lan ra ngoài.
+     * FIX 3: thêm out.reset() sau flush() để xóa object cache.
+     * Tránh client nhận dữ liệu cũ khi cùng object được gửi lại sau khi thay đổi.
      */
     private void send(ObjectOutputStream out, Object obj) {
         try {
             out.writeObject(obj);
             out.flush();
+            out.reset(); // FIX 3: xóa cache ObjectOutputStream
         } catch (Exception e) {
             log.warn("Không thể gửi response về client: {}", e.getMessage());
         }
     }
 
-    /**
-     * Tra cứu username theo userId. Trả về chuỗi rỗng nếu không tìm thấy.
-     */
     private String resolveUsername(int userId) {
         if (userId == 0) return "";
-        try {
-            User u = userDAO.findById(userId);
-            return u != null ? u.getUsername() : "";
-        } catch (Exception e) {
-            log.debug("Không lấy được username userId={}: {}", userId, e.getMessage());
-            return "";
-        }
+        try { User u = userDAO.findById(userId); return u != null ? u.getUsername() : ""; }
+        catch (Exception e) { return ""; }
     }
 
-    /**
-     * Chuyển Auction + Item → AuctionDTO để gửi về client.
-     */
     private AuctionDTO mapToDTO(Auction a, Item item, String sellerName) {
         AuctionDTO dto = new AuctionDTO();
         dto.setAuctionId(a.getId());
@@ -550,10 +504,6 @@ public class AuctionController {
         return dto;
     }
 
-    /**
-     * Factory Method – tạo Item đúng loại theo category.
-     * Áp dụng Factory Method Pattern.
-     */
     private Item createItemByCategory(String category) {
         return switch (category.toUpperCase()) {
             case "ELECTRONICS" -> new Electronics();
@@ -561,60 +511,5 @@ public class AuctionController {
             case "VEHICLE"     -> new Vehicle();
             default -> throw new IllegalArgumentException("Danh mục không hợp lệ: " + category);
         };
-    }
-
-    /**
-     * AUCTION_GET_MY – lấy danh sách phiên đấu giá của seller đang đăng nhập.
-     * Yêu cầu: đã đăng nhập.
-     */
-    private void handleGetMyAuctions(ObjectOutputStream out) {
-        if (!requireLogin(out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
-        try {
-            int sellerId = session.getUserId();
-            List<Auction> auctions = auctionService.getAuctionsBySeller(sellerId);
-            List<AuctionDTO> dtos = new ArrayList<>(auctions.size());
-            for (Auction a : auctions) {
-                Item item = itemDAO.findById(a.getItemId());
-                AuctionDTO dto = mapToDTO(a, item, session.getUsername());
-                if (a.getHighestBidderId() != 0) {
-                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-                }
-                dtos.add(dto);
-            }
-            send(out, new AuctionListResponse(true, "OK", dtos));
-        } catch (Exception e) {
-            log.error("Lỗi AUCTION_GET_MY: {}", e.getMessage(), e);
-            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
-        }
-    }
-
-    private void handleGetDashboard(ObjectOutputStream out) {
-        try {
-            // Nếu chưa đăng nhập thì excludeSellerId = 0 (không loại trừ ai)
-            int excludeId = (session != null && session.isLoggedIn()) ? session.getUserId() : 0;
-            log.info("AUCTION_GET_DASHBOARD: excludeId={}", excludeId);
-            List<Auction> running = auctionService.getRunningAuctionsExcludeSeller(excludeId);
-            List<Auction> open    = auctionService.getOpenAuctionsExcludeSeller(excludeId);
-
-            List<AuctionDTO> allDtos = new ArrayList<>();
-            for (Auction a : running) {
-                Item item = itemDAO.findById(a.getItemId());
-                AuctionDTO dto = mapToDTO(a, item, resolveUsername(a.getSellerId()));
-                if (a.getHighestBidderId() != 0)
-                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-                allDtos.add(dto);
-            }
-            for (Auction a : open) {
-                Item item = itemDAO.findById(a.getItemId());
-                AuctionDTO dto = mapToDTO(a, item, resolveUsername(a.getSellerId()));
-                if (a.getHighestBidderId() != 0)
-                    dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-                allDtos.add(dto);
-            }
-            send(out, new AuctionListResponse(true, "OK", allDtos));
-        } catch (Exception e) {
-            log.error("Lỗi AUCTION_GET_DASHBOARD: {}", e.getMessage(), e);
-            send(out, new AuctionListResponse(false, "Lỗi server: " + e.getMessage(), null));
-        }
     }
 }

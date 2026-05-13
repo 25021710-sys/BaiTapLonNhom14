@@ -7,8 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ItemDAO {
     private static final Logger logger = LoggerFactory.getLogger(ItemDAO.class);
@@ -182,5 +181,29 @@ public class ItemDAO {
             );
         }
         return null;
+    }
+    public Map<Integer, Item> findByIds(Set<Integer> ids) throws SQLException {
+        Map<Integer, Item> result = new HashMap<>();
+        if (ids == null || ids.isEmpty()) return result;
+
+        StringJoiner placeholders = new StringJoiner(",");
+        for (int ignored : ids) placeholders.add("?");
+
+        String sql = "SELECT * FROM items WHERE id IN (" + placeholders + ")";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            for (int id : ids) ps.setInt(i++, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Item item = mapRow(rs);
+                    result.put(item.getId(), item);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi findByIds ids={}", ids, e);
+            throw e;
+        }
+        return result;
     }
 }

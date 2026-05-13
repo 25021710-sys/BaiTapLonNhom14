@@ -9,6 +9,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 
 public class UserDAO {
 
@@ -168,5 +172,40 @@ public class UserDAO {
             }
         }
         return null; // Không tìm thấy user
+    }
+    public Map<Integer, String> findUsernamesByIds(Set<Integer> ids) throws SQLException {
+        Map<Integer, String> result = new HashMap<>();
+        if (ids == null || ids.isEmpty()) return result;
+
+        // Xây dựng placeholder: ?,?,?,...
+        StringJoiner placeholders = new StringJoiner(",");
+        for (int ignored : ids) placeholders.add("?");
+
+        String sql = "SELECT id, username FROM users WHERE id IN (" + placeholders + ")";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            for (int id : ids) ps.setInt(i++, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) result.put(rs.getInt("id"), rs.getString("username"));
+            }
+        }
+        return result;
+    }
+
+    private User mapRow(ResultSet rs) throws SQLException {
+        return new User(
+                rs.getInt("id"),
+                rs.getString("username"),
+                rs.getString("password_hash"),
+                rs.getString("email"),
+                rs.getBigDecimal("balance"),
+                UserRole.valueOf(rs.getString("role")),
+                rs.getBoolean("active"),
+                rs.getTimestamp("created_at").toLocalDateTime(),
+                rs.getString("salt"),
+                rs.getString("description"),
+                rs.getString("location")
+        );
     }
 }

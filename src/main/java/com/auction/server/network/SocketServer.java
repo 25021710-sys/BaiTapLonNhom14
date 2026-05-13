@@ -1,5 +1,7 @@
 package com.auction.server.network;
 
+import com.auction.server.controller.AuctionController;
+import com.auction.server.controller.ItemController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,12 +13,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * SocketServer - Lắng nghe kết nối từ client và tạo luồng xử lý cho mỗi client.
+ * SocketServer
  *
- * Luồng hoạt động:
- *   SocketServer.start()
- *       └─ accept() → ClientHandler(socket) → new Thread → run()
- *                          └─ đọc action → UserController / ItemController / AuctionController
+ * FIX: tạo shared ItemController + AuctionController một lần duy nhất,
+ * truyền vào ClientHandler qua constructor thay vì để mỗi ClientHandler
+ * tự new() → pendingDtoCache được share đúng cách giữa tất cả client.
  */
 public class SocketServer {
 
@@ -29,24 +30,16 @@ public class SocketServer {
     private ServerSocket serverSocket;
     private volatile boolean running = false;
 
-    // Thread pool giới hạn số client đồng thời
     private final ExecutorService threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
 
-    // ── Constructor ───────────────────────────────────────────
+    // Shared controllers — tạo một lần, dùng cho tất cả ClientHandler
+    private final ItemController    sharedItemController    = new ItemController();
+    private final AuctionController sharedAuctionController = new AuctionController();
 
-    public SocketServer() {
-        this(DEFAULT_PORT);
-    }
+    public SocketServer() { this(DEFAULT_PORT); }
 
-    public SocketServer(int port) {
-        this.port = port;
-    }
+    public SocketServer(int port) { this.port = port; }
 
-    // ── Lifecycle ─────────────────────────────────────────────
-
-    /**
-     * Khởi động server — chặn luồng hiện tại cho đến khi stop() được gọi.
-     */
     public void start() {
         try {
             serverSocket = new ServerSocket(port);
@@ -55,18 +48,18 @@ public class SocketServer {
 
             while (running) {
                 try {
-                    Socket clientSocket = serverSocket.accept(); // chờ client kết nối
+                    Socket clientSocket = serverSocket.accept();
                     log.info("Client mới kết nối: {}", clientSocket.getInetAddress());
 
-                    // Tạo handler và chạy trên thread pool
-                    ClientHandler handler = new ClientHandler(clientSocket);
+                    // FIX: truyền shared controller vào ClientHandler
+                    ClientHandler handler = new ClientHandler(
+                            clientSocket,
+                            sharedItemController,
+                            sharedAuctionController);
                     threadPool.submit(handler);
 
                 } catch (IOException e) {
-                    if (running) {
-                        log.error("Lỗi khi accept kết nối mới", e);
-                    }
-                    // Nếu !running thì server đang dừng — bỏ qua lỗi
+                    if (running) log.error("Lỗi khi accept kết nối mới", e);
                 }
             }
         } catch (IOException e) {
@@ -76,16 +69,11 @@ public class SocketServer {
         }
     }
 
-    /**
-     * Dừng server an toàn.
-     */
     public void stop() {
         log.info("Đang dừng server...");
         running = false;
         try {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close(); // làm serverSocket.accept() ném IOException → thoát vòng lặp
-            }
+            if (serverSocket != null && !serverSocket.isClosed()) serverSocket.close();
         } catch (IOException e) {
             log.error("Lỗi khi đóng ServerSocket", e);
         }
@@ -94,25 +82,19 @@ public class SocketServer {
     private void shutdown() {
         threadPool.shutdown();
         try {
-            if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
-                threadPool.shutdownNow();
-            }
+            if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) threadPool.shutdownNow();
         } catch (InterruptedException e) {
             threadPool.shutdownNow();
             Thread.currentThread().interrupt();
         }
+        com.auction.server.config.DatabaseConnection.close(); // đóng HikariCP pool
         log.info("Server đã dừng hoàn toàn.");
     }
-
-    // ── Entry Point ───────────────────────────────────────────
 
     public static void main(String[] args) {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
         SocketServer server = new SocketServer(port);
-
-        // Hook dừng khi nhấn Ctrl+C
         Runtime.getRuntime().addShutdownHook(new Thread(server::stop, "shutdown-hook"));
-
-        server.start(); // chặn ở đây
+        server.start();
     }
 }
