@@ -4,6 +4,14 @@ import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.request.*;
 import com.auction.common.response.*;
 import com.auction.server.model.AutoBidConfig;
+import com.auction.common.dto.AdminRoomDTO;
+import com.auction.common.request.AdminGetRoomsRequest;
+import com.auction.common.request.AdminGetRoomDetailRequest;
+import com.auction.common.request.AdminPauseRoomRequest;
+import com.auction.common.request.AdminResumeRoomRequest;
+import com.auction.common.request.AdminCloseRoomRequest;
+import com.auction.common.response.AdminGetRoomsResponse;
+import com.auction.common.response.AdminRoomDetailResponse;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -329,6 +337,46 @@ public class SocketClient {
             return readResponse();
         } catch (Exception e) {
             return new GetUserProfileResponse(false, "Loi ket noi", null, 0);
+        }
+    }
+    public AdminGetRoomsResponse adminGetRooms(String statusFilter, String keyword) {
+        try {
+            sendRequest("ADMIN_GET_ROOMS", new AdminGetRoomsRequest(statusFilter, keyword));
+            return readTypedResponse(AdminGetRoomsResponse.class);
+        } catch (Exception e) {
+            return new AdminGetRoomsResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        }
+    }
+    public AdminRoomDetailResponse adminGetRoomDetail(int auctionId) {
+        try {
+            sendRequest("ADMIN_GET_ROOM_DETAIL", new AdminGetRoomDetailRequest(auctionId));
+            return readTypedResponse(AdminRoomDetailResponse.class);
+        } catch (Exception e) {
+            return new AdminRoomDetailResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        }
+    }
+    public SimpleResponse adminPauseRoom(int auctionId, String reason) {
+        try {
+            sendRequest("ADMIN_PAUSE_ROOM", new AdminPauseRoomRequest(auctionId, reason));
+            return readTypedResponse(SimpleResponse.class);
+        } catch (Exception e) {
+            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
+    }
+    public SimpleResponse adminResumeRoom(int auctionId) {
+        try {
+            sendRequest("ADMIN_RESUME_ROOM", new AdminResumeRoomRequest(auctionId));
+            return readTypedResponse(SimpleResponse.class);
+        } catch (Exception e) {
+            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
+    }
+    public SimpleResponse adminCloseRoom(int auctionId, String reason) {
+        try {
+            sendRequest("ADMIN_CLOSE_ROOM", new AdminCloseRoomRequest(auctionId, reason));
+            return readTypedResponse(SimpleResponse.class);
+        } catch (Exception e) {
+            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
 }
