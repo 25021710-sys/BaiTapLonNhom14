@@ -67,7 +67,6 @@ public class AuctionController {
     private final BidDAO         bidDAO           = new BidDAO();
     private final AuctionDAO     auctionDAO       = new AuctionDAO();
 
-    private ServerSession session;
 
     // ── Entry point ───────────────────────────────────────────────────────────
 
@@ -76,22 +75,22 @@ public class AuctionController {
                                ObjectOutputStream out,
                                ServerSession session,
                                ClientHandler handler) throws Exception {
-        this.session = session;
+        // session là local var — không lưu vào field để tránh race condition
         switch (action) {
-            case "BID_PLACE"                    -> handlePlaceBid(in, out);
-            case "AUCTION_CREATE"               -> handleCreateAuction(in, out);
+            case "BID_PLACE"                    -> handlePlaceBid(in, out, session);
+            case "AUCTION_CREATE"               -> handleCreateAuction(in, out, session);
             case "AUCTION_GET_ACTIVE"           -> handleGetActiveAuctions(out);
-            case "AUCTION_GET_PENDING_REQUESTS" -> handleGetPendingAuctions(in, out);
-            case "AUCTION_APPROVE"              -> handleApproveAuction(in, out);
-            case "AUCTION_REJECT"               -> handleRejectAuction(in, out);
+            case "AUCTION_GET_PENDING_REQUESTS" -> handleGetPendingAuctions(in, out, session);
+            case "AUCTION_APPROVE"              -> handleApproveAuction(in, out, session);
+            case "AUCTION_REJECT"               -> handleRejectAuction(in, out, session);
             case "AUCTION_SUBSCRIBE"            -> handleSubscribe(in, out, handler);
             case "AUCTION_UNSUBSCRIBE"          -> handleUnsubscribe(in, out, handler);
             case "AUCTION_GET_BIDS"             -> handleGetBidHistory(in, out);
-            case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out);
-            case "AUTOBID_CANCEL"               -> handleCancelAutoBid(in, out);
-            case "AUCTION_GET_JOINED"          -> handleGetJoinedAuctions(out);
-            case "AUCTION_GET_MY"               -> handleGetMyAuctions(out);
-            case "AUCTION_GET_DASHBOARD"        -> handleGetDashboard(out);
+            case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out, session);
+            case "AUTOBID_CANCEL"               -> handleCancelAutoBid(in, out, session);
+            case "AUCTION_GET_JOINED"           -> handleGetJoinedAuctions(out, session);
+            case "AUCTION_GET_MY"               -> handleGetMyAuctions(out, session);
+            case "AUCTION_GET_DASHBOARD"        -> handleGetDashboard(out, session);
             default -> {
                 log.warn("Action không hỗ trợ: {}", action);
                 send(out, new SimpleResponse(false, "Action không hỗ trợ: " + action));
@@ -105,8 +104,8 @@ public class AuctionController {
 
     // ── HANDLERS ──────────────────────────────────────────────────────────────
 
-    private void handlePlaceBid(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new BidResponse(false, "Bạn chưa đăng nhập.", BigDecimal.ZERO))) return;
+    private void handlePlaceBid(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new BidResponse(false, "Bạn chưa đăng nhập.", BigDecimal.ZERO))) return;
         try {
             BidRequest request = (BidRequest) in.readObject();
             request.setUserId(session.getUserId());
@@ -118,9 +117,9 @@ public class AuctionController {
         }
     }
 
-    private void handleCreateAuction(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new CreateAuctionResponse(false, "Bạn chưa đăng nhập.", null))) return;
-        if (!requireRole(out, new CreateAuctionResponse(false, "Chỉ SELLER mới được tạo phiên đấu giá.", null),
+    private void handleCreateAuction(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new CreateAuctionResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        if (!requireRole(session, out, new CreateAuctionResponse(false, "Chỉ SELLER mới được tạo phiên đấu giá.", null),
                 "SELLER", "ADMIN")) return;
         try {
             CreateAuctionRequest req = (CreateAuctionRequest) in.readObject();
@@ -188,9 +187,9 @@ public class AuctionController {
     /**
      * FIX 2 – Cache thread-safe với synchronized block.
      */
-    private void handleGetPendingAuctions(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new GetPendingAuctionRequestsResponse(false, "Bạn chưa đăng nhập.", null))) return;
-        if (!requireRole(out, new GetPendingAuctionRequestsResponse(false, "Không có quyền truy cập.", null), "ADMIN")) return;
+    private void handleGetPendingAuctions(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new GetPendingAuctionRequestsResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        if (!requireRole(session, out, new GetPendingAuctionRequestsResponse(false, "Không có quyền truy cập.", null), "ADMIN")) return;
         try {
             in.readObject();
 
@@ -212,9 +211,9 @@ public class AuctionController {
         }
     }
 
-    private void handleApproveAuction(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new ApproveAuctionResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(out, new ApproveAuctionResponse(false, "Chỉ ADMIN mới có thể duyệt phiên đấu giá."), "ADMIN")) return;
+    private void handleApproveAuction(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new ApproveAuctionResponse(false, "Bạn chưa đăng nhập."))) return;
+        if (!requireRole(session, out, new ApproveAuctionResponse(false, "Chỉ ADMIN mới có thể duyệt phiên đấu giá."), "ADMIN")) return;
         try {
             ApproveAuctionRequest req = (ApproveAuctionRequest) in.readObject();
             boolean ok = auctionService.approveAuction(req.getRequestId(), session.getUserId());
@@ -229,9 +228,9 @@ public class AuctionController {
         }
     }
 
-    private void handleRejectAuction(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new RejectAuctionResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(out, new RejectAuctionResponse(false, "Chỉ ADMIN mới có thể từ chối phiên đấu giá."), "ADMIN")) return;
+    private void handleRejectAuction(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new RejectAuctionResponse(false, "Bạn chưa đăng nhập."))) return;
+        if (!requireRole(session, out, new RejectAuctionResponse(false, "Chỉ ADMIN mới có thể từ chối phiên đấu giá."), "ADMIN")) return;
         try {
             RejectAuctionRequest req = (RejectAuctionRequest) in.readObject();
             boolean ok = auctionService.rejectAuction(req.getRequestId(), session.getUserId(), req.getRejectReason());
@@ -285,8 +284,8 @@ public class AuctionController {
         }
     }
 
-    private void handleRegisterAutoBid(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
+    private void handleRegisterAutoBid(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
         try {
             AutoBidConfig config = (AutoBidConfig) in.readObject();
             config.setBidderId(session.getUserId());
@@ -317,8 +316,8 @@ public class AuctionController {
         }
     }
 
-    private void handleCancelAutoBid(ObjectInputStream in, ObjectOutputStream out) {
-        if (!requireLogin(out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
+    private void handleCancelAutoBid(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
         try {
             in.readInt(); // bỏ qua bidderId client gửi lên
             int auctionId = in.readInt();
@@ -331,8 +330,8 @@ public class AuctionController {
         }
     }
 
-    private void handleGetJoinedAuctions(ObjectOutputStream out) {
-        if (!requireLogin(out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
+    private void handleGetJoinedAuctions(ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
         try {
             List<Auction> auctions = auctionService.getJoinedAuctions(session.getUserId());
             List<AuctionDTO> dtos = buildAuctionDTOs(auctions);
@@ -346,8 +345,8 @@ public class AuctionController {
     /**
      * FIX 1: batch load thay vì N+1.
      */
-    private void handleGetMyAuctions(ObjectOutputStream out) {
-        if (!requireLogin(out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
+    private void handleGetMyAuctions(ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new AuctionListResponse(false, "Bạn chưa đăng nhập.", null))) return;
         try {
             List<Auction> auctions = auctionService.getAuctionsBySeller(session.getUserId());
             List<AuctionDTO> dtos = buildAuctionDTOs(auctions);
@@ -361,7 +360,7 @@ public class AuctionController {
     /**
      * FIX 1: batch load thay vì N+1.
      */
-    private void handleGetDashboard(ObjectOutputStream out) {
+    private void handleGetDashboard(ObjectOutputStream out, ServerSession session) {
         try {
             int excludeId = (session != null && session.isLoggedIn()) ? session.getUserId() : 0;
             log.info("AUCTION_GET_DASHBOARD: excludeId={}", excludeId);
@@ -452,12 +451,14 @@ public class AuctionController {
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
 
-    private boolean requireLogin(ObjectOutputStream out, Object errorResponse) {
+    private boolean requireLogin(ServerSession session, ObjectOutputStream out, Object errorResponse) {
         if (session == null || !session.isLoggedIn()) { send(out, errorResponse); return false; }
         return true;
     }
 
-    private boolean requireRole(ObjectOutputStream out, Object errorResponse, String... allowedRoles) {
+    // requireRole dùng session từ caller — nhưng vì chỉ gọi sau requireLogin đã check
+    // nên session lúc này luôn hợp lệ; giữ nguyên signature, truyền session cục bộ qua closure
+    private boolean requireRole(ServerSession session, ObjectOutputStream out, Object errorResponse, String... allowedRoles) {
         if (session == null) { send(out, errorResponse); return false; }
         String userRole = session.getLoggedInUser() != null ? session.getLoggedInUser().getRole().toUpperCase() : "";
         for (String allowed : allowedRoles) { if (allowed.equalsIgnoreCase(userRole)) return true; }
