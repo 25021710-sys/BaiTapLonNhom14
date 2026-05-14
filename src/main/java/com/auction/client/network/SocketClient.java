@@ -4,7 +4,6 @@ import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.request.*;
 import com.auction.common.response.*;
 import com.auction.server.model.AutoBidConfig;
-import com.auction.common.dto.AdminRoomDTO;
 import com.auction.common.request.AdminGetRoomsRequest;
 import com.auction.common.request.AdminGetRoomDetailRequest;
 import com.auction.common.request.AdminPauseRoomRequest;

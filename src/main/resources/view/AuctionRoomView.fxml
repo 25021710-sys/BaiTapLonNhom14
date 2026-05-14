@@ -242,29 +242,6 @@
                                 </LineChart>
                             </VBox>
                         </Tab>
-
-                        <!-- Tab 3: Chat -->
-                        <Tab text="💬  Chat">
-                            <BorderPane style="-fx-padding: 10 12 10 12;">
-                                <center>
-                                    <ListView fx:id="lvChatMessages"
-                                              styleClass="chat-list"/>
-                                </center>
-                                <bottom>
-                                    <HBox spacing="8" style="-fx-padding: 8 0 0 0;" alignment="CENTER">
-                                        <TextField fx:id="txtChatInput"
-                                                   promptText="Nhập tin nhắn..."
-                                                   styleClass="chat-input"
-                                                   HBox.hgrow="ALWAYS"
-                                                   onAction="#handleSendChat"/>
-                                        <Button text="Gửi"
-                                                onAction="#handleSendChat"
-                                                styleClass="btn-chat-send"/>
-                                    </HBox>
-                                </bottom>
-                            </BorderPane>
-                        </Tab>
-
                     </TabPane>
 
                 </VBox>
@@ -350,16 +327,6 @@
                                    disable="true"
                                    styleClass="auto-bid-input"/>
 
-                        <HBox spacing="8">
-                            <Button text="✅  Kích hoạt"
-                                    onAction="#handleEnableAutoBid"
-                                    styleClass="btn-auto-on"
-                                    maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                            <Button text="❌  Tắt"
-                                    onAction="#handleDisableAutoBid"
-                                    styleClass="btn-auto-off"
-                                    maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                        </HBox>
 
                         <Label text="Hệ thống tự đặt thay bạn khi bị vượt giá, không vượt giá tối đa."
                                styleClass="auto-bid-hint"
@@ -378,10 +345,6 @@
                         <HBox spacing="8" style="-fx-padding: 4 0 0 0;">
                             <Button text="Xem profile"
                                     onAction="#handleViewSellerProfile"
-                                    styleClass="btn-secondary"
-                                    maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                            <Button text="Nhắn tin"
-                                    onAction="#handleMessageSeller"
                                     styleClass="btn-secondary"
                                     maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
                         </HBox>
