@@ -303,7 +303,11 @@ public class AuctionRoomController {
   @FXML public void handleQuickBid100k() { setBidAmount(currentPrice.add(new BigDecimal("100000"))); }
 
   private void setBidAmount(BigDecimal value) {
-    if (txtBidAmount != null) txtBidAmount.setText(value.toPlainString());
+    if (txtBidAmount != null)
+      // setScale(0, DOWN) loại bỏ phần thập phân trước khi setText,
+      // tránh việc toPlainString() trả về "1501100000.00" rồi listener
+      // xóa dấu "." nhưng giữ lại "00" → nhân nhầm 100 lần.
+      txtBidAmount.setText(value.setScale(0, java.math.RoundingMode.DOWN).toPlainString());
   }
 
   // ── PLACE BID ─────────────────────────────────────────────────────────────
@@ -445,13 +449,13 @@ public class AuctionRoomController {
         alert.setTitle("Ho so nguoi ban");
         alert.setHeaderText(u.getUsername());
         alert.setContentText(
-            "San pham da dang: " + res.getItemCount() + "\n" +
-                "Vai tro: "          + (u.getRole()        != null ? u.getRole()        : "--") + "\n" +
-                "Vi tri: "           + (u.getLocation()    != null ? u.getLocation()    : "--") + "\n" +
-                "Gioi thieu: "       + (u.getDescription() != null ? u.getDescription() : "--") + "\n" +
-                "Tham gia tu: "      + (u.getCreatedAt()   != null
-                ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                : "--")
+                "San pham da dang: " + res.getItemCount() + "\n" +
+                        "Vai tro: "          + (u.getRole()        != null ? u.getRole()        : "--") + "\n" +
+                        "Vi tri: "           + (u.getLocation()    != null ? u.getLocation()    : "--") + "\n" +
+                        "Gioi thieu: "       + (u.getDescription() != null ? u.getDescription() : "--") + "\n" +
+                        "Tham gia tu: "      + (u.getCreatedAt()   != null
+                        ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        : "--")
         );
         alert.showAndWait();
       });
