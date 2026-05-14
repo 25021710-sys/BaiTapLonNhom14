@@ -11,7 +11,8 @@ public class AuctionUpdateDTO implements Serializable {
         BID_PLACED,
         AUCTION_ENDED,
         AUCTION_EXTENDED,
-        AUCTION_STARTED
+        AUCTION_STARTED,
+        PARTICIPANT_CHANGED
     }
 
     private int auctionId;
@@ -21,6 +22,7 @@ public class AuctionUpdateDTO implements Serializable {
     private String highestBidderUsername;
     private LocalDateTime newEndTime;
     private String message;
+    private int participantCount;
 
     public AuctionUpdateDTO() {}
 
@@ -35,6 +37,16 @@ public class AuctionUpdateDTO implements Serializable {
         this.newEndTime = newEndTime;
         this.message = message;
     }
+
+    public AuctionUpdateDTO(int auctionId, UpdateType type, BigDecimal newPrice,
+                            int highestBidderId, String highestBidderUsername,
+                            LocalDateTime newEndTime, String message, int participantCount) {
+        this(auctionId, type, newPrice, highestBidderId, highestBidderUsername, newEndTime, message);
+        this.participantCount = participantCount;
+    }
+
+    public int getParticipantCount() { return participantCount; }
+    public void setParticipantCount(int participantCount) { this.participantCount = participantCount; }
 
     public int getAuctionId() { return auctionId; }
     public void setAuctionId(int auctionId) { this.auctionId = auctionId; }

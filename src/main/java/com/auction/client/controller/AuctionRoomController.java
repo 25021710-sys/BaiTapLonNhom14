@@ -174,15 +174,15 @@ public class AuctionRoomController {
   // ── SUBSCRIBE REALTIME ────────────────────────────────────────────────────
 
   private void subscribeRealtime(int auctionId) {
-    // Đăng ký nhận push update từ server
     SocketClient.getInstance().setPushCallback(this::handlePushUpdate);
 
-    // Gọi AUCTION_SUBSCRIBE để server biết gửi push về cho client này
     new Thread(() -> {
       CreateAuctionResponse res = SocketClient.getInstance().subscribeAuction(auctionId);
       if (!res.isSuccess()) {
         Platform.runLater(() -> showBidError("Lỗi kết nối phiên: " + res.getMessage()));
       }
+      // Server sẽ push PARTICIPANT_CHANGED ngay sau subscribe.
+      // lblParticipants sẽ được cập nhật trong handlePushUpdate.
     }, "subscribe-thread").start();
   }
 
@@ -211,13 +211,18 @@ public class AuctionRoomController {
         loadBidHistory(); // refresh table
       }
       case AUCTION_ENDED -> {
-        auctionEnded = true;                      // FIX: set flag
+        auctionEnded = true;
         lblAuctionStatus.setText("ĐÃ KẾT THÚC");
         lblAuctionStatus.getStyleClass().setAll("badge-ended");
         stopCountdown();
         disableBidActions();
         lvChatMessages.getItems().add("[SYSTEM] 🏆 Phiên đấu giá đã kết thúc! Người thắng: "
                 + update.getHighestBidderUsername());
+      }
+      case PARTICIPANT_CHANGED -> {
+        if (lblParticipants != null) {
+          lblParticipants.setText(String.valueOf(update.getParticipantCount()));
+        }
       }
       default -> {}
     }

@@ -252,10 +252,11 @@ public class AuctionService {
                         ? "Phiên được gia hạn do có bid trong " + ANTI_SNIPE_THRESHOLD_SECONDS + " giây cuối!"
                         : "Bid mới từ " + user.getUsername() + "!";
 
+                int participantCount = auctionManager.getParticipantCount(auctionId);
                 auctionManager.broadcastUpdate(auctionId, new AuctionUpdateDTO(
                         auctionId, updateType, bidAmount,
                         userId, user.getUsername(),
-                        auction.getEndTime(), message
+                        auction.getEndTime(), message, participantCount
                 ));
             }
 
