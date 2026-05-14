@@ -320,4 +320,15 @@ public class SocketClient {
             return new AuctionListResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
         }
     }
+
+    public synchronized GetUserProfileResponse getSellerProfile(String username) {
+        try {
+            sendRequest("USER_GET_PROFILE_BY_USERNAME");
+            out.writeObject(username);
+            out.flush();
+            return readResponse();
+        } catch (Exception e) {
+            return new GetUserProfileResponse(false, "Loi ket noi", null, 0);
+        }
+    }
 }

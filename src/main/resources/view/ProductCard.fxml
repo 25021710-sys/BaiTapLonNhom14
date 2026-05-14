@@ -22,7 +22,7 @@
    <HBox alignment="TOP_LEFT" spacing="6.0">
       <VBox spacing="1.0" HBox.hgrow="ALWAYS">
          <Label fx:id="lblSellerName"
-                text="Người bán"
+                text="Tên sản phẩm"
                 styleClass="label-value"
                 stylesheets="@../style/ProductCards.css"/>
          <Label fx:id="lblAuctionId"
@@ -85,7 +85,7 @@
       <VBox alignment="CENTER" spacing="3.0"
             style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 10;"
             HBox.hgrow="ALWAYS">
-         <Label text="Hiện tại" styleClass="label-title"
+         <Label fx:id="lblCurrentPriceTitle" text="Hiện tại" styleClass="label-title"
                 stylesheets="@../style/ProductCards.css"/>
          <Label fx:id="lblCurrentPrice" text="—"
                 styleClass="label-value"

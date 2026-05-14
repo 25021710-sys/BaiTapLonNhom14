@@ -1,13 +1,12 @@
 package com.auction.server.controller;
 
+import com.auction.common.dto.UserDTO;
 import com.auction.common.request.BalanceRequest;
 import com.auction.common.request.LoginRequest;
 import com.auction.common.request.RegisterRequest;
 import com.auction.common.request.UpdateProfileRequest;
-import com.auction.common.response.BalanceResponse;
-import com.auction.common.response.LoginResponse;
-import com.auction.common.response.RegisterResponse;
-import com.auction.common.response.UpdateProfileResponse;
+import com.auction.common.response.*;
+import com.auction.server.model.User;
 import com.auction.server.service.AuthService;
 import com.auction.server.session.ServerSession;
 import org.slf4j.Logger;
@@ -54,6 +53,7 @@ public class UserController {
                 case "USER_REGISTER"       -> handleRegister(in, out);
                 case "USER_UPDATE_PROFILE" -> handleUpdateProfile(in, out);
                 case "USER_BALANCE"        -> handleBalance(in, out);
+                case "USER_GET_PROFILE_BY_USERNAME" -> handleGetProfileByUsername(in, out);
                 default -> {
                     log.warn("Action USER không hợp lệ: {}", action);
                     out.writeObject(new LoginResponse(false, "Action không hợp lệ: " + action, null));
@@ -161,5 +161,35 @@ public class UserController {
 
         log.info("Kết quả balance [userId={}]: {}", req.getUserId(),
                 res.isSuccess() ? "Thành công" : res.getMessage());
+    }
+
+    private void handleGetProfileByUsername(ObjectInputStream in, ObjectOutputStream out) throws Exception {
+        String username = (String) in.readObject();
+
+        com.auction.server.dao.UserDAO userDAO = new com.auction.server.dao.UserDAO();
+        User user = userDAO.findByUsername(username);
+
+        if (user == null) {
+            out.writeObject(new SimpleResponse(false, "Khong tim thay user"));
+            out.flush();
+            return;
+        }
+
+        com.auction.server.dao.ItemDAO itemDAO = new com.auction.server.dao.ItemDAO();
+        int itemCount = itemDAO.countBySeller(user.getId());
+
+        UserDTO dto = new UserDTO(
+            user.getId(),
+            user.getUsername(),
+            null,
+            null,
+            user.getRole().name(),
+            user.getCreatedAt(),
+            user.getLocation(),
+            user.getDescription()
+        );
+
+        out.writeObject(new GetUserProfileResponse(true, "OK", dto, itemCount));
+        out.flush();
     }
 }
