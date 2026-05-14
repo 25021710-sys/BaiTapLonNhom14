@@ -20,8 +20,7 @@
 
             <VBox>
                 <Label styleClass="header-title" text="Giám Sát Phòng Đấu Giá"/>
-                <Label styleClass="header-subtitle"
-                       text="Realtime monitoring hệ thống đấu giá"/>
+                <Label styleClass="header-subtitle" text="Realtime monitoring hệ thống đấu giá"/>
             </VBox>
 
             <Region HBox.hgrow="ALWAYS"/>
@@ -42,49 +41,69 @@
 
             <!-- LEFT: TABLE LIST (MASTER) -->
             <VBox styleClass="left-panel" spacing="10">
+                <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
 
-                <Label text="Active Auction Rooms"
-                       styleClass="section-title"/>
+                <Label text="Active Auction Rooms" styleClass="section-title"/>
 
                 <TableView fx:id="roomTable" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="colRoomId" text="Room" prefWidth="80"/>
-                        <TableColumn fx:id="colItem" text="Item" prefWidth="160"/>
-                        <TableColumn fx:id="colPrice" text="Current Price" prefWidth="120"/>
-                        <TableColumn fx:id="colBids" text="Bids" prefWidth="70"/>
-                        <TableColumn fx:id="colTime" text="Time Left" prefWidth="100"/>
-                        <TableColumn fx:id="colStatus" text="Status" prefWidth="90"/>
+                        <TableColumn fx:id="colRoomId" text="Room"          prefWidth="70"/>
+                        <TableColumn fx:id="colItem"   text="Item"          prefWidth="160"/>
+                        <TableColumn fx:id="colPrice"  text="Current Price" prefWidth="130"/>
+                        <TableColumn fx:id="colBids"   text="Bids"          prefWidth="60"/>
+                        <TableColumn fx:id="colTime"   text="Time Left"     prefWidth="90"/>
+                        <TableColumn fx:id="colStatus" text="Status"        prefWidth="100"/>
                     </columns>
+                    <placeholder>
+                        <Label text="Không có phòng đang hoạt động"/>
+                    </placeholder>
                 </TableView>
 
             </VBox>
 
-            <!-- RIGHT: DETAIL INSPECTOR (DETAIL) -->
+            <!-- RIGHT: DETAIL INSPECTOR -->
             <VBox styleClass="right-panel" spacing="12">
+                <padding><Insets top="10" right="12" bottom="10" left="12"/></padding>
 
-                <Label text="Room Inspector"
-                       styleClass="section-title"/>
+                <Label text="Room Inspector" styleClass="section-title"/>
 
-                <VBox styleClass="card">
-
-                    <Label fx:id="lblRoomId" text="Room: -"/>
-                    <Label fx:id="lblItem" text="Item: -"/>
-                    <Label fx:id="lblStartPrice" text="Start Price: -"/>
-                    <Label fx:id="lblCurrentPrice" text="Current: -"/>
-                    <Label fx:id="lblHighestBidder" text="Highest Bidder: -"/>
-                    <Label fx:id="lblTimeLeft" text="Time Left: -"/>
-
+                <!-- Info Card -->
+                <VBox styleClass="card" spacing="6">
+                    <Label fx:id="lblRoomId"         text="Room: -"             styleClass="detail-label"/>
+                    <Label fx:id="lblItem"            text="Item: -"             styleClass="detail-label"/>
+                    <Label fx:id="lblStartPrice"      text="Start Price: -"      styleClass="detail-label"/>
+                    <Label fx:id="lblCurrentPrice"    text="Current: -"          styleClass="detail-label"/>
+                    <Label fx:id="lblHighestBidder"   text="Highest Bidder: -"   styleClass="detail-label"/>
+                    <Label fx:id="lblTimeLeft"        text="Time Left: -"        styleClass="detail-label"/>
                 </VBox>
 
-                <TitledPane text="Live Bid Activity">
+                <!-- Admin Action Buttons -->
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Button onAction="#handlePauseRoom"
+                            styleClass="btn-pause"
+                            text="⏸ Tạm Dừng"
+                            prefWidth="110"/>
+                    <Button onAction="#handleResumeRoom"
+                            styleClass="btn-resume"
+                            text="▶ Tiếp Tục"
+                            prefWidth="110"/>
+                    <Button onAction="#handleCloseRoom"
+                            styleClass="btn-close-room"
+                            text="⛔ Đóng Phòng"
+                            prefWidth="120"/>
+                </HBox>
+
+                <!-- Live Bid Activity Log -->
+                <TitledPane text="Live Bid Activity" VBox.vgrow="ALWAYS">
                     <TextArea fx:id="logArea"
                               editable="false"
                               wrapText="true"
-                              prefHeight="250"/>
+                              prefHeight="220"/>
                 </TitledPane>
 
+                <!-- Participants -->
                 <TitledPane text="Participants" expanded="false">
-                    <ListView fx:id="participantList"/>
+                    <ListView fx:id="participantList" prefHeight="130"/>
                 </TitledPane>
 
             </VBox>
@@ -98,10 +117,8 @@
             <padding>
                 <Insets top="8" right="15" bottom="8" left="15"/>
             </padding>
-
             <Label text="System Status:"/>
             <Label fx:id="lblSystemStatus" text="ONLINE" styleClass="status-ok"/>
-
         </HBox>
     </bottom>
 
