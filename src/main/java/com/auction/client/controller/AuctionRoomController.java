@@ -68,10 +68,6 @@ public class AuctionRoomController {
   @FXML private TableColumn<BidTransaction, String> colBidType;
   @FXML private ComboBox<String> cbBidFilter;
 
-  // ── CHAT ──────────────────────────────────────────────────────────────────
-  @FXML private ListView<String> lvChatMessages;
-  @FXML private TextField txtChatInput;
-
   // ── RIGHT PANEL ───────────────────────────────────────────────────────────
   @FXML private Label lblCountdown;
   @FXML private Label lblCurrentPriceRight;
@@ -208,9 +204,7 @@ public class AuctionRoomController {
         updateYourStatus();
         // Xóa thông báo lỗi cũ khi có update mới — trạng thái đã được refresh
         if (lblBidError != null) lblBidError.setVisible(false);
-        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {
-          lvChatMessages.getItems().add("[SYSTEM] ⏱ Phiên được gia hạn thêm 60 giây!");
-        }
+        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {}
         addChartPoint(currentPrice);
         loadBidHistory(); // refresh table
       }
@@ -220,8 +214,6 @@ public class AuctionRoomController {
         lblAuctionStatus.getStyleClass().setAll("badge-ended");
         stopCountdown();
         disableBidActions();
-        lvChatMessages.getItems().add("[SYSTEM] 🏆 Phiên đấu giá đã kết thúc! Người thắng: "
-                + update.getHighestBidderUsername());
       }
       case PARTICIPANT_CHANGED -> {
         if (lblParticipants != null) {
@@ -352,7 +344,6 @@ public class AuctionRoomController {
           updateCurrentPriceUI();
           updateYourStatus();
           if (lblBidError != null) lblBidError.setVisible(false);
-          addSystemMessage("[BẠN] Đặt giá thành công: " + formatMoney(res.getCurrentHighestBid()) + " VNĐ ✓");
         } else {
           showBidError(res != null ? res.getMessage() : "Lỗi kết nối server");
         }
@@ -399,37 +390,11 @@ public class AuctionRoomController {
       com.auction.common.response.SimpleResponse res =
               SocketClient.getInstance().registerAutoBid(config);
       Platform.runLater(() -> {
-        if (res.isSuccess()) {
-          lvChatMessages.getItems().add("[SYSTEM] Auto-bid đã bật. Tối đa: "
-                  + formatMoney(maxFinal) + " VNĐ");
-        } else {
+        if (res.isSuccess()) {} else {
           showBidError("Lỗi auto-bid: " + res.getMessage());
         }
       });
     }, "register-autobid-thread").start();
-  }
-
-  @FXML
-  public void handleDisableAutoBid() {
-    if (currentAuction == null || ClientSession.getCurrentUser() == null) return;
-    chkAutoBid.setSelected(false);
-    new Thread(() -> {
-      SocketClient.getInstance().cancelAutoBid(
-              ClientSession.getCurrentUser().getId(), currentAuction.getAuctionId());
-      Platform.runLater(() ->
-              lvChatMessages.getItems().add("[SYSTEM] Auto-bid đã tắt."));
-    }, "cancel-autobid-thread").start();
-  }
-
-  // ── CHAT ──────────────────────────────────────────────────────────────────
-
-  @FXML
-  public void handleSendChat() {
-    String msg = txtChatInput.getText().trim();
-    if (msg.isEmpty()) return;
-    lvChatMessages.getItems().add("[" + (ClientSession.getCurrentUser() != null
-            ? ClientSession.getCurrentUser().getUsername() : "Bạn") + "] " + msg);
-    txtChatInput.clear();
   }
 
   // ── BID HISTORY REFRESH ───────────────────────────────────────────────────
@@ -469,8 +434,6 @@ public class AuctionRoomController {
       });
     }, "load-seller-profile").start();
   }
-
-  @FXML public void handleMessageSeller() {}
 
   // ── SETUP HELPERS ─────────────────────────────────────────────────────────
 
@@ -568,14 +531,6 @@ public class AuctionRoomController {
       lblYourStatus.setText("❌ Bạn đang bị vượt giá!");
       lblYourStatus.getStyleClass().setAll("status-losing");
     }
-  }
-
-  private void addSystemMessage(String msg) {
-    if (lvChatMessages == null) return;
-    Platform.runLater(() -> {
-      lvChatMessages.getItems().add(msg);
-      lvChatMessages.scrollTo(lvChatMessages.getItems().size() - 1);
-    });
   }
 
   private void showBidError(String msg) {
