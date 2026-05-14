@@ -54,6 +54,7 @@ public class UserController {
                 case "USER_UPDATE_PROFILE" -> handleUpdateProfile(in, out);
                 case "USER_BALANCE"        -> handleBalance(in, out);
                 case "USER_GET_PROFILE_BY_USERNAME" -> handleGetProfileByUsername(in, out);
+                case "USER_RESOLVE_USERNAMES" -> handleResolveUsernames(in, out);
                 default -> {
                     log.warn("Action USER không hợp lệ: {}", action);
                     out.writeObject(new LoginResponse(false, "Action không hợp lệ: " + action, null));
@@ -190,6 +191,14 @@ public class UserController {
         );
 
         out.writeObject(new GetUserProfileResponse(true, "OK", dto, itemCount));
+        out.flush();
+    }
+
+    private void handleResolveUsernames(ObjectInputStream in, ObjectOutputStream out) throws Exception {
+        java.util.List<Integer> ids = (java.util.List<Integer>) in.readObject();
+        java.util.Map<Integer, String> result =
+            new com.auction.server.dao.UserDAO().findUsernamesByIds(new java.util.HashSet<>(ids));
+        out.writeObject(result);
         out.flush();
     }
 }

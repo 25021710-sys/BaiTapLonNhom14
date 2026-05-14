@@ -378,4 +378,13 @@ public class SocketClient {
             return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
+
+    public java.util.Map<Integer, String> resolveUsernames(java.util.Set<Integer> ids) {
+        try {
+            sendRequest("USER_RESOLVE_USERNAMES", new java.util.ArrayList<>(ids));
+            return readTypedResponse(java.util.HashMap.class);
+        } catch (Exception e) {
+            return new java.util.HashMap<>();
+        }
+    }
 }

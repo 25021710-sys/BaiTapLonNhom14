@@ -1,6 +1,5 @@
 package com.auction.client.controller;
 
-import com.auction.common.dto.UserDTO;
 import com.auction.common.response.GetUserProfileResponse;
 import com.auction.client.network.SocketClient;
 import com.auction.common.dto.AuctionDTO;
@@ -82,8 +81,6 @@ public class AuctionRoomController {
 
   // ── SELLER INFO ───────────────────────────────────────────────────────────
   @FXML private Label lblSellerName;
-  @FXML private Label lblSellerRating;
-  @FXML private Label lblSellerProducts;
 
   // ── AUCTION INFO ──────────────────────────────────────────────────────────
   @FXML private Label lblAuctionId;
@@ -95,6 +92,9 @@ public class AuctionRoomController {
   @FXML private LineChart<Number, Number> bidHistoryChart;
   @FXML private NumberAxis chartXAxis;
   @FXML private NumberAxis chartYAxis;
+
+  // Thêm field
+  @FXML private Label lblMyBalance;
 
   // ── STATE ─────────────────────────────────────────────────────────────────
   private AuctionDTO currentAuction;
@@ -112,6 +112,8 @@ public class AuctionRoomController {
   // For bid price chart
   private XYChart.Series<Number, Number> priceSeries;
   private long chartStartMs;
+
+  private final java.util.Map<Integer, String> usernameCache = new java.util.HashMap<>();
 
   // ── INIT ──────────────────────────────────────────────────────────────────
 
@@ -157,6 +159,11 @@ public class AuctionRoomController {
       updateCurrentPriceUI();
       updateYourStatus();
       loadProductImage(auction.getImageUrl());
+
+      if (ClientSession.getCurrentUser() != null && lblMyBalance != null) {
+        String bal = formatMoney(ClientSession.getCurrentUser().getBalance()) + " VNĐ";
+        lblMyBalance.setText(bal);
+      }
     });
 
     // Subscribe realtime
@@ -231,22 +238,25 @@ public class AuctionRoomController {
     new Thread(() -> {
       BidHistoryResponse res = SocketClient.getInstance().getBidHistory(currentAuction.getAuctionId());
       if (res.isSuccess() && res.getBids() != null) {
+        // Collect tất cả bidderId chưa có trong cache
+        java.util.Set<Integer> unknownIds = new java.util.HashSet<>();
+        for (BidTransaction b : res.getBids()) {
+          if (!usernameCache.containsKey(b.getBidderId()))
+            unknownIds.add(b.getBidderId());
+        }
+
+        // Resolve username hàng loạt từ server (1 request)
+        if (!unknownIds.isEmpty()) {
+          java.util.Map<Integer, String> resolved =
+              SocketClient.getInstance().resolveUsernames(unknownIds);
+          if (resolved != null) usernameCache.putAll(resolved);
+        }
+
         Platform.runLater(() -> {
           bidHistoryList.setAll(res.getBids());
           bidCount = res.getBids().size();
           lblTotalBids.setText(String.valueOf(bidCount));
-          // Update chart
-          if (priceSeries != null) {
-            priceSeries.getData().clear();
-            for (BidTransaction b : res.getBids()) {
-              long ms = b.getCreatedAt() != null
-                      ? java.time.Duration.between(
-                      currentAuction.getStartTime(), b.getCreatedAt()).getSeconds()
-                      : 0;
-              priceSeries.getData().add(
-                      new XYChart.Data<>(ms, b.getAmount().doubleValue()));
-            }
-          }
+          tblBidHistory.refresh(); // FIX: force re-render để hiện username mới
         });
       }
     }, "load-bid-history").start();
@@ -415,22 +425,11 @@ public class AuctionRoomController {
     new Thread(() -> {
       GetUserProfileResponse res = SocketClient.getInstance().getSellerProfile(sellerName);
       Platform.runLater(() -> {
-        if (res == null || !res.isSuccess() || res.getUser() == null) return;
-        UserDTO u = res.getUser();
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Ho so nguoi ban");
-        alert.setHeaderText(u.getUsername());
-        alert.setContentText(
-                "San pham da dang: " + res.getItemCount() + "\n" +
-                        "Vai tro: "          + (u.getRole()        != null ? u.getRole()        : "--") + "\n" +
-                        "Vi tri: "           + (u.getLocation()    != null ? u.getLocation()    : "--") + "\n" +
-                        "Gioi thieu: "       + (u.getDescription() != null ? u.getDescription() : "--") + "\n" +
-                        "Tham gia tu: "      + (u.getCreatedAt()   != null
-                        ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                        : "--")
-        );
-        alert.showAndWait();
+        if (res == null || !res.isSuccess() || res.getUser() == null) {
+          showBidError("Không tìm được thông tin người bán.");
+          return;
+        }
+        showSellerProfileDialog(res.getUser(), res.getItemCount());
       });
     }, "load-seller-profile").start();
   }
@@ -468,8 +467,11 @@ public class AuctionRoomController {
       LocalDateTime t = data.getValue().getCreatedAt();
       return new SimpleStringProperty(t != null ? t.format(timeFormatter) : "");
     });
-    colBidUser.setCellValueFactory(data ->
-            new SimpleStringProperty("User#" + data.getValue().getBidderId()));
+    colBidUser.setCellValueFactory(data -> {
+      String name = usernameCache.getOrDefault(
+          data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
+      return new SimpleStringProperty(name);
+    });
     colBidAmount.setCellValueFactory(data ->
             new SimpleStringProperty(formatMoney(data.getValue().getAmount()) + " VNĐ"));
     colBidType.setCellValueFactory(data ->
@@ -542,6 +544,120 @@ public class AuctionRoomController {
   private String formatMoney(BigDecimal value) {
     if (value == null) return "0";
     return moneyFormat.format(value);
+  }
+
+  private void showSellerProfileDialog(com.auction.common.dto.UserDTO u, int itemCount) {
+    javafx.scene.layout.VBox root = new javafx.scene.layout.VBox(0);
+    root.setPrefWidth(360);
+    root.setStyle("-fx-background-color: #1a1f2e; -fx-background-radius: 14;");
+
+    // ── Header ──────────────────────────────────────────
+    javafx.scene.layout.VBox header = new javafx.scene.layout.VBox(6);
+    header.setAlignment(javafx.geometry.Pos.CENTER);
+    header.setStyle(
+        "-fx-background-color: #252b3b;" +
+            "-fx-background-radius: 14 14 0 0;" +
+            "-fx-padding: 28 20 20 20;"
+    );
+
+    javafx.scene.shape.Circle avatarCircle = new javafx.scene.shape.Circle(38);
+    avatarCircle.setFill(javafx.scene.paint.Color.web("#1f93ff"));
+    String initial = (u.getUsername() != null && !u.getUsername().isEmpty())
+        ? String.valueOf(u.getUsername().charAt(0)).toUpperCase() : "?";
+    javafx.scene.control.Label avatarLbl = new javafx.scene.control.Label(initial);
+    avatarLbl.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
+    javafx.scene.layout.StackPane avatarPane = new javafx.scene.layout.StackPane(avatarCircle, avatarLbl);
+
+    javafx.scene.control.Label nameLbl = new javafx.scene.control.Label(
+        u.getUsername() != null ? u.getUsername() : "—");
+    nameLbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+    String joinDate = (u.getCreatedAt() != null)
+        ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        : "--";
+    javafx.scene.control.Label joinLbl = new javafx.scene.control.Label("Tham gia từ: " + joinDate);
+    joinLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #8a9bb0;");
+
+    header.getChildren().addAll(avatarPane, nameLbl, joinLbl);
+
+    // ── Stats bar ────────────────────────────────────────
+    javafx.scene.layout.HBox statsBar = new javafx.scene.layout.HBox(0);
+    statsBar.setStyle("-fx-background-color: #1f93ff; -fx-padding: 12 0;");
+
+    javafx.scene.layout.VBox statBox = new javafx.scene.layout.VBox(2);
+    statBox.setAlignment(javafx.geometry.Pos.CENTER);
+    statBox.setMaxWidth(Double.MAX_VALUE);
+    javafx.scene.layout.HBox.setHgrow(statBox, javafx.scene.layout.Priority.ALWAYS);
+
+    javafx.scene.control.Label statNum = new javafx.scene.control.Label(String.valueOf(itemCount));
+    statNum.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+    javafx.scene.control.Label statTxt = new javafx.scene.control.Label("Sản phẩm đã đăng");
+    statTxt.setStyle("-fx-font-size: 11px; -fx-text-fill: rgba(255,255,255,0.85);");
+    statBox.getChildren().addAll(statNum, statTxt);
+    statsBar.getChildren().add(statBox);
+
+    // ── Info rows ────────────────────────────────────────
+    javafx.scene.layout.VBox infoSection = new javafx.scene.layout.VBox(0);
+    infoSection.setStyle("-fx-padding: 4 20 12 20;");
+
+    String location = (u.getLocation() != null && !u.getLocation().isBlank())
+        ? u.getLocation() : "Chưa cập nhật";
+    String desc = (u.getDescription() != null && !u.getDescription().isBlank())
+        ? u.getDescription() : "Chưa có giới thiệu";
+
+    infoSection.getChildren().addAll(
+        makeInfoRow("📍  Vị trí",      location),
+        makeSeparator(),
+        makeInfoRow("📝  Giới thiệu",  desc)
+    );
+
+    // ── Close button ─────────────────────────────────────
+    javafx.scene.control.Button closeBtn = new javafx.scene.control.Button("Đóng");
+    closeBtn.setMaxWidth(Double.MAX_VALUE);
+    closeBtn.setStyle(
+        "-fx-background-color: #1f93ff; -fx-text-fill: white;" +
+            "-fx-font-weight: bold; -fx-font-size: 13px;" +
+            "-fx-background-radius: 0 0 14 14; -fx-padding: 12; -fx-cursor: hand;"
+    );
+    closeBtn.setOnMouseEntered(e ->
+        closeBtn.setStyle(closeBtn.getStyle().replace("#1f93ff", "#1a7fd4")));
+    closeBtn.setOnMouseExited(e ->
+        closeBtn.setStyle(closeBtn.getStyle().replace("#1a7fd4", "#1f93ff")));
+
+    root.getChildren().addAll(header, statsBar, infoSection, closeBtn);
+
+    javafx.stage.Stage stage = new javafx.stage.Stage();
+    stage.setTitle("Hồ sơ người bán");
+    stage.setScene(new javafx.scene.Scene(root));
+    stage.setResizable(false);
+    stage.initStyle(javafx.stage.StageStyle.DECORATED);
+    closeBtn.setOnAction(e -> stage.close());
+    stage.show();
+  }
+
+  private javafx.scene.layout.HBox makeInfoRow(String key, String value) {
+    javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(12);
+    row.setStyle("-fx-padding: 10 0;");
+    row.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+
+    javafx.scene.control.Label keyLbl = new javafx.scene.control.Label(key);
+    keyLbl.setMinWidth(110);
+    keyLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #8a9bb0;");
+
+    javafx.scene.control.Label valLbl = new javafx.scene.control.Label(value);
+    valLbl.setWrapText(true);
+    valLbl.setMaxWidth(210);
+    valLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: white; -fx-font-weight: bold;");
+    javafx.scene.layout.HBox.setHgrow(valLbl, javafx.scene.layout.Priority.ALWAYS);
+
+    row.getChildren().addAll(keyLbl, valLbl);
+    return row;
+  }
+
+  private javafx.scene.control.Separator makeSeparator() {
+    javafx.scene.control.Separator sep = new javafx.scene.control.Separator();
+    sep.setStyle("-fx-background-color: #2d3448; -fx-opacity: 0.5;");
+    return sep;
   }
 
   private String formatMoney(double value) {

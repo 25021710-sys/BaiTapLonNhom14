@@ -37,6 +37,14 @@
             <!-- Stats -->
             <HBox spacing="0" alignment="CENTER">
 
+                <VBox styleClass="header-stat-block" alignment="CENTER" minWidth="160">
+                    <Label text="SỐ DƯ CỦA TÔI" styleClass="stat-label"/>
+                    <Label fx:id="lblMyBalance" text="—"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #27ae60;"/>
+                </VBox>
+
+                <Separator orientation="VERTICAL" style="-fx-padding: 10 0;"/>
+
                 <VBox styleClass="header-stat-block" alignment="CENTER" minWidth="110">
                     <Label text="NGƯỜI THAM GIA" styleClass="stat-label"/>
                     <Label fx:id="lblParticipants" text="—" styleClass="stat-value"/>
@@ -109,33 +117,24 @@
                             <!-- Product info card -->
                             <VBox styleClass="info-card">
                                 <HBox styleClass="card-header" alignment="CENTER_LEFT">
-                                    <Label text="🏷  Thông tin sản phẩm" styleClass="card-title"/>
+                                    <Label text="Thong tin san pham" styleClass="card-title"/>
                                 </HBox>
                                 <Separator styleClass="card-divider"/>
                                 <VBox spacing="0" style="-fx-padding: 2 0 4 0;">
-                                    <HBox styleClass="info-row">
-                                        <Label text="Danh mục" styleClass="info-key"/>
-                                        <Label fx:id="lblCategory" text="—" styleClass="info-val"/>
-                                    </HBox>
-                                    <HBox styleClass="info-row">
-                                        <Label fx:id="lblArtistTitle" text="Tác giả" styleClass="info-key"/>
-                                        <Label fx:id="lblArtist" text="—" styleClass="info-val"/>
-                                    </HBox>
-                                    <HBox styleClass="info-row">
-                                        <Label fx:id="lblArtYearTitle" text="Năm sáng tác" styleClass="info-key"/>
-                                        <Label fx:id="lblArtYear" text="—" styleClass="info-val"/>
-                                    </HBox>
-                                    <HBox styleClass="info-row">
-                                        <Label fx:id="lblMaterialTitle" text="Chất liệu" styleClass="info-key"/>
-                                        <Label fx:id="lblMaterial" text="—" styleClass="info-val"/>
-                                    </HBox>
                                     <HBox styleClass="info-row" style="-fx-border-color: transparent;">
-                                        <Label text="Người bán" styleClass="info-key"/>
-                                        <Label fx:id="lblSellerInline" text="—" styleClass="info-val-link"/>
+                                        <Label text="Danh muc" styleClass="info-key"/>
+                                        <Label fx:id="lblCategory" text="—" styleClass="info-val"/>
                                     </HBox>
                                 </VBox>
                             </VBox>
 
+                            <!-- Mô tả riêng bên dưới -->
+                            <VBox styleClass="info-card" VBox.vgrow="ALWAYS">
+                                <Label text="Mo ta san pham" styleClass="card-title"/>
+                                <Separator styleClass="card-divider"/>
+                                <TextArea fx:id="txtDescription" editable="false" wrapText="true"
+                                          prefRowCount="5" styleClass="desc-area"/>
+                            </VBox>
                             <!-- Auction info card -->
                             <VBox styleClass="info-card">
                                 <HBox styleClass="card-header" alignment="CENTER_LEFT">
@@ -168,16 +167,6 @@
                                         <Label fx:id="lblAuctionId" text="—" styleClass="info-val-mono"/>
                                     </HBox>
                                 </VBox>
-                            </VBox>
-
-                            <!-- Description card -->
-                            <VBox styleClass="info-card" VBox.vgrow="ALWAYS">
-                                <Label text="📝  Mô tả sản phẩm" styleClass="card-title"/>
-                                <Separator styleClass="card-divider"/>
-                                <TextArea fx:id="txtDescription"
-                                          editable="false" wrapText="true"
-                                          prefRowCount="4"
-                                          styleClass="desc-area"/>
                             </VBox>
 
                         </VBox>
