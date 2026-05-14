@@ -9,7 +9,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
@@ -17,21 +16,16 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
-/**
- * Controller cho ProductCard.fxml.
- * Nhận AuctionDTO từ DashBoard/JoinedAuction và hiển thị đầy đủ thông tin.
- * Khi bấm "Tham gia" sẽ gọi callback để mở AuctionRoomView.
- */
 public class ProductCardController {
 
     @FXML private VBox rootCard;
     @FXML private Label lblSellerName;
     @FXML private Label lblAuctionId;
-    @FXML private StackPane imagePane;
     @FXML private ImageView imgProduct;
     @FXML private Label lblNoImage;
     @FXML private Label lblTimeLeft;
     @FXML private Label lblStartPrice;
+    @FXML private Label lblCurrentPriceTitle;
     @FXML private Label lblCurrentPrice;
     @FXML private Button btnJoin;
 
@@ -41,93 +35,105 @@ public class ProductCardController {
 
     private static final DecimalFormat MONEY = new DecimalFormat("#,###");
 
-    /** DashBoardController / JoinedAuctionController truyền callback này vào */
     public void setOnJoinCallback(Consumer<AuctionDTO> callback) {
         this.onJoinCallback = callback;
     }
 
-    /**
-     * Nạp dữ liệu AuctionDTO vào card.
-     */
     public void setData(AuctionDTO dto) {
         this.auctionData = dto;
 
-        // Seller / auction ID
-        safe(lblSellerName, dto.getSellerName() != null ? dto.getSellerName() : "Người bán");
-        safe(lblAuctionId,  "#" + dto.getAuctionId());
+        // Tên sản phẩm ở trên cùng (thay vì tên seller)
+        safe(lblSellerName, dto.getItemName() != null ? dto.getItemName() : "Sản phẩm");
 
-        // Giá
+        // ID phiên bên dưới
+        safe(lblAuctionId, "#" + String.format("%04d", dto.getAuctionId()));
+
+        // Giá khởi điểm
         if (dto.getStartingPrice() != null)
             safe(lblStartPrice, MONEY.format(dto.getStartingPrice()));
-        if (dto.getCurrentPrice() != null)
-            safe(lblCurrentPrice, MONEY.format(dto.getCurrentPrice()));
 
-        // Ảnh sản phẩm
-        if (dto.getImageUrl() != null && !dto.getImageUrl().isBlank()) {
-            try {
-                Image img = new Image(dto.getImageUrl(), true);
-                if (imgProduct != null) {
-                    imgProduct.setImage(img);
-                    if (lblNoImage != null) lblNoImage.setVisible(false);
+        String status = dto.getStatus() != null ? dto.getStatus().name() : "";
+
+        if ("OPEN".equals(status)) {
+            safe(lblCurrentPriceTitle, "Thời lượng");
+            if (dto.getStartTime() != null && dto.getEndTime() != null) {
+                long durationMinutes = java.time.Duration.between(
+                    dto.getStartTime(), dto.getEndTime()).toMinutes();
+                if (durationMinutes >= 60) {
+                    long h = durationMinutes / 60;
+                    long m = durationMinutes % 60;
+                    safe(lblCurrentPrice, m > 0
+                        ? String.format("%dh%02dm", h, m)
+                        : String.format("%dh", h));
+                } else {
+                    safe(lblCurrentPrice, durationMinutes + " phút");
                 }
-            } catch (Exception ignored) { /* giữ placeholder */ }
+            } else {
+                safe(lblCurrentPrice, "--");
+            }
+            startCountdownToStart(dto.getStartTime());
+        } else {
+            safe(lblCurrentPriceTitle, "Hiện tại");
+            if (dto.getCurrentPrice() != null)
+                safe(lblCurrentPrice, MONEY.format(dto.getCurrentPrice()));
+            startCountdownToEnd(dto.getEndTime());
         }
 
-        // Màu nút theo trạng thái
-        styleJoinButton(String.valueOf(dto.getStatus()));
+        // Ảnh
+        if (dto.getImageUrl() != null && !dto.getImageUrl().isBlank()) {
+            try {
+                imgProduct.setImage(new Image(dto.getImageUrl(), true));
+                if (lblNoImage != null) lblNoImage.setVisible(false);
+            } catch (Exception ignored) {}
+        }
 
-        // Countdown
-        startCountdown(dto.getEndTime());
+        // Nút
+        styleJoinButton(status);
 
-        // Hover effect nhẹ
+        // Hover
         rootCard.setOnMouseEntered(e ->
-                rootCard.setStyle(rootCard.getStyle() +
-                        "-fx-effect: dropshadow(gaussian,rgba(41,128,185,0.45),18,0,0,4);"));
+            rootCard.setStyle(rootCard.getStyle() +
+                "-fx-effect: dropshadow(gaussian,rgba(41,128,185,0.45),18,0,0,4);"));
         rootCard.setOnMouseExited(e ->
-                rootCard.setStyle(rootCard.getStyle()
-                        .replace("-fx-effect: dropshadow(gaussian,rgba(41,128,185,0.45),18,0,0,4);", "")));
+            rootCard.setStyle(rootCard.getStyle()
+                .replace("-fx-effect: dropshadow(gaussian,rgba(41,128,185,0.45),18,0,0,4);", "")));
     }
 
     @FXML
     public void handleJoin() {
-        if (onJoinCallback != null && auctionData != null) {
+        if (onJoinCallback != null && auctionData != null)
             onJoinCallback.accept(auctionData);
-        }
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
+    // ── Countdown đến khi bắt đầu (OPEN) ────────────────────────────────────
 
-    private void styleJoinButton(String status) {
-        if (btnJoin == null || status == null) return;
-        switch (status.toUpperCase()) {
-            case "RUNNING", "ĐANG DIỄN RA" -> {
-                btnJoin.setText("Tham gia 🚀");
-                btnJoin.setStyle(
-                        "-fx-background-color: #2980B9; -fx-text-fill: white;" +
-                                "-fx-background-radius: 10; -fx-font-weight: bold; -fx-cursor: hand;");
-            }
-            case "OPEN", "SẮP DIỄN RA" -> {
-                btnJoin.setText("Xem phòng 🔔");
-                btnJoin.setStyle(
-                        "-fx-background-color: #27AE60; -fx-text-fill: white;" +
-                                "-fx-background-radius: 10; -fx-font-weight: bold; -fx-cursor: hand;");
-            }
-            default -> {
-                btnJoin.setText("Đã kết thúc");
-                btnJoin.setStyle(
-                        "-fx-background-color: #BDC3C7; -fx-text-fill: #7F8C8D;" +
-                                "-fx-background-radius: 10; -fx-cursor: default;");
-                btnJoin.setDisable(true);
-            }
-        }
-    }
-
-    private void startCountdown(LocalDateTime endTime) {
-        if (endTime == null || lblTimeLeft == null) return;
+    private void startCountdownToStart(LocalDateTime startTime) {
+        if (startTime == null || lblTimeLeft == null) return;
         if (countdown != null) countdown.stop();
+
         countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             long secondsLeft = java.time.Duration.between(
-                    LocalDateTime.now(), endTime).getSeconds();
+                LocalDateTime.now(), startTime).getSeconds();
+            if (secondsLeft <= 0) {
+                lblTimeLeft.setText("Đang bắt đầu...");
+                countdown.stop();
+            } else {
+                lblTimeLeft.setText("Bắt đầu trong " + formatTime(secondsLeft));
+            }
+        }));
+        countdown.setCycleCount(Animation.INDEFINITE);
+        countdown.play();
+    }
+
+    // ── Countdown đến khi kết thúc (RUNNING) ─────────────────────────────────
+
+    private void startCountdownToEnd(LocalDateTime endTime) {
+        if (endTime == null || lblTimeLeft == null) return;
+        if (countdown != null) countdown.stop();
+
+        countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+            long secondsLeft = java.time.Duration.between(
+                LocalDateTime.now(), endTime).getSeconds();
             if (secondsLeft <= 0) {
                 lblTimeLeft.setText("Kết thúc");
                 countdown.stop();
@@ -136,15 +142,48 @@ public class ProductCardController {
                     btnJoin.setDisable(true);
                 }
             } else {
-                long h = secondsLeft / 3600;
-                long m = (secondsLeft % 3600) / 60;
-                long s = secondsLeft % 60;
-                lblTimeLeft.setText(String.format(
-                        "Kết thúc trong %02d:%02d:%02d", h, m, s));
+                lblTimeLeft.setText("Kết thúc trong " + formatTime(secondsLeft));
             }
         }));
         countdown.setCycleCount(Animation.INDEFINITE);
         countdown.play();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void styleJoinButton(String status) {
+        if (btnJoin == null) return;
+        switch (status) {
+            case "RUNNING" -> {
+                btnJoin.setText("Tham gia 🚀");
+                btnJoin.setStyle(
+                    "-fx-background-color: #2980B9; -fx-text-fill: white;" +
+                        "-fx-background-radius: 10; -fx-font-weight: bold; -fx-cursor: hand;");
+            }
+            case "OPEN" -> {
+                btnJoin.setText("Xem phòng 🔔");
+                btnJoin.setStyle(
+                    "-fx-background-color: #27AE60; -fx-text-fill: white;" +
+                        "-fx-background-radius: 10; -fx-font-weight: bold; -fx-cursor: hand;");
+            }
+            default -> {
+                btnJoin.setText("Đã kết thúc");
+                btnJoin.setStyle(
+                    "-fx-background-color: #BDC3C7; -fx-text-fill: #7F8C8D;" +
+                        "-fx-background-radius: 10; -fx-cursor: default;");
+                btnJoin.setDisable(true);
+            }
+        }
+    }
+
+    private String formatTime(long seconds) {
+        if (seconds <= 0) return "00:00:00";
+        long d = seconds / 86400;
+        long h = (seconds % 86400) / 3600;
+        long m = (seconds % 3600) / 60;
+        long s = seconds % 60;
+        if (d > 0) return String.format("%dd %02d:%02d:%02d", d, h, m, s);
+        return String.format("%02d:%02d:%02d", h, m, s);
     }
 
     private void safe(Label lbl, String text) {

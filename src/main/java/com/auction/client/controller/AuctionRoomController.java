@@ -1,5 +1,7 @@
 package com.auction.client.controller;
 
+import com.auction.common.dto.UserDTO;
+import com.auction.common.response.GetUserProfileResponse;
 import com.auction.client.network.SocketClient;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.common.dto.AuctionUpdateDTO;
@@ -264,13 +266,14 @@ public class AuctionRoomController {
         disableBidActions();
         return;
       }
-      long hours = secondsLeft / 3600;
+      long days    = secondsLeft / 86400;
+      long hours   = (secondsLeft % 86400) / 3600;
       long minutes = (secondsLeft % 3600) / 60;
       long seconds = secondsLeft % 60;
-      lblCountdown.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
-      if (secondsLeft < 60) {
-        lblCountdown.getStyleClass().add("countdown-critical");
-      }
+      if (days > 0)
+        lblCountdown.setText(String.format("%dd %02d:%02d:%02d", days, hours, minutes, seconds));
+      else
+        lblCountdown.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
     }));
     countdownTimeline.setCycleCount(Timeline.INDEFINITE);
     countdownTimeline.play();
@@ -421,7 +424,35 @@ public class AuctionRoomController {
 
   // ── SELLER ACTIONS ────────────────────────────────────────────────────────
 
-  @FXML public void handleViewSellerProfile() {}
+  @FXML
+  public void handleViewSellerProfile() {
+    if (currentAuction == null) return;
+    String sellerName = currentAuction.getSellerName();
+    if (sellerName == null || sellerName.isBlank()) return;
+
+    new Thread(() -> {
+      GetUserProfileResponse res = SocketClient.getInstance().getSellerProfile(sellerName);
+      Platform.runLater(() -> {
+        if (res == null || !res.isSuccess() || res.getUser() == null) return;
+        UserDTO u = res.getUser();
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Ho so nguoi ban");
+        alert.setHeaderText(u.getUsername());
+        alert.setContentText(
+            "San pham da dang: " + res.getItemCount() + "\n" +
+                "Vai tro: "          + (u.getRole()        != null ? u.getRole()        : "--") + "\n" +
+                "Vi tri: "           + (u.getLocation()    != null ? u.getLocation()    : "--") + "\n" +
+                "Gioi thieu: "       + (u.getDescription() != null ? u.getDescription() : "--") + "\n" +
+                "Tham gia tu: "      + (u.getCreatedAt()   != null
+                ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : "--")
+        );
+        alert.showAndWait();
+      });
+    }, "load-seller-profile").start();
+  }
+
   @FXML public void handleMessageSeller() {}
 
   // ── SETUP HELPERS ─────────────────────────────────────────────────────────

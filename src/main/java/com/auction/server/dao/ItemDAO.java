@@ -206,4 +206,16 @@ public class ItemDAO {
         }
         return result;
     }
+
+    public int countBySeller(int sellerId) {
+        String sql = "SELECT COUNT(*) FROM items WHERE seller_id = ?";
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, sellerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            logger.error("Loi countBySeller", e);
+        }
+        return 0;
+    }
 }
