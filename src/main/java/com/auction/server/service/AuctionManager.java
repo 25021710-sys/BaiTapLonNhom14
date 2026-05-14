@@ -93,14 +93,32 @@ public class AuctionManager {
         subscribers.computeIfAbsent(auctionId,
                 k -> Collections.newSetFromMap(new ConcurrentHashMap<>())).add(handler);
         log.debug("Client subscribe auction={}", auctionId);
+        broadcastParticipantCount(auctionId);
     }
 
-    /**
-     * Hủy đăng ký (khi client rời phòng hoặc ngắt kết nối).
-     */
     public void unsubscribe(int auctionId, ClientHandler handler) {
         Set<ClientHandler> set = subscribers.get(auctionId);
-        if (set != null) set.remove(handler);
+        if (set != null) {
+            set.remove(handler);
+            broadcastParticipantCount(auctionId);
+        }
+    }
+
+    public int getParticipantCount(int auctionId) {
+        Set<ClientHandler> set = subscribers.get(auctionId);
+        return set == null ? 0 : set.size();
+    }
+
+    private void broadcastParticipantCount(int auctionId) {
+        int count = getParticipantCount(auctionId);
+        AuctionUpdateDTO update = new AuctionUpdateDTO(
+                auctionId,
+                AuctionUpdateDTO.UpdateType.PARTICIPANT_CHANGED,
+                null, 0, null, null,
+                "Số người tham gia: " + count,
+                count
+        );
+        broadcastUpdate(auctionId, update);
     }
 
     /**
