@@ -206,6 +206,8 @@ public class AuctionRoomController {
         lblLeadingUser.setText(update.getHighestBidderUsername() != null
                 ? update.getHighestBidderUsername() : "---");
         updateYourStatus();
+        // Xóa thông báo lỗi cũ khi có update mới — trạng thái đã được refresh
+        if (lblBidError != null) lblBidError.setVisible(false);
         if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {
           lvChatMessages.getItems().add("[SYSTEM] ⏱ Phiên được gia hạn thêm 60 giây!");
         }
@@ -344,6 +346,12 @@ public class AuctionRoomController {
       Platform.runLater(() -> {
         if (res != null && res.isSuccess()) {
           if (txtBidAmount != null) txtBidAmount.clear();
+          // Ngay lập tức cập nhật trạng thái "đang dẫn đầu" mà không chờ push từ server
+          currentPrice = res.getCurrentHighestBid();
+          currentHighestBidderId = ClientSession.getCurrentUser().getId();
+          updateCurrentPriceUI();
+          updateYourStatus();
+          if (lblBidError != null) lblBidError.setVisible(false);
           addSystemMessage("[BẠN] Đặt giá thành công: " + formatMoney(res.getCurrentHighestBid()) + " VNĐ ✓");
         } else {
           showBidError(res != null ? res.getMessage() : "Lỗi kết nối server");

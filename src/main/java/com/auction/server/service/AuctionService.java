@@ -186,14 +186,7 @@ public class AuctionService {
                                 + minIncrement + " VND.", currentPrice);
             }
 
-            // 7. Không tự outbid chính mình
-            if (auction.getHighestBidderId() == userId) {
-                return new BidResponse(false,
-                        "Giao dịch bị từ chối: Bạn đang dẫn đầu phiên này, không cần đặt lại.",
-                        currentPrice);
-            }
-
-            // 8. Kiểm tra số dư
+            // 7. Kiểm tra số dư (người đang dẫn đầu vẫn được phép tăng giá thêm)
             User user;
             try {
                 user = userDAO.findById(userId);
@@ -212,12 +205,17 @@ public class AuctionService {
 
             // 9. Hoàn tiền cho người dẫn đầu trước đó
             int previousBidderId = auction.getHighestBidderId();
-            if (previousBidderId != 0 && previousBidderId != userId) {
+            if (previousBidderId != 0 && previousBidderId == userId) {
+                // Người đang dẫn đầu tự tăng giá → hoàn lại khoản cũ trước khi trừ mới
+                refundPreviousBidder(userId, currentPrice);
+                try { user = userDAO.findById(userId); } catch (Exception ignored) {}
+            } else if (previousBidderId != 0) {
                 refundPreviousBidder(previousBidderId, currentPrice);
             }
 
             // 10. Trừ tiền người đặt giá mới
             try {
+                if (user == null) user = userDAO.findById(userId);
                 user.setBalance(user.getBalance().subtract(bidAmount));
                 userDAO.updateBalance(user.getId(), user.getBalance());
             } catch (Exception e) {
@@ -225,6 +223,8 @@ public class AuctionService {
                 // Rollback: hoàn lại tiền cho previousBidder nếu đã hoàn
                 if (previousBidderId != 0 && previousBidderId != userId) {
                     chargeUser(previousBidderId, currentPrice);
+                } else if (previousBidderId != 0 && previousBidderId == userId) {
+                    chargeUser(userId, currentPrice); // hoàn ngược lại khoản đã refund
                 }
                 return new BidResponse(false, "Lỗi cập nhật số dư, vui lòng thử lại.", currentPrice);
             }
