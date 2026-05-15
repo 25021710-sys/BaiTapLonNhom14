@@ -119,7 +119,7 @@ public class DashBoardController {
         if (panel == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/ProductCard.fxml"));
+                    getClass().getResource("/view/ProductCard.fxml"));
             Node card = loader.load();
             ProductCardController ctrl = loader.getController();
             ctrl.setData(dto);
@@ -160,7 +160,7 @@ public class DashBoardController {
     public void openAuctionRoom(AuctionDTO dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/AuctionRoomView.fxml"));
+                    getClass().getResource("/view/AuctionRoomView.fxml"));
             Parent roomView = loader.load();
             AuctionRoomController roomCtrl = loader.getController();
             roomCtrl.loadAuction(dto);
@@ -168,11 +168,17 @@ public class DashBoardController {
             Stage stage = new Stage();
             stage.setTitle("Phiên đấu giá: " + dto.getItemName());
             stage.setScene(new Scene(roomView));
+
+            // FIX REALTIME: cleanup khi đóng cửa sổ — unsubscribe server + remove push callback
+            // Nếu không có dòng này, callback vẫn còn trong danh sách → nhận push của phòng đã đóng,
+            // và participant count trên server không bao giờ giảm.
+            stage.setOnCloseRequest(e -> roomCtrl.cleanup());
+
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
             Alert alert = new Alert(Alert.AlertType.ERROR,
-                "Không thể mở phòng đấu giá:\n" + e.getMessage());
+                    "Không thể mở phòng đấu giá:\n" + e.getMessage());
             alert.setHeaderText("Lỗi");
             alert.showAndWait();
         }
@@ -295,7 +301,7 @@ public class DashBoardController {
         try {
             setActiveMenu(btnMyAuction);
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/MyAuctionView.fxml"));
+                    getClass().getResource("/view/MyAuctionView.fxml"));
             Parent view = loader.load();
             MyAuctionController ctrl = loader.getController();
             ctrl.setOpenRoomCallback(this::openAuctionRoom);

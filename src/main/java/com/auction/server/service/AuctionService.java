@@ -132,11 +132,16 @@ public class AuctionService {
         lock.lock();
 
         try {
-            // 1. Kiểm tra phiên tồn tại
+            // 1. Kiểm tra phiên tồn tại — đọc FRESH từ DB bên trong lock
+            //    để tránh đọc cache stale khi 2 request vào lock liên tiếp rất nhanh
             Auction auction;
             try {
-                auction = getAuction(auctionId);
-            } catch (AuctionException e) {
+                Auction fresh = auctionDAO.findById(auctionId);
+                if (fresh == null)
+                    return new BidResponse(false, "Phiên đấu giá không tồn tại.", BigDecimal.ZERO);
+                auctionCache.put(auctionId, fresh);
+                auction = fresh;
+            } catch (Exception e) {
                 return new BidResponse(false, "Phiên đấu giá không tồn tại.", BigDecimal.ZERO);
             }
 
@@ -170,20 +175,27 @@ public class AuctionService {
                         currentPrice);
             }
 
-            // 5. Kiểm tra giá hợp lệ: phải cao hơn currentPrice
+            // 5. Kiểm tra giá hợp lệ: phải STRICTLY cao hơn currentPrice
             if (bidAmount.compareTo(currentPrice) <= 0) {
                 return new BidResponse(false,
                         "Giao dịch bị từ chối: Mức giá đề xuất phải cao hơn giá hiện tại ("
                                 + currentPrice + ").", currentPrice);
             }
 
-            // 6. Kiểm tra bước giá tối thiểu (nếu auction đã có bid)
+            // 6. Kiểm tra bước giá tối thiểu — áp dụng LUÔN LUÔN (không chỉ khi đã có bid)
             BigDecimal minIncrement = auction.getMinBidIncrement();
-            if (auction.getHighestBidderId() != 0
-                    && bidAmount.compareTo(currentPrice.add(minIncrement)) < 0) {
+            if (bidAmount.compareTo(currentPrice.add(minIncrement)) < 0) {
                 return new BidResponse(false,
                         "Giao dịch bị từ chối: Mức giá tối thiểu phải cao hơn giá hiện tại ít nhất "
                                 + minIncrement + " VND.", currentPrice);
+            }
+
+            // 6b. FIX: Người đang dẫn đầu không được bid lại đúng giá hiện tại của chính mình
+            if (auction.getHighestBidderId() == userId
+                    && bidAmount.compareTo(currentPrice) == 0) {
+                return new BidResponse(false,
+                        "Giao dịch bị từ chối: Bạn đang dẫn đầu với mức giá này rồi.",
+                        currentPrice);
             }
 
             // 7. Kiểm tra số dư (người đang dẫn đầu vẫn được phép tăng giá thêm)
@@ -229,11 +241,29 @@ public class AuctionService {
                 return new BidResponse(false, "Lỗi cập nhật số dư, vui lòng thử lại.", currentPrice);
             }
 
-            // 11. Cập nhật auction (DB trước, rồi cache)
+            // 11. Cập nhật auction — dùng optimistic UPDATE với điều kiện current_price < bidAmount
+            //     Điều này đảm bảo chỉ DUY NHẤT một bid thắng race dù 2 request vào lock tuần tự
+            //     với cùng bidAmount (vì người thứ 2 sẽ thấy current_price đã bằng bidAmount → 0 rows)
             auction.setCurrentPrice(bidAmount);
             auction.setHighestBidderId(userId);
             auction.setStatus(AuctionStatus.RUNNING);
-            auctionDAO.updateAuction(auction);
+            boolean dbUpdated = auctionDAO.updateBidPrice(auctionId, userId, bidAmount);
+            if (!dbUpdated) {
+                // DB đã có giá >= bidAmount (người khác vừa thắng race ở DB level)
+                // Rollback: hoàn tiền cho userId, không hoàn cho previousBidder (họ vẫn đang dẫn đầu)
+                refundPreviousBidder(userId, bidAmount);
+                if (previousBidderId != 0 && previousBidderId != userId) {
+                    // Hoàn ngược lại tiền đã refund cho previousBidder ở bước 9
+                    chargeUser(previousBidderId, currentPrice);
+                }
+                // Làm mới cache từ DB để lần sau đọc đúng
+                Auction fresh = auctionDAO.findById(auctionId);
+                if (fresh != null) auctionCache.put(auctionId, fresh);
+                return new BidResponse(false,
+                        "Giao dịch bị từ chối: Đã có người đặt giá cao hơn vừa xong. Vui lòng thử lại.",
+                        fresh != null && fresh.getCurrentPrice() != null
+                                ? fresh.getCurrentPrice() : currentPrice);
+            }
             auctionCache.put(auctionId, auction);
 
             // 12. Lưu lịch sử giao dịch

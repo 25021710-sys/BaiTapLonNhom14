@@ -179,7 +179,8 @@ public class AuctionRoomController {
   // ── SUBSCRIBE REALTIME ────────────────────────────────────────────────────
 
   private void subscribeRealtime(int auctionId) {
-    SocketClient.getInstance().setPushCallback(this::handlePushUpdate);
+    // addPushCallback thay vì setPushCallback — không overwrite callback của màn hình khác
+    SocketClient.getInstance().addPushCallback(this::handlePushUpdate);
 
     new Thread(() -> {
       CreateAuctionResponse res = SocketClient.getInstance().subscribeAuction(auctionId);
@@ -189,6 +190,27 @@ public class AuctionRoomController {
       // Server sẽ push PARTICIPANT_CHANGED ngay sau subscribe.
       // lblParticipants sẽ được cập nhật trong handlePushUpdate.
     }, "subscribe-thread").start();
+  }
+
+  /**
+   * Dọn dẹp khi màn hình bị đóng: hủy subscribe server + remove push callback.
+   * Gọi từ onCloseRequest của Stage (xem DashboardController hoặc nơi mở Stage này).
+   *
+   * Ví dụ dùng:
+   *   stage.setOnCloseRequest(e -> auctionRoomController.cleanup());
+   */
+  public void cleanup() {
+    // Dừng countdown để không leak Timer thread
+    stopCountdown();
+    // Gỡ callback trước — tránh nhận push sau khi màn hình đã đóng
+    SocketClient.getInstance().removePushCallback(this::handlePushUpdate);
+    // Báo server bỏ subscribe (giảm participant count)
+    if (currentAuction != null) {
+      new Thread(() ->
+              SocketClient.getInstance().unsubscribeAuction(currentAuction.getAuctionId()),
+              "unsubscribe-thread"
+      ).start();
+    }
   }
 
   /**
@@ -248,7 +270,7 @@ public class AuctionRoomController {
         // Resolve username hàng loạt từ server (1 request)
         if (!unknownIds.isEmpty()) {
           java.util.Map<Integer, String> resolved =
-              SocketClient.getInstance().resolveUsernames(unknownIds);
+                  SocketClient.getInstance().resolveUsernames(unknownIds);
           if (resolved != null) usernameCache.putAll(resolved);
         }
 
@@ -469,7 +491,7 @@ public class AuctionRoomController {
     });
     colBidUser.setCellValueFactory(data -> {
       String name = usernameCache.getOrDefault(
-          data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
+              data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
       return new SimpleStringProperty(name);
     });
     colBidAmount.setCellValueFactory(data ->
@@ -555,26 +577,26 @@ public class AuctionRoomController {
     javafx.scene.layout.VBox header = new javafx.scene.layout.VBox(6);
     header.setAlignment(javafx.geometry.Pos.CENTER);
     header.setStyle(
-        "-fx-background-color: #252b3b;" +
-            "-fx-background-radius: 14 14 0 0;" +
-            "-fx-padding: 28 20 20 20;"
+            "-fx-background-color: #252b3b;" +
+                    "-fx-background-radius: 14 14 0 0;" +
+                    "-fx-padding: 28 20 20 20;"
     );
 
     javafx.scene.shape.Circle avatarCircle = new javafx.scene.shape.Circle(38);
     avatarCircle.setFill(javafx.scene.paint.Color.web("#1f93ff"));
     String initial = (u.getUsername() != null && !u.getUsername().isEmpty())
-        ? String.valueOf(u.getUsername().charAt(0)).toUpperCase() : "?";
+            ? String.valueOf(u.getUsername().charAt(0)).toUpperCase() : "?";
     javafx.scene.control.Label avatarLbl = new javafx.scene.control.Label(initial);
     avatarLbl.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
     javafx.scene.layout.StackPane avatarPane = new javafx.scene.layout.StackPane(avatarCircle, avatarLbl);
 
     javafx.scene.control.Label nameLbl = new javafx.scene.control.Label(
-        u.getUsername() != null ? u.getUsername() : "—");
+            u.getUsername() != null ? u.getUsername() : "—");
     nameLbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
 
     String joinDate = (u.getCreatedAt() != null)
-        ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        : "--";
+            ? u.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            : "--";
     javafx.scene.control.Label joinLbl = new javafx.scene.control.Label("Tham gia từ: " + joinDate);
     joinLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #8a9bb0;");
 
@@ -601,28 +623,28 @@ public class AuctionRoomController {
     infoSection.setStyle("-fx-padding: 4 20 12 20;");
 
     String location = (u.getLocation() != null && !u.getLocation().isBlank())
-        ? u.getLocation() : "Chưa cập nhật";
+            ? u.getLocation() : "Chưa cập nhật";
     String desc = (u.getDescription() != null && !u.getDescription().isBlank())
-        ? u.getDescription() : "Chưa có giới thiệu";
+            ? u.getDescription() : "Chưa có giới thiệu";
 
     infoSection.getChildren().addAll(
-        makeInfoRow("📍  Vị trí",      location),
-        makeSeparator(),
-        makeInfoRow("📝  Giới thiệu",  desc)
+            makeInfoRow("📍  Vị trí",      location),
+            makeSeparator(),
+            makeInfoRow("📝  Giới thiệu",  desc)
     );
 
     // ── Close button ─────────────────────────────────────
     javafx.scene.control.Button closeBtn = new javafx.scene.control.Button("Đóng");
     closeBtn.setMaxWidth(Double.MAX_VALUE);
     closeBtn.setStyle(
-        "-fx-background-color: #1f93ff; -fx-text-fill: white;" +
-            "-fx-font-weight: bold; -fx-font-size: 13px;" +
-            "-fx-background-radius: 0 0 14 14; -fx-padding: 12; -fx-cursor: hand;"
+            "-fx-background-color: #1f93ff; -fx-text-fill: white;" +
+                    "-fx-font-weight: bold; -fx-font-size: 13px;" +
+                    "-fx-background-radius: 0 0 14 14; -fx-padding: 12; -fx-cursor: hand;"
     );
     closeBtn.setOnMouseEntered(e ->
-        closeBtn.setStyle(closeBtn.getStyle().replace("#1f93ff", "#1a7fd4")));
+            closeBtn.setStyle(closeBtn.getStyle().replace("#1f93ff", "#1a7fd4")));
     closeBtn.setOnMouseExited(e ->
-        closeBtn.setStyle(closeBtn.getStyle().replace("#1a7fd4", "#1f93ff")));
+            closeBtn.setStyle(closeBtn.getStyle().replace("#1a7fd4", "#1f93ff")));
 
     root.getChildren().addAll(header, statsBar, infoSection, closeBtn);
 

@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -64,7 +66,9 @@ public class SocketClient {
     // Queue nhận mọi response từ server (trừ PUSH_UPDATE đã tách riêng)
     private final LinkedBlockingQueue<Object> responseQueue = new LinkedBlockingQueue<>();
 
-    private volatile Consumer<AuctionUpdateDTO> pushCallback;
+    // Danh sách callback nhận push update — CopyOnWriteArrayList để thread-safe
+    // khi add/remove đồng thời với push listener đang iterate
+    private final List<Consumer<AuctionUpdateDTO>> pushCallbacks = new CopyOnWriteArrayList<>();
 
     private SocketClient(String host, int port) {
         this.host = host;
@@ -103,8 +107,27 @@ public class SocketClient {
         }
     }
 
+    /**
+     * Đăng ký nhận push update. Dùng addPushCallback thay vì setPushCallback
+     * để nhiều màn hình có thể subscribe đồng thời mà không overwrite nhau.
+     * Nhớ gọi removePushCallback khi màn hình đóng để tránh memory leak.
+     */
+    public void addPushCallback(Consumer<AuctionUpdateDTO> callback) {
+        if (callback != null) pushCallbacks.add(callback);
+    }
+
+    /**
+     * Hủy đăng ký nhận push update. Gọi trong onCloseRequest / cleanup của controller.
+     */
+    public void removePushCallback(Consumer<AuctionUpdateDTO> callback) {
+        pushCallbacks.remove(callback);
+    }
+
+    /** @deprecated Dùng addPushCallback thay thế để tránh overwrite callback của màn hình khác. */
+    @Deprecated
     public void setPushCallback(Consumer<AuctionUpdateDTO> callback) {
-        this.pushCallback = callback;
+        pushCallbacks.clear();
+        if (callback != null) pushCallbacks.add(callback);
     }
 
     // ── Push listener ─────────────────────────────────────────────────────────
@@ -121,9 +144,17 @@ public class SocketClient {
                     Object obj = in.readObject();
                     if ("AUCTION_PUSH_UPDATE".equals(obj)) {
                         AuctionUpdateDTO update = (AuctionUpdateDTO) in.readObject();
-                        Consumer<AuctionUpdateDTO> cb = pushCallback;
-                        if (cb != null) {
-                            javafx.application.Platform.runLater(() -> cb.accept(update));
+                        // Fan-out đến tất cả callback đã đăng ký (mỗi màn hình phòng đấu giá mở)
+                        List<Consumer<AuctionUpdateDTO>> snapshot = new java.util.ArrayList<>(pushCallbacks);
+                        if (!snapshot.isEmpty()) {
+                            javafx.application.Platform.runLater(() -> {
+                                for (Consumer<AuctionUpdateDTO> cb : snapshot) {
+                                    try { cb.accept(update); }
+                                    catch (Exception ex) {
+                                        System.err.println("[SocketClient] Callback lỗi: " + ex.getMessage());
+                                    }
+                                }
+                            });
                         }
                     } else {
                         responseQueue.put(obj);
