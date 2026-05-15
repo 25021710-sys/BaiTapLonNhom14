@@ -620,4 +620,70 @@ public class AuctionService {
     public List<Auction> getOpenAuctionsExcludeSeller(int sellerId) {
         return auctionDAO.findByStatusExcludeSeller("OPEN", sellerId);
     }
+    public boolean pauseAuction(int auctionId, int adminId) {
+        ReentrantLock lock = auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
+        lock.lock();
+        try {
+            Auction auction = auctionCache.get(auctionId);
+            if (auction == null) auction = auctionDAO.findById(auctionId);
+            if (auction == null) return false;
+            if (auction.getStatus() != AuctionStatus.RUNNING) return false;
+
+            auction.setStatus(AuctionStatus.OPEN);
+            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.OPEN);
+            if (ok) {
+                auctionCache.put(auctionId, auction);
+                log.info("Admin {} tạm dừng phòng {}", adminId, auctionId);
+            }
+            return ok;
+        } finally {
+            lock.unlock();
+        }
+    }
+    public boolean resumeAuction(int auctionId, int adminId) {
+        ReentrantLock lock = auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
+        lock.lock();
+        try {
+            Auction auction = auctionCache.get(auctionId);
+            if (auction == null) auction = auctionDAO.findById(auctionId);
+            if (auction == null) return false;
+            if (auction.getStatus() != AuctionStatus.OPEN) return false;
+
+            auction.setStatus(AuctionStatus.RUNNING);
+            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.RUNNING);
+            if (ok) {
+                auctionCache.put(auctionId, auction);
+                log.info("Admin {} tiếp tục phòng {}", adminId, auctionId);
+            }
+            return ok;
+        } finally {
+            lock.unlock();
+        }
+    }
+    public boolean cancelAuction(int auctionId, int adminId, String reason) {
+        ReentrantLock lock = auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
+        lock.lock();
+        try {
+            Auction auction = auctionCache.get(auctionId);
+            if (auction == null) auction = auctionDAO.findById(auctionId);
+            if (auction == null) return false;
+
+            AuctionStatus prev = auction.getStatus();
+            if (prev == AuctionStatus.FINISHED || prev == AuctionStatus.CANCELED) return false;
+
+            auction.setStatus(AuctionStatus.CANCELED);
+            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.CANCELED);
+            if (ok) {
+                // Xóa khỏi cache vì phòng đã đóng hẳn
+                auctionCache.remove(auctionId);
+                auctionLocks.remove(auctionId);
+                log.info("Admin {} HỦY phòng {} (trước: {}) | Lý do: {}", adminId, auctionId, prev, reason);
+            }
+            return ok;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+
 }

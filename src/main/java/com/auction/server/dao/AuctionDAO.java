@@ -120,18 +120,6 @@ public class AuctionDAO {
         return null;
     }
     /** Cập nhật trạng thái phiên đấu giá */
-    public void updateStatus(int auctionId, AuctionStatus status) {
-        String sql = "UPDATE auctions SET status = ? WHERE id = ?";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, status.name());
-            ps.setInt(2, auctionId);
-            ps.executeUpdate();
-            logger.info("Auction {} -> status {}", auctionId, status);
-        } catch (SQLException e) {
-            logger.error("Lỗi updateStatus", e);
-            throw new RuntimeException(e);
-        }
-    }
     /** Gia hạn thời gian kết thúc (anti-sniping) */
     public void extendEndTime(int auctionId, LocalDateTime newEndTime) {
         String sql = "UPDATE auctions SET end_time = ?, extension_count = extension_count + 1 WHERE id = ?";
@@ -412,5 +400,17 @@ public class AuctionDAO {
             logger.error("Lỗi findByStatusExcludeSeller", e);
         }
         return list;
+    }
+    public boolean updateStatus(int auctionId, AuctionStatus status) {
+        String sql = "UPDATE auctions SET status = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setInt(2, auctionId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            logger.error("Lỗi updateStatus auction {}: {}", auctionId, e.getMessage());
+            return false;
+        }
     }
 }

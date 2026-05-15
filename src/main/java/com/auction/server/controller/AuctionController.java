@@ -1,7 +1,9 @@
 package com.auction.server.controller;
 
 import com.auction.common.dto.AdminAuctionRequestDTO;
+import com.auction.common.dto.AdminRoomDTO;
 import com.auction.common.dto.AuctionDTO;
+import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.request.*;
 import com.auction.common.response.*;
 import com.auction.server.dao.AuctionDAO;
@@ -91,6 +93,11 @@ public class AuctionController {
             case "AUCTION_GET_JOINED"           -> handleGetJoinedAuctions(out, session);
             case "AUCTION_GET_MY"               -> handleGetMyAuctions(out, session);
             case "AUCTION_GET_DASHBOARD"        -> handleGetDashboard(out, session);
+            case "ADMIN_GET_ROOMS"        -> handleAdminGetRooms(in, out, session);
+            case "ADMIN_GET_ROOM_DETAIL"  -> handleAdminGetRoomDetail(in, out, session);
+            case "ADMIN_PAUSE_ROOM"       -> handleAdminPauseRoom(in, out, session);
+            case "ADMIN_RESUME_ROOM"      -> handleAdminResumeRoom(in, out, session);
+            case "ADMIN_CLOSE_ROOM"       -> handleAdminCloseRoom(in, out, session);
             default -> {
                 log.warn("Action không hỗ trợ: {}", action);
                 send(out, new SimpleResponse(false, "Action không hỗ trợ: " + action));
@@ -525,5 +532,239 @@ public class AuctionController {
             case "VEHICLE"     -> new Vehicle();
             default -> throw new IllegalArgumentException("Danh mục không hợp lệ: " + category);
         };
+    }
+    private void handleAdminGetRooms(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new AdminGetRoomsResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        if (!requireRole(session, out, new AdminGetRoomsResponse(false, "Chỉ ADMIN mới có quyền.", null), "ADMIN")) return;
+        try {
+            AdminGetRoomsRequest req = (AdminGetRoomsRequest) in.readObject();
+
+            // Lấy danh sách auction đang active từ service
+            List<Auction> allActive = auctionService.getActiveAuctions();
+
+            // Lọc theo keyword (tên item hoặc auctionId)
+            String keyword = req.getKeyword();
+            List<Auction> filtered = allActive.stream()
+                    .filter(a -> {
+                        if (keyword == null || keyword.isBlank()) return true;
+                        String kw = keyword.trim().toLowerCase();
+                        // Lọc theo auctionId
+                        if (String.valueOf(a.getId()).contains(kw)) return true;
+                        // Lọc theo tên item
+                        Item item = itemDAO.findById(a.getItemId());
+                        return item != null && item.getName().toLowerCase().contains(kw);
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+            // Lọc thêm theo status nếu có
+            String statusFilter = req.getStatusFilter();
+            if (statusFilter != null && !statusFilter.isBlank()) {
+                try {
+                    AuctionStatus filterStatus = AuctionStatus.valueOf(statusFilter.toUpperCase());
+                    filtered = filtered.stream()
+                            .filter(a -> a.getStatus() == filterStatus)
+                            .collect(java.util.stream.Collectors.toList());
+                } catch (IllegalArgumentException ignored) {}
+            }
+
+            List<AdminRoomDTO> dtos = filtered.stream()
+                    .map(a -> buildAdminRoomDTO(a, false))
+                    .collect(java.util.stream.Collectors.toList());
+
+            send(out, new AdminGetRoomsResponse(true, "OK", dtos));
+            log.info("Admin {} lấy danh sách {} phòng", session.getUsername(), dtos.size());
+        } catch (Exception e) {
+            log.error("Lỗi ADMIN_GET_ROOMS: {}", e.getMessage(), e);
+            send(out, new AdminGetRoomsResponse(false, "Lỗi server: " + e.getMessage(), null));
+        }
+    }
+    private void handleAdminGetRoomDetail(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new AdminRoomDetailResponse(false, "Bạn chưa đăng nhập.", null))) return;
+        if (!requireRole(session, out, new AdminRoomDetailResponse(false, "Chỉ ADMIN mới có quyền.", null), "ADMIN")) return;
+        try {
+            AdminGetRoomDetailRequest req = (AdminGetRoomDetailRequest) in.readObject();
+            Auction auction = auctionService.getAuction(req.getAuctionId());
+            AdminRoomDTO dto = buildAdminRoomDTO(auction, true);
+            send(out, new AdminRoomDetailResponse(true, "OK", dto));
+        } catch (Exception e) {
+            log.error("Lỗi ADMIN_GET_ROOM_DETAIL: {}", e.getMessage(), e);
+            send(out, new AdminRoomDetailResponse(false, "Lỗi server: " + e.getMessage(), null));
+        }
+    }
+    private void handleAdminPauseRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
+        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN mới có quyền."), "ADMIN")) return;
+        try {
+            AdminPauseRoomRequest req = (AdminPauseRoomRequest) in.readObject();
+            Auction auction = auctionService.getAuction(req.getAuctionId());
+
+            if (auction.getStatus() != AuctionStatus.RUNNING) {
+                send(out, new SimpleResponse(false,
+                        "Chỉ có thể tạm dừng phòng đang RUNNING. Trạng thái hiện tại: "
+                                + auction.getStatus().getDisplay()));
+                return;
+            }
+
+            // Cập nhật trạng thái → OPEN (tái sử dụng nghĩa "chờ")
+            boolean ok = auctionService.pauseAuction(auction.getId(), session.getUserId());
+            if (!ok) {
+                send(out, new SimpleResponse(false, "Không thể tạm dừng phòng."));
+                return;
+            }
+
+            // Broadcast thông báo tạm dừng đến tất cả người xem phòng này
+            String reason = req.getReason() != null ? req.getReason() : "Admin tạm dừng phòng đấu giá";
+            AuctionUpdateDTO update = new AuctionUpdateDTO(
+                    auction.getId(),
+                    AuctionUpdateDTO.UpdateType.AUCTION_STARTED, // dùng làm status change event
+                    auction.getCurrentPrice(),
+                    auction.getHighestBidderId(),
+                    resolveUsername(auction.getHighestBidderId()),
+                    auction.getEndTime(),
+                    "[ADMIN] Phòng đã bị TẠM DỪNG: " + reason
+            );
+            auctionManager.broadcastUpdate(auction.getId(), update);
+
+            send(out, new SimpleResponse(true, "Đã tạm dừng phòng đấu giá #" + req.getAuctionId()));
+            log.info("Admin {} TẠM DỪNG phòng {} | Lý do: {}", session.getUsername(), req.getAuctionId(), reason);
+        } catch (Exception e) {
+            log.error("Lỗi ADMIN_PAUSE_ROOM: {}", e.getMessage(), e);
+            send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
+        }
+    }
+    private void handleAdminResumeRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
+        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN mới có quyền."), "ADMIN")) return;
+        try {
+            AdminResumeRoomRequest req = (AdminResumeRoomRequest) in.readObject();
+            Auction auction = auctionService.getAuction(req.getAuctionId());
+
+            if (auction.getStatus() != AuctionStatus.OPEN) {
+                send(out, new SimpleResponse(false,
+                        "Chỉ có thể tiếp tục phòng đang ở trạng thái OPEN. Hiện tại: "
+                                + auction.getStatus().getDisplay()));
+                return;
+            }
+
+            boolean ok = auctionService.resumeAuction(auction.getId(), session.getUserId());
+            if (!ok) {
+                send(out, new SimpleResponse(false, "Không thể tiếp tục phòng."));
+                return;
+            }
+
+            AuctionUpdateDTO update = new AuctionUpdateDTO(
+                    auction.getId(),
+                    AuctionUpdateDTO.UpdateType.AUCTION_STARTED,
+                    auction.getCurrentPrice(),
+                    auction.getHighestBidderId(),
+                    resolveUsername(auction.getHighestBidderId()),
+                    auction.getEndTime(),
+                    "[ADMIN] Phòng đã được TIẾP TỤC"
+            );
+            auctionManager.broadcastUpdate(auction.getId(), update);
+
+            send(out, new SimpleResponse(true, "Đã tiếp tục phòng đấu giá #" + req.getAuctionId()));
+            log.info("Admin {} TIẾP TỤC phòng {}", session.getUsername(), req.getAuctionId());
+        } catch (Exception e) {
+            log.error("Lỗi ADMIN_RESUME_ROOM: {}", e.getMessage(), e);
+            send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
+        }
+    }
+    private void handleAdminCloseRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
+        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN mới có quyền."), "ADMIN")) return;
+        try {
+            AdminCloseRoomRequest req = (AdminCloseRoomRequest) in.readObject();
+            Auction auction = auctionService.getAuction(req.getAuctionId());
+
+            if (auction.getStatus() == AuctionStatus.FINISHED
+                    || auction.getStatus() == AuctionStatus.CANCELED) {
+                send(out, new SimpleResponse(false, "Phòng đã ở trạng thái kết thúc: "
+                        + auction.getStatus().getDisplay()));
+                return;
+            }
+
+            String reason = req.getReason() != null ? req.getReason() : "Admin đóng phòng cưỡng bức";
+            boolean ok = auctionService.cancelAuction(auction.getId(), session.getUserId(), reason);
+            if (!ok) {
+                send(out, new SimpleResponse(false, "Không thể đóng phòng."));
+                return;
+            }
+
+            // Broadcast kết thúc cho tất cả người đang xem
+            auctionManager.broadcastAuctionEnd(
+                    auction.getId(),
+                    auction.getHighestBidderId(),
+                    auction.getCurrentPrice() != null ? auction.getCurrentPrice().doubleValue() : 0
+            );
+
+            send(out, new SimpleResponse(true, "Đã đóng phòng đấu giá #" + req.getAuctionId()));
+            log.info("Admin {} ĐÓNG CƯỠNG BỨC phòng {} | Lý do: {}", session.getUsername(), req.getAuctionId(), reason);
+        } catch (Exception e) {
+            log.error("Lỗi ADMIN_CLOSE_ROOM: {}", e.getMessage(), e);
+            send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
+        }
+    }
+    // ── HELPER: Build AdminRoomDTO ────────────────────────────────────────────
+
+/**
+ * Xây dựng AdminRoomDTO từ Auction.
+ * @param withDetail nếu true → nạp thêm participantUsernames + recentBidLogs
+ */
+
+    private AdminRoomDTO buildAdminRoomDTO(Auction a, boolean withDetail) {
+        AdminRoomDTO dto = new AdminRoomDTO();
+        dto.setAuctionId(a.getId());
+        dto.setStatus(a.getStatus());
+        dto.setStartingPrice(a.getStartingPrice());
+        dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
+        dto.setStartTime(a.getStartTime());
+        dto.setEndTime(a.getEndTime());
+        dto.setTotalBids(bidDAO.countByAuction(a.getId()));
+        dto.setSellerName(resolveUsername(a.getSellerId()));
+
+        if (a.getHighestBidderId() != 0) {
+            dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
+        }
+
+        Item item = itemDAO.findById(a.getItemId());
+        if (item != null) {
+            dto.setItemName(item.getName());
+            dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
+        }
+
+        // Số người đang subscribe phòng này (realtime)
+        dto.setParticipantCount(auctionManager.getParticipantCount(a.getId()));
+
+        if (withDetail) {
+            // Danh sách username người tham gia (lấy từ bid history)
+            List<BidTransaction> bids = bidDAO.findByAuction(a.getId());
+
+            // Unique usernames
+            java.util.LinkedHashSet<String> participantSet = new java.util.LinkedHashSet<>();
+            java.util.List<String> recentLogs = new java.util.ArrayList<>();
+            int logCount = 0;
+            // Duyệt từ mới nhất → cũ nhất
+            for (int i = bids.size() - 1; i >= 0; i--) {
+                BidTransaction bid = bids.get(i);
+                String username = resolveUsername(bid.getBidderId());
+                participantSet.add(username);
+                if (logCount < 10) {
+                    recentLogs.add(String.format("[%s] %s đặt giá %,.0f đ",
+                            bid.getCreatedAt() != null
+                                    ? bid.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
+                                    : "--:--:--",
+                            username,
+                            bid.getAmount().doubleValue()));
+                    logCount++;
+                }
+            }
+            // Đảo lại log: mới nhất ở cuối (như append log)
+            java.util.Collections.reverse(recentLogs);
+            dto.setParticipantUsernames(new java.util.ArrayList<>(participantSet));
+            dto.setRecentBidLogs(recentLogs);
+        }
+
+        return dto;
     }
 }
