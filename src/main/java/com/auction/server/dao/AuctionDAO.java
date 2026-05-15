@@ -135,13 +135,15 @@ public class AuctionDAO {
     }
     /**
      * Cập nhật giá hiện tại + người dẫn đầu sau mỗi bid hợp lệ.
-     * Dùng optimistic-style UPDATE: chỉ cập nhật nếu current_price vẫn <= newPrice.
-     * Trả về true nếu update thành công (tức bid này thắng race).
+     * Điều kiện WHERE: current_price < newPrice (STRICTLY less than).
+     * → Đảm bảo chỉ bid CAO HƠN thực sự mới ghi được — không bao giờ 2 người
+     *   cùng giá đều thắng, dù request đến gần nhau trong cùng millisecond.
+     * Trả về true nếu update thành công (bid này thắng race).
      */
     public boolean updateBidPrice(int auctionId, int highestBidderId, BigDecimal newPrice) {
         String sql = """
             UPDATE auctions
-            SET current_price = ?, highest_bidder_id = ?
+            SET current_price = ?, highest_bidder_id = ?, status = 'RUNNING'
             WHERE id = ? AND current_price < ?
             """;
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
