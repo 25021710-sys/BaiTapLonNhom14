@@ -102,6 +102,8 @@ public class AuctionRoomController {
   private BigDecimal stepPrice    = new BigDecimal("50000");
   private LocalDateTime auctionEndTime;
   private Timeline countdownTimeline;
+  // Debounce: chỉ load lại lịch sử tối đa 1 lần/500ms dù nhận nhiều push liên tiếp
+  private Timeline bidHistoryDebounce;
   private int bidCount = 0;
   private boolean auctionEnded = false;           // FIX: thêm field bị thiếu
   private int currentHighestBidderId = -1;        // FIX: track highest bidder riêng
@@ -200,9 +202,8 @@ public class AuctionRoomController {
    *   stage.setOnCloseRequest(e -> auctionRoomController.cleanup());
    */
   public void cleanup() {
-    // Dừng countdown để không leak Timer thread
     stopCountdown();
-    // Gỡ callback trước — tránh nhận push sau khi màn hình đã đóng
+    if (bidHistoryDebounce != null) bidHistoryDebounce.stop();
     SocketClient.getInstance().removePushCallback(this::handlePushUpdate);
     // Báo server bỏ subscribe (giảm participant count)
     if (currentAuction != null) {
@@ -235,7 +236,7 @@ public class AuctionRoomController {
         if (lblBidError != null) lblBidError.setVisible(false);
         if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {}
         addChartPoint(currentPrice);
-        loadBidHistory(); // refresh table
+        scheduleBidHistoryReload(); // debounced — tránh flood request khi nhiều bid liên tiếp
       }
       case AUCTION_ENDED -> {
         auctionEnded = true;
@@ -254,6 +255,18 @@ public class AuctionRoomController {
   }
 
   // ── LOAD BID HISTORY ──────────────────────────────────────────────────────
+
+  /**
+   * Debounce: nếu nhận nhiều push BID_PLACED liên tiếp trong 500ms,
+   * chỉ thực sự gọi loadBidHistory() 1 lần sau khi burst dừng lại.
+   * Tránh nhiều background thread đồng thời tranh responseQueue gây lẫn response.
+   */
+  private void scheduleBidHistoryReload() {
+    if (bidHistoryDebounce != null) bidHistoryDebounce.stop();
+    bidHistoryDebounce = new Timeline(new KeyFrame(Duration.millis(500), e -> loadBidHistory()));
+    bidHistoryDebounce.setCycleCount(1);
+    bidHistoryDebounce.play();
+  }
 
   private void loadBidHistory() {
     if (currentAuction == null) return;
@@ -370,12 +383,24 @@ public class AuctionRoomController {
       Platform.runLater(() -> {
         if (res != null && res.isSuccess()) {
           if (txtBidAmount != null) txtBidAmount.clear();
-          // Ngay lập tức cập nhật trạng thái "đang dẫn đầu" mà không chờ push từ server
-          currentPrice = res.getCurrentHighestBid();
-          currentHighestBidderId = ClientSession.getCurrentUser().getId();
-          updateCurrentPriceUI();
-          updateYourStatus();
           if (lblBidError != null) lblBidError.setVisible(false);
+
+          // FIX RACE CONDITION:
+          // handlePushUpdate (từ server broadcast) có thể đã chạy trước trên FX thread
+          // và đã set currentPrice = giá của người BID SAU (cao hơn giá của mình).
+          // Nếu ta ghi đè currentPrice = res.getCurrentHighestBid() (giá cũ hơn) → UI lùi về trước.
+          //
+          // Quy tắc: chỉ áp dụng BidResponse nếu giá server trả về CAO HƠN giá hiện tại.
+          // Nếu push đã cập nhật giá mới hơn rồi → bỏ qua, tin vào push.
+          BigDecimal responsePrice = res.getCurrentHighestBid();
+          if (responsePrice != null && responsePrice.compareTo(currentPrice) > 0) {
+            currentPrice = responsePrice;
+            currentHighestBidderId = ClientSession.getCurrentUser().getId();
+            updateCurrentPriceUI();
+            updateYourStatus();
+          }
+          // Nếu currentPrice đã bằng hoặc cao hơn responsePrice → push đã xử lý đúng,
+          // không cần làm gì thêm (updateYourStatus đã được handlePushUpdate gọi rồi).
         } else {
           showBidError(res != null ? res.getMessage() : "Lỗi kết nối server");
         }
