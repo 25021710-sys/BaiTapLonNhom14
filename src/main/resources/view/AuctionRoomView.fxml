@@ -115,26 +115,37 @@
                         <VBox spacing="10" HBox.hgrow="ALWAYS">
 
                             <!-- Product info card -->
-                            <VBox styleClass="info-card">
+                            <!-- Product info + description card (gộp lại) -->
+                            <VBox styleClass="info-card" VBox.vgrow="ALWAYS">
+
                                 <HBox styleClass="card-header" alignment="CENTER_LEFT">
-                                    <Label text="Thong tin san pham" styleClass="card-title"/>
+                                    <Label text="Thông tin sản phẩm" styleClass="card-title"/>
                                 </HBox>
+
                                 <Separator styleClass="card-divider"/>
+
                                 <VBox spacing="0" style="-fx-padding: 2 0 4 0;">
-                                    <HBox styleClass="info-row" style="-fx-border-color: transparent;">
-                                        <Label text="Danh muc" styleClass="info-key"/>
+
+                                    <HBox styleClass="info-row">
+                                        <Label text="Danh mục" styleClass="info-key"/>
                                         <Label fx:id="lblCategory" text="—" styleClass="info-val"/>
                                     </HBox>
+
+                                    <HBox styleClass="info-row" style="-fx-border-color: transparent;">
+                                        <Label text="Mô tả" styleClass="info-key"/>
+                                    </HBox>
+
+                                    <TextArea fx:id="txtDescription"
+                                              editable="false"
+                                              wrapText="true"
+                                              prefRowCount="6"
+                                              styleClass="desc-area"/>
                                 </VBox>
+
                             </VBox>
 
                             <!-- Mô tả riêng bên dưới -->
-                            <VBox styleClass="info-card" VBox.vgrow="ALWAYS">
-                                <Label text="Mo ta san pham" styleClass="card-title"/>
-                                <Separator styleClass="card-divider"/>
-                                <TextArea fx:id="txtDescription" editable="false" wrapText="true"
-                                          prefRowCount="5" styleClass="desc-area"/>
-                            </VBox>
+
                             <!-- Auction info card -->
                             <VBox styleClass="info-card">
                                 <HBox styleClass="card-header" alignment="CENTER_LEFT">
