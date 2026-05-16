@@ -715,6 +715,4 @@ public class AuctionService {
             lock.unlock();
         }
     }
-
-
 }
