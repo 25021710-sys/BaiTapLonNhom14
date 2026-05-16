@@ -134,15 +134,16 @@ public class AuctionService {
         try {
             // 1. Kiểm tra phiên tồn tại — đọc FRESH từ DB bên trong lock
             //    để tránh đọc cache stale khi 2 request vào lock liên tiếp rất nhanh
-            Auction auction;
-            try {
-                Auction fresh = auctionDAO.findById(auctionId);
-                if (fresh == null)
+            Auction auction = auctionCache.get(auctionId);
+            if (auction == null) {
+                try {
+                    auction = auctionDAO.findById(auctionId);
+                    if (auction == null)
+                        return new BidResponse(false, "Phiên đấu giá không tồn tại.", BigDecimal.ZERO);
+                    auctionCache.put(auctionId, auction);
+                } catch (Exception e) {
                     return new BidResponse(false, "Phiên đấu giá không tồn tại.", BigDecimal.ZERO);
-                auctionCache.put(auctionId, fresh);
-                auction = fresh;
-            } catch (Exception e) {
-                return new BidResponse(false, "Phiên đấu giá không tồn tại.", BigDecimal.ZERO);
+                }
             }
 
             BigDecimal currentPrice = auction.getCurrentPrice() != null
@@ -714,6 +715,4 @@ public class AuctionService {
             lock.unlock();
         }
     }
-
-
 }
