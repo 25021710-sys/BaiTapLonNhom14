@@ -37,12 +37,6 @@
             <!-- Stats -->
             <HBox spacing="0" alignment="CENTER">
 
-                <VBox styleClass="header-stat-block" alignment="CENTER" minWidth="160">
-                    <Label text="SỐ DƯ CỦA TÔI" styleClass="stat-label"/>
-                    <Label fx:id="lblMyBalance" text="—"
-                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #27ae60;"/>
-                </VBox>
-
                 <Separator orientation="VERTICAL" style="-fx-padding: 10 0;"/>
 
                 <VBox styleClass="header-stat-block" alignment="CENTER" minWidth="110">
@@ -60,8 +54,9 @@
                 <Separator orientation="VERTICAL" style="-fx-padding: 10 0;"/>
 
                 <VBox styleClass="header-stat-block" alignment="CENTER" minWidth="160">
-                    <Label text="GIÁ HIỆN TẠI" styleClass="stat-label"/>
-                    <Label fx:id="lblCurrentPrice" text="—" styleClass="stat-value-price"/>
+                    <Label text="SỐ DƯ CỦA TÔI" styleClass="stat-label"/>
+                    <Label fx:id="lblMyBalance" text="—"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #27ae60;"/>
                 </VBox>
 
             </HBox>
@@ -184,7 +179,7 @@
                     </HBox>
 
                     <!-- ── ROW 2: TABS ── -->
-                    <TabPane styleClass="main-tabs" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+                    <TabPane fx:id="auctionTabs" styleClass="main-tabs" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
 
                         <!-- Tab 1: Lịch sử đấu giá -->
                         <Tab text="📋  Lịch sử đấu giá">
@@ -259,10 +254,10 @@
                     hbarPolicy="NEVER"
                     vbarPolicy="AS_NEEDED">
             <content>
-                <VBox styleClass="bid-panel" spacing="0" prefWidth="300">
+                <VBox fx:id="auctionSidebar" styleClass="bid-panel" spacing="0" prefWidth="300">
 
                     <!-- ① Countdown -->
-                    <VBox styleClass="panel-section" spacing="4">
+                    <VBox fx:id="countdownSection" styleClass="panel-section" spacing="4">
                         <Label text="⏳  Thời gian còn lại" styleClass="panel-section-title"/>
                         <Label fx:id="lblCountdown" text="00:00:00" styleClass="countdown-label"/>
                         <Label text="đến khi phiên đóng" styleClass="countdown-sub"/>
@@ -270,15 +265,15 @@
                     <Separator styleClass="panel-sep"/>
 
                     <!-- ② Current price + status -->
-                    <VBox styleClass="panel-section" spacing="6">
-                        <Label text="💰  Giá hiện tại" styleClass="panel-section-title"/>
+                    <VBox fx:id="priceSection" styleClass="panel-section" spacing="6">
+                        <Label fx:id="lblPriceTitleRight" text="💰  Giá hiện tại" styleClass="panel-section-title"/>
                         <Label fx:id="lblCurrentPriceRight" text="—" styleClass="current-price-big"/>
                         <Label fx:id="lblYourStatus" text="Chưa có người đặt giá" styleClass="status-neutral"/>
                     </VBox>
                     <Separator styleClass="panel-sep"/>
 
                     <!-- ③ Place bid -->
-                    <VBox styleClass="panel-section" spacing="8">
+                    <VBox fx:id="placeBidSection" styleClass="panel-section" spacing="8">
                         <Label text="🎯  Đặt giá" styleClass="panel-section-title"/>
 
                         <TextField fx:id="txtBidAmount"
@@ -310,7 +305,7 @@
                     <Separator styleClass="panel-sep"/>
 
                     <!-- ④ Auto-bid -->
-                    <VBox styleClass="panel-section" spacing="8">
+                    <VBox fx:id="autoBidSection" styleClass="panel-section" spacing="8">
                         <Label text="🤖  Auto-Bid" styleClass="panel-section-title"/>
 
                         <CheckBox fx:id="chkAutoBid"
@@ -335,7 +330,7 @@
                     <Separator styleClass="panel-sep"/>
 
                     <!-- ⑤ Seller info -->
-                    <VBox styleClass="panel-section" spacing="6">
+                    <VBox fx:id="sellerSection" styleClass="panel-section" spacing="6">
                         <Label text="🏪  Người bán" styleClass="panel-section-title"/>
 
                         <Label fx:id="lblSellerName"   text="—" styleClass="seller-name"/>

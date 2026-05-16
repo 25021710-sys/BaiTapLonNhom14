@@ -25,6 +25,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.math.BigDecimal;
@@ -96,6 +97,15 @@ public class AuctionRoomController {
   // Thêm field
   @FXML private Label lblMyBalance;
 
+  @FXML private TabPane auctionTabs;
+
+  @FXML private VBox countdownSection;
+  @FXML private VBox priceSection;
+  @FXML private VBox placeBidSection;
+  @FXML private VBox autoBidSection;
+
+  @FXML private Label lblPriceTitleRight;
+
   // ── STATE ─────────────────────────────────────────────────────────────────
   private AuctionDTO currentAuction;
   private BigDecimal currentPrice = BigDecimal.ZERO;
@@ -136,46 +146,163 @@ public class AuctionRoomController {
    */
   public void loadAuction(AuctionDTO auction) {
     this.currentAuction = auction;
+
     this.currentPrice = auction.getCurrentPrice() != null
-            ? auction.getCurrentPrice() : auction.getStartingPrice();
+        ? auction.getCurrentPrice()
+        : auction.getStartingPrice();
+
     this.auctionEndTime = auction.getEndTime();
     this.chartStartMs = System.currentTimeMillis();
-    this.currentHighestBidderId = auction.getHighestBidderId(); // FIX: init từ DTO
+    this.currentHighestBidderId = auction.getHighestBidderId();
 
-    // Hiển thị thông tin
+    String status = auction.getStatus() != null ? auction.getStatus().name() : "";
+
     Platform.runLater(() -> {
+
+      // ── Top info
       lblAuctionTitle.setText("Đấu giá: " + auction.getItemName());
-      lblAuctionStatus.setText(String.valueOf(auction.getStatus()));
+      if ("OPEN".equals(status)) {
+        lblAuctionStatus.setText("SẮP DIỄN RA");
+        lblAuctionStatus.getStyleClass().setAll("badge-open");
+      } else if ("RUNNING".equals(status)) {
+        lblAuctionStatus.setText("ĐANG DIỄN RA");
+        lblAuctionStatus.getStyleClass().setAll("badge-running");
+      } else {
+        lblAuctionStatus.setText("ĐÃ KẾT THÚC");
+        lblAuctionStatus.getStyleClass().setAll("badge-ended");
+      }
+
       lblCategory.setText(auction.getItemCategory());
       lblStartPrice.setText(formatMoney(auction.getStartingPrice()) + " VNĐ");
       lblStepPrice.setText(formatMoney(stepPrice) + " VNĐ");
+
       lblTotalBids.setText(String.valueOf(auction.getTotalBids()));
-      lblLeadingUser.setText(auction.getHighestBidderUsername() != null
-              ? auction.getHighestBidderUsername() : "---");
+      lblLeadingUser.setText(
+          auction.getHighestBidderUsername() != null
+              ? auction.getHighestBidderUsername()
+              : "---"
+      );
+
       if (auction.getItemDescription() != null)
         txtDescription.setText(auction.getItemDescription());
+
       lblAuctionId.setText("Auction ID: #" + auction.getAuctionId());
       lblStartTime.setText("Bắt đầu: " + auction.getStartTime().format(timeFormatter));
       lblEndTime.setText("Kết thúc: " + auction.getEndTime().format(timeFormatter));
+
       lblSellerName.setText("Seller: " + auction.getSellerName());
-      updateCurrentPriceUI();
+
+      // Balance
+      if (ClientSession.getCurrentUser() != null && lblMyBalance != null) {
+        lblMyBalance.setText(formatMoney(ClientSession.getCurrentUser().getBalance()) + " VNĐ");
+      }
+
+      // ── Update status UI (winner/loser)
       updateYourStatus();
+
+      // ── Load image
       loadProductImage(auction.getImageUrl());
 
-      if (ClientSession.getCurrentUser() != null && lblMyBalance != null) {
-        String bal = formatMoney(ClientSession.getCurrentUser().getBalance()) + " VNĐ";
-        lblMyBalance.setText(bal);
+      // ───────────────────────────────────────────────
+      // Sidebar PRICE TITLE + VALUE theo status
+      // ───────────────────────────────────────────────
+      if (lblPriceTitleRight != null && lblCurrentPriceRight != null) {
+
+        if ("OPEN".equals(status)) {
+          lblPriceTitleRight.setText("💰  Giá khởi điểm");
+          lblCurrentPriceRight.setText(formatMoney(auction.getStartingPrice()) + " VNĐ");
+
+        } else if ("RUNNING".equals(status)) {
+          lblPriceTitleRight.setText("💰  Giá hiện tại");
+          lblCurrentPriceRight.setText(formatMoney(currentPrice) + " VNĐ");
+
+        } else if ("FINISHED".equals(status)) {
+          lblPriceTitleRight.setText("💰  Giá chốt phiên");
+
+          BigDecimal finalPrice = auction.getCurrentPrice() != null
+              ? auction.getCurrentPrice()
+              : auction.getStartingPrice();
+
+          lblCurrentPriceRight.setText(formatMoney(finalPrice) + " VNĐ");
+        }
+      }
+
+      // ───────────────────────────────────────────────
+      // Hide/Show Tabs + Sidebar sections theo status
+      // ───────────────────────────────────────────────
+      boolean isOpen = "OPEN".equals(status);
+      boolean isRunning = "RUNNING".equals(status);
+      boolean isFinished = "FINISHED".equals(status);
+
+// Tabs: OPEN thì ẩn, còn RUNNING/FINISHED thì hiện
+      if (auctionTabs != null) {
+        auctionTabs.setVisible(!isOpen);
+        auctionTabs.setManaged(!isOpen);
+      }
+
+// Countdown chỉ hiện khi RUNNING
+      if (countdownSection != null) {
+        countdownSection.setVisible(isRunning);
+        countdownSection.setManaged(isRunning);
+      }
+
+// Price section: LUÔN HIỆN (OPEN/RUNNING/FINISHED đều thấy)
+      if (priceSection != null) {
+        priceSection.setVisible(true);
+        priceSection.setManaged(true);
+      }
+
+// Place bid + Auto bid: chỉ hiện khi RUNNING
+      if (placeBidSection != null) {
+        placeBidSection.setVisible(isRunning);
+        placeBidSection.setManaged(isRunning);
+      }
+
+      if (autoBidSection != null) {
+        autoBidSection.setVisible(isRunning);
+        autoBidSection.setManaged(isRunning);
+      }
+
+      if (lblYourStatus != null) {
+        boolean showStatus = isRunning;
+        lblYourStatus.setVisible(showStatus);
+        lblYourStatus.setManaged(showStatus);
+      }
+
+      if (lblPriceTitleRight != null && lblCurrentPriceRight != null) {
+
+        if (isOpen) {
+          lblPriceTitleRight.setText("💰  Giá khởi điểm");
+          lblCurrentPriceRight.setText(formatMoney(auction.getStartingPrice()) + " VNĐ");
+
+        } else if (isRunning) {
+          lblPriceTitleRight.setText("💰  Giá hiện tại");
+          lblCurrentPriceRight.setText(formatMoney(currentPrice) + " VNĐ");
+
+        } else if (isFinished) {
+          lblPriceTitleRight.setText("💰  Giá chốt phiên");
+
+          BigDecimal finalPrice = auction.getCurrentPrice() != null
+              ? auction.getCurrentPrice()
+              : auction.getStartingPrice();
+
+          lblCurrentPriceRight.setText(formatMoney(finalPrice) + " VNĐ");
+        }
       }
     });
 
-    // Subscribe realtime
+    // ── Subscribe realtime
     subscribeRealtime(auction.getAuctionId());
 
-    // Load bid history
+    // ── Load bid history
     loadBidHistory();
 
-    // Start countdown
-    startCountdownTimer();
+    // ── Countdown chỉ chạy khi RUNNING
+    if ("RUNNING".equals(status)) {
+      startCountdownTimer();
+    } else {
+      stopCountdown();
+    }
   }
 
   // ── SUBSCRIBE REALTIME ────────────────────────────────────────────────────
@@ -237,6 +364,8 @@ public class AuctionRoomController {
         if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {}
         addChartPoint(currentPrice);
         scheduleBidHistoryReload(); // debounced — tránh flood request khi nhiều bid liên tiếp
+        if (lblPriceTitleRight != null)
+          lblPriceTitleRight.setText("💰  Giá hiện tại");
       }
       case AUCTION_ENDED -> {
         auctionEnded = true;
