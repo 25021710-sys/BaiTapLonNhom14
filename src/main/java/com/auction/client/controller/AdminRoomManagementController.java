@@ -7,7 +7,6 @@ import com.auction.common.response.AdminGetRoomsResponse;
 import com.auction.common.response.AdminRoomDetailResponse;
 import com.auction.common.response.SimpleResponse;
 import com.auction.server.model.AuctionStatus;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -18,11 +17,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.text.NumberFormat;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 

@@ -124,6 +124,36 @@
 .btn-secondary:hover { -fx-background-color: #E8ECF0; }
 .separator .line { -fx-border-color: #EEF0F3; -fx-border-width: 1 0 0 0; }
 
-.bid-table { -fx-opacity: 1.0; }
-.bid-table .table-row-cell { -fx-opacity: 1.0; }
-.bid-table .table-cell { -fx-text-fill: #1a1f2e; }
+/* ── Fix bảng bid history bị mờ ── */
+.bid-table .table-cell {
+    -fx-text-fill: #2C3E50;
+    -fx-font-size: 12px;
+    -fx-opacity: 1.0;
+}
+
+/* JavaFX render text qua node .text bên trong cell */
+.bid-table .table-row-cell .text {
+    -fx-fill: #2C3E50 !important;
+    -fx-opacity: 1.0;
+}
+
+.bid-table .table-row-cell:selected .text {
+    -fx-fill: #1565C0;
+}
+
+/* Fix TabPane content area làm mờ table */
+.main-tabs .tab-content-area {
+    -fx-background-color: #FFFFFF;
+    -fx-opacity: 1.0;
+}
+
+.bid-table .column-header .label {
+    -fx-text-fill: #000000;
+    -fx-opacity: 1.0;
+    -fx-font-weight: bold;
+}
+
+.bid-table .column-header .text {
+    -fx-fill: #000000;
+    -fx-opacity: 1.0;
+}

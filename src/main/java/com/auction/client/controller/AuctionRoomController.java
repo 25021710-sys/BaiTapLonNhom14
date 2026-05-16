@@ -510,19 +510,47 @@ public class AuctionRoomController {
 
   private void setupBidHistoryTable() {
     tblBidHistory.setItems(bidHistoryList);
+
     colBidTime.setCellValueFactory(data -> {
       LocalDateTime t = data.getValue().getCreatedAt();
       return new SimpleStringProperty(t != null ? t.format(timeFormatter) : "");
     });
     colBidUser.setCellValueFactory(data -> {
       String name = usernameCache.getOrDefault(
-              data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
+          data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
       return new SimpleStringProperty(name);
     });
     colBidAmount.setCellValueFactory(data ->
-            new SimpleStringProperty(formatMoney(data.getValue().getAmount()) + " VNĐ"));
+        new SimpleStringProperty(formatMoney(data.getValue().getAmount()) + " VND"));
     colBidType.setCellValueFactory(data ->
-            new SimpleStringProperty(data.getValue().isAutoBid() ? "AUTO" : "MANUAL"));
+        new SimpleStringProperty(data.getValue().isAutoBid() ? "AUTO" : "MANUAL"));
+
+    // Force mau chu trang ro
+    javafx.util.Callback<TableColumn<BidTransaction, String>,
+        TableCell<BidTransaction, String>> cellFactory = col -> {
+      TableCell<BidTransaction, String> cell = new TableCell<>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+          super.updateItem(item, empty);
+          if (empty || item == null) {
+            setText(null);
+            setGraphic(null);
+          } else {
+            setText(item);
+          }
+        }
+      };
+      cell.setStyle("-fx-text-fill: #2C3E50; -fx-alignment: CENTER-LEFT;");
+      return cell;
+    };
+
+    colBidTime.setCellFactory(cellFactory);
+    colBidUser.setCellFactory(cellFactory);
+    colBidAmount.setCellFactory(cellFactory);
+    colBidType.setCellFactory(cellFactory);
+
+    // Bo sung style cho table
+    tblBidHistory.setStyle("-fx-background-color: white;");
   }
 
   private void setupChart() {
