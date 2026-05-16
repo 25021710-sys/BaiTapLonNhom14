@@ -56,21 +56,17 @@ public class ProductCardController {
 
         if ("OPEN".equals(status)) {
             safe(lblCurrentPriceTitle, "Thời lượng");
+
             if (dto.getStartTime() != null && dto.getEndTime() != null) {
-                long durationMinutes = java.time.Duration.between(
-                    dto.getStartTime(), dto.getEndTime()).toMinutes();
-                if (durationMinutes >= 60) {
-                    long h = durationMinutes / 60;
-                    long m = durationMinutes % 60;
-                    safe(lblCurrentPrice, m > 0
-                        ? String.format("%dh%02dm", h, m)
-                        : String.format("%dh", h));
-                } else {
-                    safe(lblCurrentPrice, durationMinutes + " phút");
-                }
+                long durationSeconds = java.time.Duration.between(
+                    dto.getStartTime(), dto.getEndTime()
+                ).getSeconds();
+
+                safe(lblCurrentPrice, formatDurationSmart(durationSeconds));
             } else {
                 safe(lblCurrentPrice, "--");
             }
+
             startCountdownToStart(dto.getStartTime());
         } else {
             safe(lblCurrentPriceTitle, "Hiện tại");
@@ -186,7 +182,62 @@ public class ProductCardController {
         return String.format("%02d:%02d:%02d", h, m, s);
     }
 
+    private String formatDurationSmart(long seconds) {
+        if (seconds <= 0) return "0s";
+
+        long d = seconds / 86400;
+        long h = (seconds % 86400) / 3600;
+        long m = (seconds % 3600) / 60;
+        long s = seconds % 60;
+
+        // Có ngày
+        if (d > 0) {
+            // tròn ngày
+            if (h == 0 && m == 0 && s == 0) {
+                return d + "d";
+            }
+            // tròn giờ
+            if (m == 0 && s == 0) {
+                return String.format("%dd %02dh", d, h);
+            }
+            // tròn phút
+            if (s == 0) {
+                return String.format("%dd %02dh%02dm", d, h, m);
+            }
+            // không tròn -> giữ full
+            return String.format("%dd %02d:%02d:%02d", d, h, m, s);
+        }
+
+        // Không có ngày, có giờ
+        if (h > 0) {
+            // tròn giờ
+            if (m == 0 && s == 0) {
+                return String.format("%dh", h);
+            }
+            // tròn phút
+            if (s == 0) {
+                return String.format("%dh%02dm", h, m);
+            }
+            // không tròn
+            return String.format("%dh%02dm%02ds", h, m, s);
+        }
+
+        // Không có ngày, không có giờ, có phút
+        if (m > 0) {
+            // tròn phút
+            if (s == 0) {
+                return String.format("%dm", m);
+            }
+            // không tròn
+            return String.format("%dm%02ds", m, s);
+        }
+
+        // chỉ có giây
+        return String.format("%ds", s);
+    }
+
     private void safe(Label lbl, String text) {
         if (lbl != null) lbl.setText(text);
     }
 }
+
