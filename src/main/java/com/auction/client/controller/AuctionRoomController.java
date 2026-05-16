@@ -373,6 +373,32 @@ public class AuctionRoomController {
         lblAuctionStatus.getStyleClass().setAll("badge-ended");
         stopCountdown();
         disableBidActions();
+
+        // ── Cập nhật giá chốt cuối cùng lên sidebar
+        if (update.getNewPrice() != null) {
+          currentPrice = update.getNewPrice();
+          if (lblPriceTitleRight != null)
+            lblPriceTitleRight.setText("💰  Giá chốt phiên");
+          if (lblCurrentPriceRight != null)
+            lblCurrentPriceRight.setText(formatMoney(currentPrice) + " VNĐ");
+        }
+
+        // ── Ẩn khu vực đặt giá
+        if (placeBidSection != null) {
+          placeBidSection.setVisible(false);
+          placeBidSection.setManaged(false);
+        }
+        if (autoBidSection != null) {
+          autoBidSection.setVisible(false);
+          autoBidSection.setManaged(false);
+        }
+        if (countdownSection != null) {
+          countdownSection.setVisible(false);
+          countdownSection.setManaged(false);
+        }
+
+        // ── Hiện popup thông báo kết thúc
+        showAuctionEndedDialog(update);
       }
       case PARTICIPANT_CHANGED -> {
         if (lblParticipants != null) {
@@ -863,8 +889,128 @@ public class AuctionRoomController {
     sep.setStyle("-fx-background-color: #2d3448; -fx-opacity: 0.5;");
     return sep;
   }
-
   private String formatMoney(double value) {
     return moneyFormat.format(value);
+  }
+
+
+  private void showAuctionEndedDialog(AuctionUpdateDTO update) {
+    int myId = ClientSession.getCurrentUser() != null
+            ? ClientSession.getCurrentUser().getId() : -1;
+    int winnerId    = update.getHighestBidderId();
+    String winner   = update.getHighestBidderUsername();
+    BigDecimal price = update.getNewPrice();
+
+    boolean iWon  = (myId != -1 && myId == winnerId);
+    boolean noOne = (winnerId == 0 || price == null
+            || price.compareTo(BigDecimal.ZERO) == 0);
+
+    // ── Nội dung thay đổi theo kết quả
+    String icon, title, sub, btnText, cardColor;
+    if (noOne) {
+      icon      = "🔨";
+      title     = "Phiên đấu giá kết thúc";
+      sub       = "Không có người thắng\n(không đạt giá sàn)";
+      btnText   = "Đóng";
+      cardColor = "#37474F";
+    } else if (iWon) {
+      icon      = "🏆";
+      title     = "Chúc mừng! Bạn đã thắng!";
+      sub       = String.format("Giá chốt: %s VNĐ", formatMoney(price));
+      btnText   = "Tuyệt vời!";
+      cardColor = "#1B5E20";
+    } else {
+      String winnerName = (winner != null && !winner.isBlank()) ? winner : "Người khác";
+      icon      = "😔";
+      title     = "Phiên đấu giá kết thúc";
+      sub       = String.format("Người thắng: %s\nGiá chốt: %s VNĐ",
+              winnerName, formatMoney(price));
+      btnText   = "Đóng";
+      cardColor = "#B71C1C";
+    }
+
+    // ── Build dialog layout
+    javafx.scene.layout.VBox root = new javafx.scene.layout.VBox(0);
+    root.setPrefWidth(360);
+    root.setAlignment(javafx.geometry.Pos.CENTER);
+    root.setStyle("-fx-background-color: #1a1f2e; -fx-background-radius: 16;");
+
+    // Header màu
+    javafx.scene.layout.VBox header = new javafx.scene.layout.VBox(10);
+    header.setAlignment(javafx.geometry.Pos.CENTER);
+    header.setStyle(String.format(
+            "-fx-background-color: %s; -fx-background-radius: 16 16 0 0; -fx-padding: 32 24 24 24;",
+            cardColor));
+
+    javafx.scene.control.Label iconLbl = new javafx.scene.control.Label(icon);
+    iconLbl.setStyle("-fx-font-size: 52px;");
+
+    javafx.scene.control.Label titleLbl = new javafx.scene.control.Label(title);
+    titleLbl.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; " +
+            "-fx-text-fill: white; -fx-wrap-text: true; -fx-text-alignment: center;");
+    titleLbl.setMaxWidth(300);
+    titleLbl.setWrapText(true);
+
+    javafx.scene.control.Label subLbl = new javafx.scene.control.Label(sub);
+    subLbl.setStyle("-fx-font-size: 14px; -fx-text-fill: rgba(255,255,255,0.85); " +
+            "-fx-wrap-text: true; -fx-text-alignment: center;");
+    subLbl.setMaxWidth(300);
+    subLbl.setWrapText(true);
+    subLbl.setAlignment(javafx.geometry.Pos.CENTER);
+
+    header.getChildren().addAll(iconLbl, titleLbl, subLbl);
+
+    // Thông tin chi tiết bên dưới
+    javafx.scene.layout.VBox body = new javafx.scene.layout.VBox(12);
+    body.setStyle("-fx-padding: 20 24 8 24;");
+    body.setAlignment(javafx.geometry.Pos.CENTER);
+
+    if (!noOne) {
+      javafx.scene.layout.HBox priceRow = makeDialogRow("Giá chốt",
+              formatMoney(price) + " VNĐ", "#F9A825");
+      javafx.scene.layout.HBox winnerRow = makeDialogRow("Người thắng",
+              (winner != null && !winner.isBlank()) ? winner : "—", "#81C784");
+      body.getChildren().addAll(priceRow, winnerRow);
+    }
+
+    javafx.scene.layout.HBox itemRow = makeDialogRow("Sản phẩm",
+            currentAuction != null ? currentAuction.getItemName() : "—", "#90CAF9");
+    body.getChildren().add(itemRow);
+
+    // Nút đóng
+    javafx.scene.control.Button closeBtn = new javafx.scene.control.Button(btnText);
+    closeBtn.setMaxWidth(Double.MAX_VALUE);
+    closeBtn.setStyle(String.format(
+            "-fx-background-color: %s; -fx-text-fill: white; -fx-font-weight: bold; " +
+                    "-fx-font-size: 14px; -fx-background-radius: 0 0 16 16; -fx-padding: 14; -fx-cursor: hand;",
+            cardColor));
+
+    root.getChildren().addAll(header, body, closeBtn);
+
+    javafx.stage.Stage stage = new javafx.stage.Stage();
+    stage.setTitle("Kết thúc phiên đấu giá");
+    stage.setScene(new javafx.scene.Scene(root));
+    stage.setResizable(false);
+    stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+    closeBtn.setOnAction(e -> stage.close());
+    stage.show();
+  }
+
+  private javafx.scene.layout.HBox makeDialogRow(String key, String value, String valueColor) {
+    javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(12);
+    row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+    row.setStyle("-fx-padding: 6 0;");
+
+    javafx.scene.control.Label keyLbl = new javafx.scene.control.Label(key + ":");
+    keyLbl.setMinWidth(100);
+    keyLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: #8a9bb0;");
+
+    javafx.scene.control.Label valLbl = new javafx.scene.control.Label(value);
+    valLbl.setWrapText(true);
+    valLbl.setStyle(String.format(
+            "-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: %s;", valueColor));
+
+    row.getChildren().addAll(keyLbl, valLbl);
+    return row;
   }
 }

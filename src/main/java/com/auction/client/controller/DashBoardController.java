@@ -76,6 +76,8 @@ public class DashBoardController {
 
         // Load data thật từ server (background thread)
         loadAuctionDataFromServer();
+        // ── Lắng nghe push update từ server khi đang ở Dashboard
+        SocketClient.getInstance().addPushCallback(this::handleGlobalPushUpdate);
     }
 
     // ── LOAD DATA TỪ SERVER ───────────────────────────────────────────────────
@@ -309,5 +311,116 @@ public class DashBoardController {
         } catch (IOException e) {
             System.out.println("Lỗi load MyAuction: " + e.getMessage());
         }
+    }
+
+    /**
+     * Nhận push update từ server khi user đang ở Dashboard
+     * (không ở trong phòng đấu giá cụ thể nào).
+     */
+    private void handleGlobalPushUpdate(com.auction.common.dto.AuctionUpdateDTO update) {
+        if (update.getType() != com.auction.common.dto.AuctionUpdateDTO.UpdateType.AUCTION_ENDED)
+            return;
+
+        // Chỉ thông báo nếu user đã từng tham gia phiên này
+        // (kiểm tra bằng cách so sánh với danh sách joined auctions — đơn giản hơn
+        //  là so winnerId vì user có thể đã bid nhưng không thắng)
+        int myId = ClientSession.getCurrentUser() != null
+                ? ClientSession.getCurrentUser().getId() : -1;
+        if (myId == -1) return;
+
+        int winnerId = update.getHighestBidderId();
+        boolean iWon = (winnerId == myId);
+
+        // Chỉ hiện thông báo nếu user liên quan (thắng hoặc thua)
+        // Nếu muốn thông báo tất cả mọi phiên thì bỏ điều kiện này
+        if (winnerId == 0) return; // không ai thắng → bỏ qua ở Dashboard
+
+        Platform.runLater(() -> showToastNotification(update, iWon, myId));
+    }
+
+    /**
+     * Hiện toast notification góc dưới phải màn hình.
+     * Tự động biến mất sau 6 giây.
+     */
+    private void showToastNotification(
+            com.auction.common.dto.AuctionUpdateDTO update,
+            boolean iWon, int myId) {
+
+        int winnerId     = update.getHighestBidderId();
+        String winner    = update.getHighestBidderUsername();
+        java.math.BigDecimal price = update.getNewPrice();
+
+        // Chỉ hiện nếu user là người thắng hoặc là người thua (đã tham gia)
+        // Đơn giản nhất: luôn hiện với mọi phiên kết thúc khi ở Dashboard
+        String icon, title, body, bgColor;
+        if (iWon) {
+            icon    = "🏆";
+            title   = "Bạn đã thắng phiên đấu giá!";
+            body    = String.format("Giá chốt: %,.0f VNĐ",
+                    price != null ? price.doubleValue() : 0);
+            bgColor = "#1B5E20";
+        } else {
+            String winnerName = (winner != null && !winner.isBlank()) ? winner : "Người khác";
+            icon    = "🔔";
+            title   = "Một phiên đấu giá vừa kết thúc";
+            body    = String.format("Người thắng: %s — %,.0f VNĐ",
+                    winnerName, price != null ? price.doubleValue() : 0);
+            bgColor = "#37474F";
+        }
+
+        // ── Build toast UI
+        javafx.scene.layout.VBox toast = new javafx.scene.layout.VBox(4);
+        toast.setStyle(String.format(
+                "-fx-background-color: %s; -fx-background-radius: 12; " +
+                        "-fx-padding: 14 18 14 18; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 12, 0, 0, 4);",
+                bgColor));
+        toast.setMaxWidth(320);
+
+        javafx.scene.control.Label titleLbl = new javafx.scene.control.Label(icon + "  " + title);
+        titleLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;");
+        titleLbl.setWrapText(true);
+
+        javafx.scene.control.Label bodyLbl = new javafx.scene.control.Label(body);
+        bodyLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.85);");
+        bodyLbl.setWrapText(true);
+
+        toast.getChildren().addAll(titleLbl, bodyLbl);
+
+        // ── Đặt toast vào góc dưới phải của rootPane
+        javafx.scene.layout.StackPane overlay = new javafx.scene.layout.StackPane(toast);
+        overlay.setAlignment(javafx.geometry.Pos.BOTTOM_RIGHT);
+        overlay.setStyle("-fx-padding: 0 24 24 0;");
+        overlay.setPickOnBounds(false); // không chặn click vào các component bên dưới
+
+        // Wrap rootPane trong StackPane nếu chưa có — hoặc thêm thẳng vào root
+        javafx.scene.layout.StackPane root;
+        if (rootPane.getParent() instanceof javafx.scene.layout.StackPane sp) {
+            root = sp;
+        } else {
+            // Bọc rootPane vào StackPane mới
+            root = new javafx.scene.layout.StackPane(rootPane);
+            javafx.scene.Scene scene = rootPane.getScene();
+            if (scene != null) scene.setRoot(root);
+        }
+        root.getChildren().add(overlay);
+
+        // ── Tự động ẩn sau 6 giây với fade out animation
+        javafx.animation.FadeTransition fadeOut =
+                new javafx.animation.FadeTransition(javafx.util.Duration.seconds(1), overlay);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+        fadeOut.setOnFinished(e -> root.getChildren().remove(overlay));
+
+        javafx.animation.PauseTransition pause =
+                new javafx.animation.PauseTransition(javafx.util.Duration.seconds(5));
+        pause.setOnFinished(e -> fadeOut.play());
+        pause.play();
+    }
+    /**
+     * Gọi khi user logout hoặc đóng Dashboard.
+     * Ví dụ: stage.setOnCloseRequest(e -> dashboardController.cleanup());
+     */
+    public void cleanup() {
+        SocketClient.getInstance().removePushCallback(this::handleGlobalPushUpdate);
     }
 }

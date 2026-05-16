@@ -350,7 +350,7 @@ public class SocketClient {
         }
     }
 
-    public synchronized AuctionListResponse getDashboardAuctions() {
+    public AuctionListResponse getDashboardAuctions() {
         try {
             sendRequest("AUCTION_GET_DASHBOARD");
             return readResponse();
@@ -359,14 +359,12 @@ public class SocketClient {
         }
     }
 
-    public synchronized GetUserProfileResponse getSellerProfile(String username) {
+    public GetUserProfileResponse getSellerProfile(String username) {
         try {
-            sendRequest("USER_GET_PROFILE_BY_USERNAME");
-            out.writeObject(username);
-            out.flush();
-            return readResponse();
+            sendRequest("USER_GET_PROFILE_BY_USERNAME", username); // gộp vào 1 lần ghi
+            return readTypedResponse(GetUserProfileResponse.class);
         } catch (Exception e) {
-            return new GetUserProfileResponse(false, "Loi ket noi", null, 0);
+            return new GetUserProfileResponse(false, "Lỗi kết nối", null, 0);
         }
     }
     public AdminGetRoomsResponse adminGetRooms(String statusFilter, String keyword) {

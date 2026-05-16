@@ -145,17 +145,32 @@ public class AuctionManager {
     /**
      * Gửi thông báo phiên kết thúc (legacy string format cho backward compat).
      */
-    public void broadcastAuctionEnd(int auctionId, int winnerId, double finalPrice) {
+    // Thêm method mới nhận thêm winnerUsername
+    public void broadcastAuctionEnd(int auctionId, int winnerId,
+                                    double finalPrice, String winnerUsername) {
+        String message;
+        if (winnerId == 0) {
+            message = "Phiên đấu giá kết thúc — Không có người thắng (không đạt giá sàn).";
+        } else {
+            message = String.format("Phiên kết thúc! 🏆 Người thắng: %s — Giá: %,.0f VND",
+                    winnerUsername, finalPrice);
+        }
+
         AuctionUpdateDTO update = new AuctionUpdateDTO(
                 auctionId,
                 AuctionUpdateDTO.UpdateType.AUCTION_ENDED,
                 BigDecimal.valueOf(finalPrice),
                 winnerId,
-                "",
+                winnerUsername,   // ← có tên rồi
                 null,
-                "Phiên đấu giá đã kết thúc!"
+                message
         );
         broadcastUpdate(auctionId, update);
+    }
+
+    // Giữ method cũ để không break code khác
+    public void broadcastAuctionEnd(int auctionId, int winnerId, double finalPrice) {
+        broadcastAuctionEnd(auctionId, winnerId, finalPrice, "");
     }
 
     // ── PRIVATE ───────────────────────────────────────────────────────────────
@@ -176,12 +191,32 @@ public class AuctionManager {
             if (now.isAfter(auction.getEndTime())
                     && (auction.getStatus() == AuctionStatus.RUNNING
                     || auction.getStatus() == AuctionStatus.OPEN)) {
+
+                // Lưu thông tin trước khi closeAuction() có thể reset winnerId
+                int winnerId = auction.getHighestBidderId();
+                double finalPrice = auction.getCurrentPrice() != null
+                        ? auction.getCurrentPrice().doubleValue() : 0.0;
+
+                // Lấy tên người thắng từ DB trước
+                String winnerUsername = "";
+                if (winnerId != 0) {
+                    try {
+                        com.auction.server.dao.UserDAO userDAO =
+                                new com.auction.server.dao.UserDAO();
+                        com.auction.server.model.User winner = userDAO.findById(winnerId);
+                        if (winner != null) winnerUsername = winner.getUsername();
+                    } catch (Exception e) {
+                        log.warn("Không lấy được tên winner auctionId={}", auction.getId());
+                    }
+                }
+
+                // Đóng phiên (có thể reset winnerId nếu không đạt reserve)
                 auctionService.closeAuction(auction);
-                broadcastAuctionEnd(auction.getId(),
-                        auction.getHighestBidderId(),
-                        auction.getCurrentPrice() != null
-                                ? auction.getCurrentPrice().doubleValue() : 0.0);
-                log.info("Scheduler đóng phiên {}", auction.getId());
+
+                // Broadcast với thông tin đã lưu trước
+                broadcastAuctionEnd(auction.getId(), winnerId, finalPrice, winnerUsername);
+                log.info("Scheduler đóng phiên {} — winner={} ({}), giá={}",
+                        auction.getId(), winnerUsername, winnerId, finalPrice);
             }
         });
     }
