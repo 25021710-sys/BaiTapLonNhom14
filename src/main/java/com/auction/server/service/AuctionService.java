@@ -67,6 +67,11 @@ public class AuctionService {
         this.auctionManager = manager;
     }
 
+    /** Expose cache để AuctionManager scheduler có thể cập nhật status khi phiên tự mở. */
+    public ConcurrentHashMap<Integer, Auction> getAuctionCache() {
+        return auctionCache;
+    }
+
     // ── CREATE AUCTION ────────────────────────────────────────────────────────
 
     /**
@@ -549,13 +554,26 @@ public class AuctionService {
 
     /** Load tất cả phiên OPEN/RUNNING vào cache khi server khởi động. */
     public void loadActiveAuctions() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
         List<Auction> active = auctionDAO.findActiveAuctions();
+        int autoOpened = 0;
         for (Auction a : active) {
+            // Nếu phiên OPEN đã qua startTime mà chưa được mở → mở luôn khi load
+            if (a.getStatus() == AuctionStatus.OPEN
+                    && a.getStartTime() != null
+                    && !now.isBefore(a.getStartTime())) {
+                a.setStatus(AuctionStatus.RUNNING);
+                auctionDAO.updateStatus(a.getId(), AuctionStatus.RUNNING);
+                autoOpened++;
+                log.info("loadActiveAuctions: tự mở phiên {} (startTime={} đã qua)",
+                        a.getId(), a.getStartTime());
+            }
             auctionCache.put(a.getId(), a);
             auctionLocks.put(a.getId(), new ReentrantLock(true));
             autoBidEngine.loadFromDb(a.getId());
         }
-        log.info("Đã load {} phiên đấu giá vào cache.", active.size());
+        log.info("Đã load {} phiên vào cache ({} phiên tự mở do qua startTime).",
+                active.size(), autoOpened);
     }
 
     /** Lấy danh sách phiên OPEN/RUNNING (cho Dashboard). */

@@ -407,6 +407,20 @@ public class AuctionRoomController {
           lblParticipants.setText(String.valueOf(update.getParticipantCount()));
         }
       }
+      case AUCTION_STARTED -> {
+        // Phiên vừa chuyển OPEN → RUNNING: cập nhật UI badge + bắt đầu countdown
+        lblAuctionStatus.setText("ĐANG DIỄN RA");
+        lblAuctionStatus.getStyleClass().setAll("badge-running");
+        if (lblPriceTitleRight != null) lblPriceTitleRight.setText("💰  Giá hiện tại");
+        if (lblCurrentPriceRight != null && update.getNewPrice() != null) {
+          currentPrice = update.getNewPrice();
+          lblCurrentPriceRight.setText(formatMoney(currentPrice) + " VNĐ");
+        }
+        if (update.getNewEndTime() != null) auctionEndTime = update.getNewEndTime();
+        startCountdownTimer();
+        // Bật lại khu vực đặt giá (nếu bị disable do chưa mở)
+        updateYourStatus();
+      }
       default -> {}
     }
   }

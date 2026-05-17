@@ -178,11 +178,50 @@ public class AuctionManager {
     private void startScheduler() {
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                checkExpiredAuctions();
+                checkStartingAuctions(); // OPEN → RUNNING khi đến giờ bắt đầu
+                checkExpiredAuctions();  // RUNNING/OPEN → FINISHED khi hết giờ
             } catch (Exception e) {
-                log.error("Lỗi scheduler kiểm tra phiên hết giờ", e);
+                log.error("Lỗi scheduler", e);
             }
         }, 5, 5, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Kiểm tra các phiên OPEN đã đến giờ startTime → chuyển sang RUNNING.
+     * Chạy mỗi 5 giây cùng với checkExpiredAuctions.
+     */
+    private void checkStartingAuctions() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        auctionDAO.findActiveAuctions().forEach(auction -> {
+            if (auction.getStatus() == AuctionStatus.OPEN
+                    && auction.getStartTime() != null
+                    && !now.isBefore(auction.getStartTime())) {
+
+                // Chuyển OPEN → RUNNING trong DB
+                boolean ok = auctionDAO.updateStatus(auction.getId(), AuctionStatus.RUNNING);
+                if (ok) {
+                    // Cập nhật cache trong AuctionService
+                    auction.setStatus(AuctionStatus.RUNNING);
+                    auctionService.getAuctionCache().put(auction.getId(), auction);
+
+                    // Load auto-bid configs cho phiên vừa mở (nếu chưa load)
+                    autoBidEngine.loadFromDb(auction.getId());
+
+                    // Broadcast cho client biết phiên đã bắt đầu
+                    AuctionUpdateDTO update = new AuctionUpdateDTO(
+                            auction.getId(),
+                            AuctionUpdateDTO.UpdateType.AUCTION_STARTED,
+                            auction.getCurrentPrice() != null
+                                    ? auction.getCurrentPrice()
+                                    : auction.getStartingPrice(),
+                            0, null, auction.getEndTime(),
+                            "Phiên đấu giá đã bắt đầu!"
+                    );
+                    broadcastUpdate(auction.getId(), update);
+                    log.info("Scheduler: phiên {} tự động mở (OPEN → RUNNING)", auction.getId());
+                }
+            }
+        });
     }
 
     private void checkExpiredAuctions() {
