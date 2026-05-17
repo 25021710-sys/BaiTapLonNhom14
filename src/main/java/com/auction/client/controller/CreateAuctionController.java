@@ -64,8 +64,7 @@ public class CreateAuctionController {
     cbCategory.getItems().addAll(
             "ART",
             "ELECTRONICS",
-            "VEHICLE",
-            "OTHER"
+            "VEHICLE"
     );
 
     // Setup hours
@@ -276,6 +275,15 @@ public class CreateAuctionController {
     CreateAuctionResponse response =
             SocketClient.getInstance()
                     .createAuction(req);
+
+    System.out.println("=== CLIENT DEBUG: response = " +
+            (response != null ? response.isSuccess() + " | " + response.getMessage() : "null"));
+
+// Check kết quả
+    if (response == null || !response.isSuccess()) {
+      showError(response != null ? response.getMessage() : "Lỗi kết nối server");
+      return;
+    }
 
     // ======================
     // SUCCESS

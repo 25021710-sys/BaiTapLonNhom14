@@ -1,11 +1,13 @@
 package com.auction.common.request;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class CreateAuctionRequest implements Serializable {
-    private static final long serialVersionIDL=1L;
+    @Serial
+    private static final long serialVersionUID=1L;
 
     private String itemName;
     private String itemDescription;

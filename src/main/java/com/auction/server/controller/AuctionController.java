@@ -126,8 +126,6 @@ public class AuctionController {
 
     private void handleCreateAuction(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
         if (!requireLogin(session, out, new CreateAuctionResponse(false, "Bạn chưa đăng nhập.", null))) return;
-        if (!requireRole(session, out, new CreateAuctionResponse(false, "Chỉ SELLER mới được tạo phiên đấu giá.", null),
-                "SELLER", "ADMIN")) return;
         try {
             CreateAuctionRequest req = (CreateAuctionRequest) in.readObject();
             int sellerId = session.getUserId();
