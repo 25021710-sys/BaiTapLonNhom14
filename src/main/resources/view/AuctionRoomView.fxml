@@ -231,8 +231,9 @@
                                     </xAxis>
                                     <yAxis>
                                         <NumberAxis fx:id="chartYAxis"
-                                                    label="Giá (VNĐ)"
-                                                    autoRanging="true"/>
+                                                    label="Giá (tỷ VNĐ)"
+                                                    autoRanging="false"
+                                                    forceZeroInRange="false"/>
                                     </yAxis>
                                 </LineChart>
                             </VBox>

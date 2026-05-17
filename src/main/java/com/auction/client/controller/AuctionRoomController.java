@@ -33,6 +33,8 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 /**
  * AuctionRoomController – màn hình đấu giá trực tiếp (realtime bidding).
@@ -148,8 +150,8 @@ public class AuctionRoomController {
     this.currentAuction = auction;
 
     this.currentPrice = auction.getCurrentPrice() != null
-        ? auction.getCurrentPrice()
-        : auction.getStartingPrice();
+            ? auction.getCurrentPrice()
+            : auction.getStartingPrice();
 
     this.auctionEndTime = auction.getEndTime();
     this.chartStartMs = System.currentTimeMillis();
@@ -178,9 +180,9 @@ public class AuctionRoomController {
 
       lblTotalBids.setText(String.valueOf(auction.getTotalBids()));
       lblLeadingUser.setText(
-          auction.getHighestBidderUsername() != null
-              ? auction.getHighestBidderUsername()
-              : "---"
+              auction.getHighestBidderUsername() != null
+                      ? auction.getHighestBidderUsername()
+                      : "---"
       );
 
       if (auction.getItemDescription() != null)
@@ -220,8 +222,8 @@ public class AuctionRoomController {
           lblPriceTitleRight.setText("💰  Giá chốt phiên");
 
           BigDecimal finalPrice = auction.getCurrentPrice() != null
-              ? auction.getCurrentPrice()
-              : auction.getStartingPrice();
+                  ? auction.getCurrentPrice()
+                  : auction.getStartingPrice();
 
           lblCurrentPriceRight.setText(formatMoney(finalPrice) + " VNĐ");
         }
@@ -283,8 +285,8 @@ public class AuctionRoomController {
           lblPriceTitleRight.setText("💰  Giá chốt phiên");
 
           BigDecimal finalPrice = auction.getCurrentPrice() != null
-              ? auction.getCurrentPrice()
-              : auction.getStartingPrice();
+                  ? auction.getCurrentPrice()
+                  : auction.getStartingPrice();
 
           lblCurrentPriceRight.setText(formatMoney(finalPrice) + " VNĐ");
         }
@@ -447,6 +449,8 @@ public class AuctionRoomController {
           bidCount = res.getBids().size();
           lblTotalBids.setText(String.valueOf(bidCount));
           tblBidHistory.refresh(); // FIX: force re-render để hiện username mới
+          // FIX: populate biểu đồ từ lịch sử thực (có timestamp)
+          populateChartFromHistory(res.getBids());
         });
       }
     }, "load-bid-history").start();
@@ -672,17 +676,17 @@ public class AuctionRoomController {
     });
     colBidUser.setCellValueFactory(data -> {
       String name = usernameCache.getOrDefault(
-          data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
+              data.getValue().getBidderId(), "User#" + data.getValue().getBidderId());
       return new SimpleStringProperty(name);
     });
     colBidAmount.setCellValueFactory(data ->
-        new SimpleStringProperty(formatMoney(data.getValue().getAmount()) + " VND"));
+            new SimpleStringProperty(formatMoney(data.getValue().getAmount()) + " VND"));
     colBidType.setCellValueFactory(data ->
-        new SimpleStringProperty(data.getValue().isAutoBid() ? "AUTO" : "MANUAL"));
+            new SimpleStringProperty(data.getValue().isAutoBid() ? "AUTO" : "MANUAL"));
 
     // Force mau chu trang ro
     javafx.util.Callback<TableColumn<BidTransaction, String>,
-        TableCell<BidTransaction, String>> cellFactory = col -> {
+            TableCell<BidTransaction, String>> cellFactory = col -> {
       TableCell<BidTransaction, String> cell = new TableCell<>() {
         @Override
         protected void updateItem(String item, boolean empty) {
@@ -713,14 +717,103 @@ public class AuctionRoomController {
     priceSeries = new XYChart.Series<>();
     priceSeries.setName("Giá đấu");
     bidHistoryChart.getData().add(priceSeries);
-    if (chartXAxis != null) chartXAxis.setLabel("Giây");
-    if (chartYAxis != null) chartYAxis.setLabel("Giá (VNĐ)");
+    bidHistoryChart.setLegendVisible(false);
+    bidHistoryChart.setCreateSymbols(true);
+    if (chartXAxis != null) {
+      chartXAxis.setLabel("Thời gian (phút)");
+      chartXAxis.setTickLabelFormatter(new javafx.util.StringConverter<Number>() {
+        public String toString(Number n) { return String.format("%.1f", n.doubleValue()); }
+        public Number fromString(String s) { return Double.parseDouble(s); }
+      });
+    }
+    if (chartYAxis != null) {
+      chartYAxis.setLabel("Giá (tỷ VNĐ)");
+      // Format Y axis: hiển thị đơn vị tỷ để tránh số quá dài
+      chartYAxis.setTickLabelFormatter(new javafx.util.StringConverter<Number>() {
+        public String toString(Number n) {
+          double val = n.doubleValue() / 1_000_000_000.0;
+          return String.format("%.2f", val);
+        }
+        public Number fromString(String s) { return Double.parseDouble(s) * 1_000_000_000; }
+      });
+    }
   }
 
   private void addChartPoint(BigDecimal price) {
-    if (priceSeries == null) return;
-    long seconds = (System.currentTimeMillis() - chartStartMs) / 1000;
-    priceSeries.getData().add(new XYChart.Data<>(seconds, price.doubleValue()));
+    if (priceSeries == null || price == null) return;
+    double minutes = (System.currentTimeMillis() - chartStartMs) / 60_000.0;
+    Platform.runLater(() -> {
+      priceSeries.getData().add(new XYChart.Data<>(minutes, price.doubleValue()));
+      updateYAxisBounds();
+    });
+  }
+
+  /** Vẽ lại toàn bộ biểu đồ từ danh sách lịch sử bid (có timestamp thực). */
+  private void populateChartFromHistory(java.util.List<BidTransaction> bids) {
+    if (priceSeries == null || bids == null || bids.isEmpty()) return;
+
+    // Lấy bid đầu tiên làm gốc thời gian (t=0)
+    LocalDateTime firstTime = bids.get(0).getCreatedAt();
+    long firstMs = firstTime != null
+            ? java.sql.Timestamp.valueOf(firstTime).getTime()
+            : chartStartMs;
+
+    java.util.List<XYChart.Data<Number, Number>> points = new java.util.ArrayList<>();
+    double minPrice = Double.MAX_VALUE, maxPrice = Double.MIN_VALUE;
+
+    for (BidTransaction b : bids) {
+      if (b.getAmount() == null) continue;
+      LocalDateTime bidTime = b.getCreatedAt();
+      long bidMs = bidTime != null
+              ? java.sql.Timestamp.valueOf(bidTime).getTime()
+              : firstMs;
+      double minutes = (bidMs - firstMs) / 60_000.0;
+      double amount  = b.getAmount().doubleValue();
+      points.add(new XYChart.Data<>(minutes, amount));
+      if (amount < minPrice) minPrice = amount;
+      if (amount > maxPrice) maxPrice = amount;
+    }
+
+    // Reset chartStartMs để addChartPoint() về sau căn đúng với lịch sử
+    chartStartMs = firstMs;
+
+    // Tính padding Y: 5% của khoảng giá, tối thiểu 1 bước giá (tránh đường phẳng)
+    double range   = maxPrice - minPrice;
+    double padding = range > 0 ? range * 0.15 : maxPrice * 0.001;
+    double yLow    = minPrice - padding;
+    double yHigh   = maxPrice + padding;
+
+    // tickUnit: chia ~5 tick đẹp
+    double tickUnit = (yHigh - yLow) / 5.0;
+
+    final java.util.List<XYChart.Data<Number, Number>> finalPoints = points;
+    final double finalLow = yLow, finalHigh = yHigh, finalTick = tickUnit;
+
+    Platform.runLater(() -> {
+      if (chartYAxis != null) {
+        // Tắt autoRanging để tự kiểm soát bounds — tránh forceZeroInRange
+        chartYAxis.setAutoRanging(false);
+        chartYAxis.setLowerBound(finalLow);
+        chartYAxis.setUpperBound(finalHigh);
+        chartYAxis.setTickUnit(finalTick);
+      }
+      priceSeries.getData().setAll(finalPoints);
+    });
+  }
+
+  /** Cập nhật Y-axis bounds sau mỗi addChartPoint() realtime. */
+  private void updateYAxisBounds() {
+    if (chartYAxis == null || priceSeries == null) return;
+    double min = priceSeries.getData().stream()
+            .mapToDouble(d -> d.getYValue().doubleValue()).min().orElse(0);
+    double max = priceSeries.getData().stream()
+            .mapToDouble(d -> d.getYValue().doubleValue()).max().orElse(0);
+    double range   = max - min;
+    double padding = range > 0 ? range * 0.15 : max * 0.001;
+    chartYAxis.setAutoRanging(false);
+    chartYAxis.setLowerBound(min - padding);
+    chartYAxis.setUpperBound(max + padding);
+    chartYAxis.setTickUnit((max - min + 2 * padding) / 5.0);
   }
 
   private void setupAutoBidToggle() {
