@@ -191,15 +191,20 @@ public class AuctionService {
                                 + minIncrement + " VND.", currentPrice);
             }
 
-            // 6b. FIX: Người đang dẫn đầu không được bid lại đúng giá hiện tại của chính mình
-            if (auction.getHighestBidderId() == userId
-                    && bidAmount.compareTo(currentPrice) == 0) {
+            // 6b. Người đang dẫn đầu KHÔNG được phép bid thêm cho đến khi bị người khác vượt giá
+            int previousBidderId = auction.getHighestBidderId();
+            boolean isSelfRaise  = (previousBidderId != 0 && previousBidderId == userId);
+
+            if (isSelfRaise) {
                 return new BidResponse(false,
-                        "Giao dịch bị từ chối: Bạn đang dẫn đầu với mức giá này rồi.",
+                        "Giao dịch bị từ chối: Bạn đang dẫn đầu. Chỉ có thể đặt giá tiếp khi bị người khác vượt qua.",
                         currentPrice);
             }
 
-            // 7. Kiểm tra số dư (người đang dẫn đầu vẫn được phép tăng giá thêm)
+            // 7. Kiểm tra số dư
+            //    - Nếu người đang dẫn đầu tự nâng giá: chỉ cần trả phần chênh lệch
+            //      vì tiền cũ (currentPrice) đã bị giữ, chỉ cần thêm (bidAmount - currentPrice)
+            //    - Nếu là bidder mới: cần trả đủ bidAmount
             User user;
             try {
                 user = userDAO.findById(userId);
@@ -210,34 +215,30 @@ public class AuctionService {
             if (user == null) {
                 return new BidResponse(false, "Tài khoản không tồn tại.", currentPrice);
             }
-            if (user.getBalance().compareTo(bidAmount) < 0) {
+
+            BigDecimal requiredBalance = bidAmount; // bidder mới cần trả đủ bidAmount
+
+            if (user.getBalance().compareTo(requiredBalance) < 0) {
                 return new BidResponse(false,
                         "Giao dịch bị từ chối: Số dư tài khoản không đủ (hiện có: "
-                                + user.getBalance() + " VND).", currentPrice);
+                                + user.getBalance() + " VND).",
+                        currentPrice);
             }
 
-            // 9. Hoàn tiền cho người dẫn đầu trước đó
-            int previousBidderId = auction.getHighestBidderId();
-            if (previousBidderId != 0 && previousBidderId == userId) {
-                // Người đang dẫn đầu tự tăng giá → hoàn lại khoản cũ trước khi trừ mới
-                refundPreviousBidder(userId, currentPrice);
-                try { user = userDAO.findById(userId); } catch (Exception ignored) {}
-            } else if (previousBidderId != 0) {
+            // 9. Hoàn tiền cho người dẫn đầu trước đó (nếu có và khác userId)
+            if (previousBidderId != 0 && previousBidderId != userId) {
                 refundPreviousBidder(previousBidderId, currentPrice);
             }
 
             // 10. Trừ tiền người đặt giá mới
             try {
-                if (user == null) user = userDAO.findById(userId);
-                user.setBalance(user.getBalance().subtract(bidAmount));
+                user.setBalance(user.getBalance().subtract(requiredBalance));
                 userDAO.updateBalance(user.getId(), user.getBalance());
             } catch (Exception e) {
                 log.error("Lỗi trừ tiền user {}: {}", userId, e.getMessage());
                 // Rollback: hoàn lại tiền cho previousBidder nếu đã hoàn
                 if (previousBidderId != 0 && previousBidderId != userId) {
                     chargeUser(previousBidderId, currentPrice);
-                } else if (previousBidderId != 0 && previousBidderId == userId) {
-                    chargeUser(userId, currentPrice); // hoàn ngược lại khoản đã refund
                 }
                 return new BidResponse(false, "Lỗi cập nhật số dư, vui lòng thử lại.", currentPrice);
             }
@@ -251,8 +252,8 @@ public class AuctionService {
             boolean dbUpdated = auctionDAO.updateBidPrice(auctionId, userId, bidAmount);
             if (!dbUpdated) {
                 // DB đã có giá >= bidAmount (người khác vừa thắng race ở DB level)
-                // Rollback: hoàn tiền cho userId, không hoàn cho previousBidder (họ vẫn đang dẫn đầu)
-                refundPreviousBidder(userId, bidAmount);
+                // Rollback: hoàn lại khoản tiền đã trừ ở bước 10
+                refundPreviousBidder(userId, requiredBalance);
                 if (previousBidderId != 0 && previousBidderId != userId) {
                     // Hoàn ngược lại tiền đã refund cho previousBidder ở bước 9
                     chargeUser(previousBidderId, currentPrice);
