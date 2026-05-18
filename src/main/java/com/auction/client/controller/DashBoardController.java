@@ -174,8 +174,7 @@ public class DashBoardController {
             // FIX REALTIME: cleanup khi đóng cửa sổ — unsubscribe server + remove push callback
             // Nếu không có dòng này, callback vẫn còn trong danh sách → nhận push của phòng đã đóng,
             // và participant count trên server không bao giờ giảm.
-            stage.setOnCloseRequest(e -> roomCtrl.cleanup());
-
+            stage.setOnHiding(e -> roomCtrl.cleanup());
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
