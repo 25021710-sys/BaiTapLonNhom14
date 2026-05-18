@@ -462,22 +462,37 @@ public class AuctionService {
         auctionDAO.updateStatus(auction.getId(), AuctionStatus.FINISHED);
         auctionCache.remove(auction.getId());
 
-        // Kiểm tra giá sàn (reserve price)
-        BigDecimal currentPrice  = auction.getCurrentPrice();
-        BigDecimal reservePrice  = auction.getReservePrice();
-        int        winnerId      = auction.getHighestBidderId();
+        BigDecimal currentPrice = auction.getCurrentPrice();
+        BigDecimal reservePrice = auction.getReservePrice();
+        int winnerId  = auction.getHighestBidderId();
+        int sellerId  = auction.getSellerId();
 
         if (winnerId != 0 && reservePrice != null
                 && currentPrice != null
                 && currentPrice.compareTo(reservePrice) < 0) {
-            // Giá không đạt sàn → hoàn tiền người dẫn đầu, phiên coi như không có người thắng
-            log.info("Phiên {} không đạt giá sàn ({} < {}). Hoàn tiền cho bidderId={}.",
-                    auction.getId(), currentPrice, reservePrice, winnerId);
+            // Không đạt giá sàn → hoàn tiền người thắng, không cộng cho seller
+            log.info("Phiên {} không đạt giá sàn. Hoàn tiền bidderId={}.",
+                    auction.getId(), winnerId);
             refundPreviousBidder(winnerId, currentPrice);
-            auction.setHighestBidderId(0); // xóa người thắng
+            auction.setHighestBidderId(0);
+
+        } else if (winnerId != 0 && currentPrice != null
+                && currentPrice.compareTo(BigDecimal.ZERO) > 0) {
+            // ✅ Có người thắng + đạt giá sàn → cộng tiền cho seller
+            try {
+                User seller = userDAO.findById(sellerId);
+                if (seller != null) {
+                    seller.setBalance(seller.getBalance().add(currentPrice));
+                    userDAO.updateBalance(sellerId, seller.getBalance());
+                    log.info("Cộng {} VNĐ cho seller id={} (phiên {})",
+                            currentPrice, sellerId, auction.getId());
+                }
+            } catch (Exception e) {
+                log.error("Lỗi cộng tiền seller id={}: {}", sellerId, e.getMessage());
+            }
         }
 
-        log.info("Phiên {} kết thúc. Winner: bidderId={}, giá={}",
+        log.info("Phiên {} kết thúc. Winner={}, giá={}",
                 auction.getId(), auction.getHighestBidderId(), currentPrice);
     }
 

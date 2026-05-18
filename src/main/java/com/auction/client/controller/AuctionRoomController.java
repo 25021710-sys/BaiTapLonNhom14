@@ -368,6 +368,18 @@ public class AuctionRoomController {
         scheduleBidHistoryReload(); // debounced — tránh flood request khi nhiều bid liên tiếp
         if (lblPriceTitleRight != null)
           lblPriceTitleRight.setText("💰  Giá hiện tại");
+        // ✅ Nếu mình vừa bị outbid → cộng lại tiền
+        int myId = ClientSession.getCurrentUser() != null
+                ? ClientSession.getCurrentUser().getId() : -1;
+        if (myId != -1
+                && currentHighestBidderId == myId          // mình đang dẫn đầu
+                && update.getHighestBidderId() != myId) {  // người khác vừa vượt
+          BigDecimal newBalance = ClientSession.getCurrentUser()
+                  .getBalance().add(currentPrice);       // hoàn lại giá cũ
+          ClientSession.getCurrentUser().setBalance(newBalance);
+          if (lblMyBalance != null)
+            lblMyBalance.setText(formatMoney(newBalance) + " VNĐ");
+        }
       }
       case AUCTION_ENDED -> {
         auctionEnded = true;
@@ -571,6 +583,15 @@ public class AuctionRoomController {
             currentHighestBidderId = ClientSession.getCurrentUser().getId();
             updateCurrentPriceUI();
             updateYourStatus();
+          }
+          // ✅ Thêm: trừ tiền hiển thị ngay trên UI
+          if (ClientSession.getCurrentUser() != null && lblMyBalance != null) {
+            BigDecimal newBalance = ClientSession.getCurrentUser()
+                    .getBalance().subtract(bidAmount);
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0)
+              newBalance = BigDecimal.ZERO;
+            ClientSession.getCurrentUser().setBalance(newBalance);
+            lblMyBalance.setText(formatMoney(newBalance) + " VNĐ");
           }
           // Nếu currentPrice đã bằng hoặc cao hơn responsePrice → push đã xử lý đúng,
           // không cần làm gì thêm (updateYourStatus đã được handlePushUpdate gọi rồi).
@@ -1098,8 +1119,12 @@ public class AuctionRoomController {
     stage.setTitle("Kết thúc phiên đấu giá");
     stage.setScene(new javafx.scene.Scene(root));
     stage.setResizable(false);
-    stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-    closeBtn.setOnAction(e -> stage.close());
+    stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+    stage.initOwner(lblAuctionTitle.getScene().getWindow());
+    closeBtn.setOnAction(e -> {
+      stage.close();
+      lblAuctionTitle.getScene().getWindow().requestFocus();
+    });
     stage.show();
   }
 
