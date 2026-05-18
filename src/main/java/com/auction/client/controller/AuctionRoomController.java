@@ -352,6 +352,18 @@ public class AuctionRoomController {
 
     switch (update.getType()) {
       case BID_PLACED, AUCTION_EXTENDED -> {
+        // ✅ Nếu mình vừa bị outbid → cộng lại tiền
+        int myId = ClientSession.getCurrentUser() != null
+                ? ClientSession.getCurrentUser().getId() : -1;
+        if (myId != -1
+                && currentHighestBidderId == myId          // mình đang dẫn đầu
+                && update.getHighestBidderId() != myId) {  // người khác vừa vượt
+          BigDecimal newBalance = ClientSession.getCurrentUser()
+                  .getBalance().add(currentPrice);       // hoàn lại giá cũ
+          ClientSession.getCurrentUser().setBalance(newBalance);
+          if (lblMyBalance != null)
+            lblMyBalance.setText(formatMoney(newBalance) + " VNĐ");
+        }
         currentPrice = update.getNewPrice();
         currentHighestBidderId = update.getHighestBidderId(); // FIX: update live
         auctionEndTime = update.getNewEndTime() != null ? update.getNewEndTime() : auctionEndTime;
@@ -368,18 +380,6 @@ public class AuctionRoomController {
         scheduleBidHistoryReload(); // debounced — tránh flood request khi nhiều bid liên tiếp
         if (lblPriceTitleRight != null)
           lblPriceTitleRight.setText("💰  Giá hiện tại");
-        // ✅ Nếu mình vừa bị outbid → cộng lại tiền
-        int myId = ClientSession.getCurrentUser() != null
-                ? ClientSession.getCurrentUser().getId() : -1;
-        if (myId != -1
-                && currentHighestBidderId == myId          // mình đang dẫn đầu
-                && update.getHighestBidderId() != myId) {  // người khác vừa vượt
-          BigDecimal newBalance = ClientSession.getCurrentUser()
-                  .getBalance().add(currentPrice);       // hoàn lại giá cũ
-          ClientSession.getCurrentUser().setBalance(newBalance);
-          if (lblMyBalance != null)
-            lblMyBalance.setText(formatMoney(newBalance) + " VNĐ");
-        }
       }
       case AUCTION_ENDED -> {
         auctionEnded = true;
@@ -1119,11 +1119,11 @@ public class AuctionRoomController {
     stage.setTitle("Kết thúc phiên đấu giá");
     stage.setScene(new javafx.scene.Scene(root));
     stage.setResizable(false);
-    stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
-    stage.initOwner(lblAuctionTitle.getScene().getWindow());
+    stage.initStyle(javafx.stage.StageStyle.UTILITY);
     closeBtn.setOnAction(e -> {
       stage.close();
-      lblAuctionTitle.getScene().getWindow().requestFocus();
+      if (lblAuctionTitle.getScene() != null)
+        lblAuctionTitle.getScene().getWindow().requestFocus();
     });
     stage.show();
   }
