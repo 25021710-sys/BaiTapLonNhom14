@@ -296,6 +296,21 @@ public class SocketClient {
         try { sendRequestWithInt("AUCTION_UNSUBSCRIBE", auctionId); readResponse(); }
         catch (Exception ignored) {}
     }
+    // Thêm method unsubscribe không chờ response
+    public void unsubscribeAuctionNoWait(int auctionId) {
+        try {
+            ensureConnected();
+            writeLock.lock();
+            try {
+                out.writeObject("AUCTION_UNSUBSCRIBE");
+                out.writeInt(auctionId);
+                out.flush();
+                // ✅ KHÔNG readResponse() — gửi xong thôi
+            } finally {
+                writeLock.unlock();
+            }
+        } catch (Exception ignored) {}
+    }
 
     public BidResponse placeBid(BidRequest request) {
         try { sendRequest("BID_PLACE", request); return readTypedResponse(BidResponse.class); }
