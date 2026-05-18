@@ -334,12 +334,11 @@ public class AuctionRoomController {
     stopCountdown();
     if (bidHistoryDebounce != null) bidHistoryDebounce.stop();
     SocketClient.getInstance().removePushCallback(this::handlePushUpdate);
-    // Báo server bỏ subscribe (giảm participant count)
+
     if (currentAuction != null) {
-      new Thread(() ->
-              SocketClient.getInstance().unsubscribeAuction(currentAuction.getAuctionId()),
-              "unsubscribe-thread"
-      ).start();
+      // Dùng method — không chờ response
+      SocketClient.getInstance()
+              .unsubscribeAuctionNoWait(currentAuction.getAuctionId());
     }
   }
 
@@ -348,6 +347,8 @@ public class AuctionRoomController {
    * Được gọi trên FX thread nhờ Platform.runLater() trong SocketClient.
    */
   private void handlePushUpdate(AuctionUpdateDTO update) {
+    System.out.println("[DEBUG] push: type=" + update.getType()
+            + " auctionId=" + update.getAuctionId());
     if (currentAuction == null || update.getAuctionId() != currentAuction.getAuctionId()) return;
 
     switch (update.getType()) {
