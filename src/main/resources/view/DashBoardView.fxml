@@ -14,14 +14,16 @@
 <?import javafx.scene.layout.Region?>
 
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.StackPane?>
+<StackPane fx:id="sceneRoot"
+           xmlns="http://javafx.com/javafx/25"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.auction.client.controller.DashBoardController">
 <BorderPane fx:id="rootPane"
-            maxWidth="Infinity"
-            maxHeight="Infinity"
-            stylesheets="@../style/DashBoardStyle.css"
-            style="-fx-background-color: #f4f6f9;"
-            xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.auction.client.controller.DashBoardController">
+               maxWidth="Infinity"
+               maxHeight="Infinity"
+               stylesheets="@../style/DashBoardStyle.css"
+               style="-fx-background-color: #f4f6f9;">
 
    <!-- LEFT MENU -->
    <left>
@@ -269,3 +271,4 @@
       </VBox>
    </center>
 </BorderPane>
+</StackPane>

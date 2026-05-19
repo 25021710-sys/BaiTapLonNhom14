@@ -48,6 +48,8 @@ public class DashBoardController {
     @FXML private Button btnLeftUpComingBids;
     @FXML private Button btnRightUpComingBids;
     @FXML private BorderPane rootPane;
+    @FXML private javafx.scene.layout.StackPane sceneRoot;
+
 
     private Parent adminApprovalView;
     private AdminAuctionApprovalController adminApprovalController;
@@ -391,24 +393,14 @@ public class DashBoardController {
         overlay.setStyle("-fx-padding: 0 24 24 0;");
         overlay.setPickOnBounds(false); // không chặn click vào các component bên dưới
 
-        // Wrap rootPane trong StackPane nếu chưa có — hoặc thêm thẳng vào root
-        javafx.scene.layout.StackPane root;
-        if (rootPane.getParent() instanceof javafx.scene.layout.StackPane sp) {
-            root = sp;
-        } else {
-            // Bọc rootPane vào StackPane mới
-            root = new javafx.scene.layout.StackPane(rootPane);
-            javafx.scene.Scene scene = rootPane.getScene();
-            if (scene != null) scene.setRoot(root);
-        }
-        root.getChildren().add(overlay);
+        sceneRoot.getChildren().add(overlay);
 
         // ── Tự động ẩn sau 6 giây với fade out animation
         javafx.animation.FadeTransition fadeOut =
                 new javafx.animation.FadeTransition(javafx.util.Duration.seconds(1), overlay);
         fadeOut.setFromValue(1.0);
         fadeOut.setToValue(0.0);
-        fadeOut.setOnFinished(e -> root.getChildren().remove(overlay));
+        fadeOut.setOnFinished(e -> sceneRoot.getChildren().remove(overlay));
 
         javafx.animation.PauseTransition pause =
                 new javafx.animation.PauseTransition(javafx.util.Duration.seconds(5));
