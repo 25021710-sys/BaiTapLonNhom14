@@ -312,7 +312,7 @@ public class AuctionRoomController {
   private void subscribeRealtime(int auctionId) {
     // addPushCallback thay vì setPushCallback — không overwrite callback của màn hình khác
     SocketClient.getInstance().addPushCallback(this::handlePushUpdate);
-
+    ClientSession.addBalanceListener(this::refreshBalanceLabel);
     new Thread(() -> {
       CreateAuctionResponse res = SocketClient.getInstance().subscribeAuction(auctionId);
       if (!res.isSuccess()) {
@@ -334,7 +334,7 @@ public class AuctionRoomController {
     stopCountdown();
     if (bidHistoryDebounce != null) bidHistoryDebounce.stop();
     SocketClient.getInstance().removePushCallback(this::handlePushUpdate);
-
+    ClientSession.removeBalanceListener(this::refreshBalanceLabel);
     if (currentAuction != null) {
       // Dùng method — không chờ response
       SocketClient.getInstance()
@@ -361,9 +361,7 @@ public class AuctionRoomController {
                 && update.getHighestBidderId() != myId) {  // người khác vừa vượt
           BigDecimal newBalance = ClientSession.getCurrentUser()
                   .getBalance().add(currentPrice);       // hoàn lại giá cũ
-          ClientSession.getCurrentUser().setBalance(newBalance);
-          if (lblMyBalance != null)
-            lblMyBalance.setText(formatMoney(newBalance) + " VNĐ");
+          ClientSession.updateBalance(newBalance); // notify tất cả AuctionRoom đang mở
         }
         currentPrice = update.getNewPrice();
         currentHighestBidderId = update.getHighestBidderId(); // FIX: update live
@@ -586,13 +584,12 @@ public class AuctionRoomController {
             updateYourStatus();
           }
           // ✅ Thêm: trừ tiền hiển thị ngay trên UI
-          if (ClientSession.getCurrentUser() != null && lblMyBalance != null) {
+          if (ClientSession.getCurrentUser() != null) {
             BigDecimal newBalance = ClientSession.getCurrentUser()
                     .getBalance().subtract(bidAmount);
             if (newBalance.compareTo(BigDecimal.ZERO) < 0)
               newBalance = BigDecimal.ZERO;
-            ClientSession.getCurrentUser().setBalance(newBalance);
-            lblMyBalance.setText(formatMoney(newBalance) + " VNĐ");
+            ClientSession.updateBalance(newBalance); // notify tất cả AuctionRoom đang mở
           }
           // Nếu currentPrice đã bằng hoặc cao hơn responsePrice → push đã xử lý đúng,
           // không cần làm gì thêm (updateYourStatus đã được handlePushUpdate gọi rồi).
@@ -872,6 +869,14 @@ public class AuctionRoomController {
         field.setText(newVal.replaceAll("[^\\d]", ""));
       }
     });
+  }
+
+  /** Được gọi bởi ClientSession.balanceListener — cập nhật label số dư trên bất kỳ AuctionRoom nào đang mở */
+  private void refreshBalanceLabel() {
+    if (ClientSession.getCurrentUser() == null || lblMyBalance == null) return;
+    javafx.application.Platform.runLater(() ->
+            lblMyBalance.setText(formatMoney(ClientSession.getCurrentUser().getBalance()) + " VNĐ")
+    );
   }
 
   private void updateCurrentPriceUI() {
