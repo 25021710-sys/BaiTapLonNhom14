@@ -65,6 +65,7 @@ public class AdminRoomManagementController implements Initializable {
     private final ObservableList<AdminRoomDTO> allRooms   = FXCollections.observableArrayList();
     private FilteredList<AdminRoomDTO>         filteredRooms;
     private AdminRoomDTO                       selectedRoom;
+    private javafx.animation.Timeline clockTimeline;
 
     private static final NumberFormat CURRENCY_FMT =
             NumberFormat.getNumberInstance(new Locale("vi", "VN"));
@@ -80,6 +81,7 @@ public class AdminRoomManagementController implements Initializable {
         setupSearch();
         registerPushCallback();
         loadRooms();
+        startClock();
     }
 
     // ======================================================================
@@ -472,5 +474,26 @@ public class AdminRoomManagementController implements Initializable {
         Thread t = new Thread(task);
         t.setDaemon(true);
         t.start();
+    }
+    /** Đồng hồ đếm ngược: cập nhật cột Time Left và lblTimeLeft mỗi giây. */
+    private void startClock() {
+        clockTimeline = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(
+                        javafx.util.Duration.seconds(1),
+                        e -> {
+                            roomTable.refresh(); // cập nhật cột Time Left trong bảng
+                            if (selectedRoom != null) {
+                                lblTimeLeft.setText("Còn lại: " + selectedRoom.getTimeLeftFormatted());
+                            }
+                        }
+                )
+        );
+        clockTimeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        clockTimeline.play();
+    }
+
+    /** Gọi khi view bị unload để dừng timer, tránh memory leak. */
+    public void cleanup() {
+        if (clockTimeline != null) clockTimeline.stop();
     }
 }
