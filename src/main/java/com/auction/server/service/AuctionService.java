@@ -694,8 +694,8 @@ public class AuctionService {
             if (auction == null) return false;
             if (auction.getStatus() != AuctionStatus.RUNNING) return false;
 
-            auction.setStatus(AuctionStatus.OPEN);
-            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.OPEN);
+            auction.setStatus(AuctionStatus.PAUSED);  // thay vì OPEN
+            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.PAUSED);
             if (ok) {
                 auctionCache.put(auctionId, auction);
                 log.info("Admin {} tạm dừng phòng {}", adminId, auctionId);
@@ -712,7 +712,7 @@ public class AuctionService {
             Auction auction = auctionCache.get(auctionId);
             if (auction == null) auction = auctionDAO.findById(auctionId);
             if (auction == null) return false;
-            if (auction.getStatus() != AuctionStatus.OPEN) return false;
+            if (auction.getStatus() != AuctionStatus.PAUSED) return false;  // check đúng
 
             auction.setStatus(AuctionStatus.RUNNING);
             boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.RUNNING);

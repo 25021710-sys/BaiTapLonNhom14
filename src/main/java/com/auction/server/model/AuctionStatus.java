@@ -4,6 +4,7 @@ public enum AuctionStatus {
     PENDING("Chờ duyệt"),
     OPEN("Sắp diễn ra"),
     RUNNING("Đang diễn ra"),
+    PAUSED("Đang tạm dừng"),
     FINISHED("Kết thúc"),
     PAID("Đã thanh toán"),
     CANCELED("Đã hủy");

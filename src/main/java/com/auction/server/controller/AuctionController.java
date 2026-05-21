@@ -590,8 +590,6 @@ public class AuctionController {
         }
     }
     private void handleAdminPauseRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
-        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN mới có quyền."), "ADMIN")) return;
         try {
             AdminPauseRoomRequest req = (AdminPauseRoomRequest) in.readObject();
             Auction auction = auctionService.getAuction(req.getAuctionId());
@@ -631,15 +629,13 @@ public class AuctionController {
         }
     }
     private void handleAdminResumeRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
-        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN mới có quyền."), "ADMIN")) return;
         try {
             AdminResumeRoomRequest req = (AdminResumeRoomRequest) in.readObject();
             Auction auction = auctionService.getAuction(req.getAuctionId());
 
-            if (auction.getStatus() != AuctionStatus.OPEN) {
+            if (auction.getStatus() != AuctionStatus.PAUSED) {  // sửa từ OPEN → PAUSED
                 send(out, new SimpleResponse(false,
-                        "Chỉ có thể tiếp tục phòng đang ở trạng thái OPEN. Hiện tại: "
+                        "Chỉ có thể tiếp tục phòng đang PAUSED. Hiện tại: "
                                 + auction.getStatus().getDisplay()));
                 return;
             }
@@ -669,8 +665,6 @@ public class AuctionController {
         }
     }
     private void handleAdminCloseRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
-        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
-        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN mới có quyền."), "ADMIN")) return;
         try {
             AdminCloseRoomRequest req = (AdminCloseRoomRequest) in.readObject();
             Auction auction = auctionService.getAuction(req.getAuctionId());
