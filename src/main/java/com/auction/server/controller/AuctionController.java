@@ -704,59 +704,72 @@ public class AuctionController {
  * @param withDetail nếu true → nạp thêm participantUsernames + recentBidLogs
  */
 
-    private AdminRoomDTO buildAdminRoomDTO(Auction a, boolean withDetail) {
-        AdminRoomDTO dto = new AdminRoomDTO();
-        dto.setAuctionId(a.getId());
-        dto.setStatus(a.getStatus());
-        dto.setStartingPrice(a.getStartingPrice());
-        dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
-        dto.setStartTime(a.getStartTime());
-        dto.setEndTime(a.getEndTime());
-        dto.setTotalBids(bidDAO.countByAuction(a.getId()));
-        dto.setSellerName(resolveUsername(a.getSellerId()));
+private AdminRoomDTO buildAdminRoomDTO(Auction a, boolean withDetail) {
+    AdminRoomDTO dto = new AdminRoomDTO();
+    dto.setAuctionId(a.getId());
+    dto.setStatus(a.getStatus());
+    dto.setStartingPrice(a.getStartingPrice());
+    dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
+    dto.setStartTime(a.getStartTime());
+    dto.setEndTime(a.getEndTime());
+    dto.setTotalBids(bidDAO.countByAuction(a.getId()));
+    dto.setSellerName(resolveUsername(a.getSellerId()));
 
-        if (a.getHighestBidderId() != 0) {
-            dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-        }
-
-        Item item = itemDAO.findById(a.getItemId());
-        if (item != null) {
-            dto.setItemName(item.getName());
-            dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
-        }
-
-        // Số người đang subscribe phòng này (realtime)
-        dto.setParticipantCount(auctionManager.getParticipantCount(a.getId()));
-
-        if (withDetail) {
-            // Danh sách username người tham gia (lấy từ bid history)
-            List<BidTransaction> bids = bidDAO.findByAuction(a.getId());
-
-            // Unique usernames
-            java.util.LinkedHashSet<String> participantSet = new java.util.LinkedHashSet<>();
-            java.util.List<String> recentLogs = new java.util.ArrayList<>();
-            int logCount = 0;
-            // Duyệt từ mới nhất → cũ nhất
-            for (int i = bids.size() - 1; i >= 0; i--) {
-                BidTransaction bid = bids.get(i);
-                String username = resolveUsername(bid.getBidderId());
-                participantSet.add(username);
-                if (logCount < 10) {
-                    recentLogs.add(String.format("[%s] %s đặt giá %,.0f đ",
-                            bid.getCreatedAt() != null
-                                    ? bid.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
-                                    : "--:--:--",
-                            username,
-                            bid.getAmount().doubleValue()));
-                    logCount++;
-                }
-            }
-            // Đảo lại log: mới nhất ở cuối (như append log)
-            java.util.Collections.reverse(recentLogs);
-            dto.setParticipantUsernames(new java.util.ArrayList<>(participantSet));
-            dto.setRecentBidLogs(recentLogs);
-        }
-
-        return dto;
+    if (a.getHighestBidderId() != 0) {
+        dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
     }
+
+    Item item = itemDAO.findById(a.getItemId());
+    if (item != null) {
+        dto.setItemName(item.getName());
+        dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
+    }
+
+    dto.setParticipantCount(auctionManager.getParticipantCount(a.getId()));
+
+    if (withDetail) {
+        List<BidTransaction> bids = bidDAO.findByAuction(a.getId());
+
+        // Batch load tất cả username 1 lần thay vì gọi resolveUsername() trong vòng lặp
+        java.util.Set<Integer> bidderIds = new java.util.HashSet<>();
+        for (BidTransaction bid : bids) bidderIds.add(bid.getBidderId());
+
+        java.util.Map<Integer, String> usernameMap = new java.util.HashMap<>();
+        if (!bidderIds.isEmpty()) {
+            try {
+                usernameMap = userDAO.findUsernamesByIds(bidderIds);
+            } catch (Exception e) {
+                log.warn("Không batch load được username cho phòng {}: {}", a.getId(), e.getMessage());
+            }
+            // Fallback: id nào không tìm được thì hiện "User#id" thay vì trống
+            for (int id : bidderIds) usernameMap.putIfAbsent(id, "User#" + id);
+        }
+
+        java.util.LinkedHashSet<String> participantSet = new java.util.LinkedHashSet<>();
+        java.util.List<String> recentLogs = new java.util.ArrayList<>();
+        int logCount = 0;
+
+        for (int i = bids.size() - 1; i >= 0; i--) {
+            BidTransaction bid = bids.get(i);
+            // Lấy từ map đã batch load, không gọi DB nữa
+            String username = usernameMap.getOrDefault(bid.getBidderId(), "User#" + bid.getBidderId());
+            participantSet.add(username);
+            if (logCount < 10) {
+                recentLogs.add(String.format("[%s] %s đặt giá %,.0f đ",
+                        bid.getCreatedAt() != null
+                                ? bid.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
+                                : "--:--:--",
+                        username,
+                        bid.getAmount().doubleValue()));
+                logCount++;
+            }
+        }
+
+        java.util.Collections.reverse(recentLogs);
+        dto.setParticipantUsernames(new java.util.ArrayList<>(participantSet));
+        dto.setRecentBidLogs(recentLogs);
+    }
+
+    return dto;
+}
 }

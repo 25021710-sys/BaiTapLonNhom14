@@ -467,7 +467,9 @@ public class AuctionRoomController {
         if (!unknownIds.isEmpty()) {
           java.util.Map<Integer, String> resolved =
                   SocketClient.getInstance().resolveUsernames(unknownIds);
-          if (resolved != null) usernameCache.putAll(resolved);
+          if (resolved != null && !resolved.isEmpty()) usernameCache.putAll(resolved);
+          // Fallback: id nào không resolve được thì hiện "User#id" thay vì trống
+          for (int id : unknownIds) usernameCache.putIfAbsent(id, "User#" + id);
         }
 
         Platform.runLater(() -> {
