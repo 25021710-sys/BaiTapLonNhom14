@@ -86,6 +86,8 @@ public class AuctionController {
             case "AUCTION_APPROVE"              -> handleApproveAuction(in, out, session);
             case "AUCTION_REJECT"               -> handleRejectAuction(in, out, session);
             case "AUCTION_SUBSCRIBE"            -> handleSubscribe(in, out, handler);
+            case "ADMIN_SUBSCRIBE_ALL"          -> handleAdminSubscribeAll(in, out, session, handler);
+            case "ADMIN_UNSUBSCRIBE_ALL"        -> handleAdminUnsubscribeAll(in, out, session, handler);
             case "AUCTION_UNSUBSCRIBE"          -> handleUnsubscribe(in, out, handler);
             case "AUCTION_GET_BIDS"             -> handleGetBidHistory(in, out);
             case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out, session);
@@ -280,7 +282,38 @@ public class AuctionController {
             send(out, new CreateAuctionResponse(false, "Lỗi subscribe: " + e.getMessage(), null));
         }
     }
+    private void handleAdminSubscribeAll(ObjectInputStream in, ObjectOutputStream out,
+                                         ServerSession session, ClientHandler handler) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Chưa đăng nhập."))) return;
+        if (!requireRole(session, out, new SimpleResponse(false, "Chỉ ADMIN."), "ADMIN")) return;
+        try {
+            if (handler != null) {
+                // Subscribe admin vào tất cả phòng đang active
+                for (Auction a : auctionService.getActiveAuctions()) {
+                    auctionManager.subscribe(a.getId(), handler);
+                }
+            }
+            send(out, new SimpleResponse(true, "OK"));
+            log.info("Admin {} subscribed all rooms", session.getUsername());
+        } catch (Exception e) {
+            send(out, new SimpleResponse(false, "Lỗi: " + e.getMessage()));
+        }
+    }
 
+    private void handleAdminUnsubscribeAll(ObjectInputStream in, ObjectOutputStream out,
+                                           ServerSession session, ClientHandler handler) {
+        if (!requireLogin(session, out, new SimpleResponse(false, "Chưa đăng nhập."))) return;
+        try {
+            if (handler != null) {
+                for (Auction a : auctionService.getActiveAuctions()) {
+                    auctionManager.unsubscribe(a.getId(), handler);
+                }
+            }
+            send(out, new SimpleResponse(true, "OK"));
+        } catch (Exception e) {
+            send(out, new SimpleResponse(false, "Lỗi: " + e.getMessage()));
+        }
+    }
     private void handleUnsubscribe(ObjectInputStream in, ObjectOutputStream out, ClientHandler handler) {
         try {
             int auctionId = in.readInt();
@@ -291,6 +324,7 @@ public class AuctionController {
             send(out, new SimpleResponse(false, "Lỗi: " + e.getMessage()));
         }
     }
+
 
     private void handleGetBidHistory(ObjectInputStream in, ObjectOutputStream out) {
         try {

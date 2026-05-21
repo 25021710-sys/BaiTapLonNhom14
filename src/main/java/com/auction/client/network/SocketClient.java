@@ -37,7 +37,7 @@ import java.util.function.Consumer;
  */
 public class SocketClient {
 
-    private static final String DEFAULT_HOST        = "10.11.19.191";
+    private static final String DEFAULT_HOST        = "localhost";
     private static final int    DEFAULT_PORT        = 8080;
     private static final int    RESPONSE_TIMEOUT_MS = 10_000;
 
@@ -430,5 +430,18 @@ public class SocketClient {
         } catch (Exception e) {
             return new java.util.HashMap<>();
         }
+    }
+    public void adminSubscribeAll() {
+        try {
+            sendRequest("ADMIN_SUBSCRIBE_ALL");
+            readTypedResponse(SimpleResponse.class);
+        } catch (Exception ignored) {}
+    }
+
+    public void adminUnsubscribeAll() {
+        try {
+            sendRequest("ADMIN_UNSUBSCRIBE_ALL");
+            readTypedResponse(SimpleResponse.class);
+        } catch (Exception ignored) {}
     }
 }

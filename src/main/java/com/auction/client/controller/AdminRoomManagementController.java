@@ -22,6 +22,7 @@ import java.net.URL;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 /**
  * AdminRoomManagementController – Màn hình giám sát phòng đấu giá realtime.
@@ -66,6 +67,7 @@ public class AdminRoomManagementController implements Initializable {
     private FilteredList<AdminRoomDTO>         filteredRooms;
     private AdminRoomDTO                       selectedRoom;
     private javafx.animation.Timeline clockTimeline;
+    private Consumer<AuctionUpdateDTO> pushCallback;
 
     private static final NumberFormat CURRENCY_FMT =
             NumberFormat.getNumberInstance(new Locale("vi", "VN"));
@@ -170,12 +172,6 @@ public class AdminRoomManagementController implements Initializable {
      * Đăng ký callback nhận push update realtime từ server.
      * Khi có bid mới hoặc trạng thái thay đổi, cập nhật log + detail panel.
      */
-    private void registerPushCallback() {
-        SocketClient.getInstance().setPushCallback(update -> {
-            // Đã trên FX thread (Platform.runLater đã được gọi trong SocketClient)
-            handlePushUpdate(update);
-        });
-    }
 
     // ======================================================================
     // LOAD DATA
@@ -493,7 +489,19 @@ public class AdminRoomManagementController implements Initializable {
     }
 
     /** Gọi khi view bị unload để dừng timer, tránh memory leak. */
+    private void registerPushCallback() {
+        pushCallback = update -> handlePushUpdate(update);
+        SocketClient.getInstance().addPushCallback(pushCallback); // ← đổi setPushCallback → addPushCallback
+        // Subscribe admin vào tất cả phòng để nhận push từ server
+        SocketClient.getInstance().adminSubscribeAll();
+    }
+
+    // Cập nhật cleanup() để unsubscribe đúng cách
     public void cleanup() {
         if (clockTimeline != null) clockTimeline.stop();
+        if (pushCallback != null) {
+            SocketClient.getInstance().removePushCallback(pushCallback); // ← thêm dòng này
+        }
+        SocketClient.getInstance().adminUnsubscribeAll(); // ← thêm dòng này
     }
 }
