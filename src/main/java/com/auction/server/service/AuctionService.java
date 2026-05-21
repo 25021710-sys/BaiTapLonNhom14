@@ -300,16 +300,19 @@ public class AuctionService {
             // 15. Kích hoạt chuỗi auto-bid (nếu có config đang active)
             BidTransaction autoBidTx = autoBidEngine.triggerAutoBid(auctionId, userId, bidAmount);
             if (autoBidTx != null && auctionManager != null) {
-                // Lấy username thật của auto-bidder (không dùng chuỗi "auto-bid")
+                // Lấy auction mới nhất từ cache (placeAutoBid đã cập nhật endTime nếu anti-snipe)
+                Auction updatedAuction = auctionCache.getOrDefault(auctionId, auction);
                 String autoBidderName = resolveUsername(autoBidTx.getBidderId());
+                int participantCount = auctionManager.getParticipantCount(auctionId);
                 auctionManager.broadcastUpdate(auctionId, new AuctionUpdateDTO(
                         auctionId,
                         AuctionUpdateDTO.UpdateType.BID_PLACED,
                         autoBidTx.getAmount(),
                         autoBidTx.getBidderId(),
                         autoBidderName + " (auto)",
-                        auction.getEndTime(),
-                        "Auto-bid từ " + autoBidderName + "!"
+                        updatedAuction.getEndTime(),
+                        "Auto-bid từ " + autoBidderName + "!",
+                        participantCount
                 ));
             }
 
@@ -694,8 +697,8 @@ public class AuctionService {
             if (auction == null) return false;
             if (auction.getStatus() != AuctionStatus.RUNNING) return false;
 
-            auction.setStatus(AuctionStatus.OPEN);
-            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.OPEN);
+            auction.setStatus(AuctionStatus.PAUSED);  // thay vì OPEN
+            boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.PAUSED);
             if (ok) {
                 auctionCache.put(auctionId, auction);
                 log.info("Admin {} tạm dừng phòng {}", adminId, auctionId);
@@ -712,7 +715,7 @@ public class AuctionService {
             Auction auction = auctionCache.get(auctionId);
             if (auction == null) auction = auctionDAO.findById(auctionId);
             if (auction == null) return false;
-            if (auction.getStatus() != AuctionStatus.OPEN) return false;
+            if (auction.getStatus() != AuctionStatus.PAUSED) return false;  // check đúng
 
             auction.setStatus(AuctionStatus.RUNNING);
             boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.RUNNING);

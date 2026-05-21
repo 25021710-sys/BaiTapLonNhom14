@@ -365,9 +365,9 @@ public class AdminRoomManagementController implements Initializable {
             showAlert(Alert.AlertType.WARNING, "Chưa chọn phòng", "Vui lòng chọn một phòng từ bảng.");
             return;
         }
-        if (selectedRoom.getStatus() != AuctionStatus.OPEN) {
+        if (selectedRoom.getStatus() != AuctionStatus.PAUSED) {  // sửa từ OPEN → PAUSED
             showAlert(Alert.AlertType.WARNING, "Không thể tiếp tục",
-                    "Chỉ có thể tiếp tục phòng đang TẠM DỪNG (OPEN).\nTrạng thái hiện tại: "
+                    "Chỉ có thể tiếp tục phòng đang TẠM DỪNG.\nTrạng thái hiện tại: "
                             + selectedRoom.getStatus().getDisplay());
             return;
         }

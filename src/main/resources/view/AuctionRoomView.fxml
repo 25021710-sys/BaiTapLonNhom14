@@ -327,6 +327,13 @@
                         <Label text="Hệ thống tự đặt thay bạn khi bị vượt giá, không vượt giá tối đa."
                                styleClass="auto-bid-hint"
                                wrapText="true"/>
+
+                        <Button text="✅  Đăng ký Auto-bid"
+                                onAction="#handleEnableAutoBid"
+                                styleClass="btn-bid"
+                                maxWidth="Infinity"
+                                disable="true"
+                                fx:id="btnRegisterAutoBid"/>
                     </VBox>
                     <Separator styleClass="panel-sep"/>
 

@@ -81,6 +81,7 @@ public class AuctionRoomController {
   @FXML private CheckBox chkAutoBid;
   @FXML private TextField txtAutoBidMax;
   @FXML private TextField txtAutoBidIncrement;
+  @FXML private javafx.scene.control.Button btnRegisterAutoBid;
 
   // ── SELLER INFO ───────────────────────────────────────────────────────────
   @FXML private Label lblSellerName;
@@ -466,7 +467,9 @@ public class AuctionRoomController {
         if (!unknownIds.isEmpty()) {
           java.util.Map<Integer, String> resolved =
                   SocketClient.getInstance().resolveUsernames(unknownIds);
-          if (resolved != null) usernameCache.putAll(resolved);
+          if (resolved != null && !resolved.isEmpty()) usernameCache.putAll(resolved);
+          // Fallback: id nào không resolve được thì hiện "User#id" thay vì trống
+          for (int id : unknownIds) usernameCache.putIfAbsent(id, "User#" + id);
         }
 
         Platform.runLater(() -> {
@@ -516,6 +519,7 @@ public class AuctionRoomController {
     chkAutoBid.setDisable(true);
     txtAutoBidMax.setDisable(true);
     if (txtAutoBidIncrement != null) txtAutoBidIncrement.setDisable(true);
+    if (btnRegisterAutoBid != null) btnRegisterAutoBid.setDisable(true);
   }
 
   // ── QUICK BID ─────────────────────────────────────────────────────────────
@@ -639,7 +643,15 @@ public class AuctionRoomController {
       com.auction.common.response.SimpleResponse res =
               SocketClient.getInstance().registerAutoBid(config);
       Platform.runLater(() -> {
-        if (res.isSuccess()) {} else {
+        if (res.isSuccess()) {
+          // Thông báo thành công và reset UI
+          showBidError(""); // xóa lỗi cũ (nếu có)
+          lblBidError.setStyle("-fx-text-fill: #2ecc71;");
+          lblBidError.setText("✅ Đã đăng ký Auto-bid (tối đa: " + maxFinal.toPlainString() + " VNĐ)");
+          lblBidError.setVisible(true);
+          // Giữ nguyên checkbox để user biết auto-bid đang bật
+        } else {
+          lblBidError.setStyle("-fx-text-fill: #e74c3c;");
           showBidError("Lỗi auto-bid: " + res.getMessage());
         }
       });
@@ -889,6 +901,7 @@ public class AuctionRoomController {
     chkAutoBid.selectedProperty().addListener((obs, oldVal, newVal) -> {
       txtAutoBidMax.setDisable(!newVal);
       if (txtAutoBidIncrement != null) txtAutoBidIncrement.setDisable(!newVal);
+      if (btnRegisterAutoBid != null) btnRegisterAutoBid.setDisable(!newVal);
     });
   }
 
