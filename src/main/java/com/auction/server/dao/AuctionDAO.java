@@ -184,7 +184,7 @@ public class AuctionDAO {
     }
     /** Lấy tất cả phiên đang OPEN hoặc RUNNING */
     public List<Auction> findActiveAuctions() {
-        String sql = "SELECT * FROM auctions WHERE status IN ('OPEN','RUNNING') ORDER BY end_time ASC";
+        String sql = "SELECT * FROM auctions WHERE status IN ('OPEN','RUNNING', 'PAUSED') ORDER BY end_time ASC";
         List<Auction> list = new ArrayList<>();
         try (Connection c = getConn();
              PreparedStatement ps = c.prepareStatement(sql);
