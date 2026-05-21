@@ -144,28 +144,42 @@ public class AuctionController {
             }
 
             BigDecimal reservePrice = req.getReservePrice() != null
-                    ? req.getReservePrice()
-                    : req.getStartingPrice();
+                ? req.getReservePrice() : req.getStartingPrice();
 
             Auction auction = auctionService.createAuction(
-                    item.getId(), sellerId,
-                    req.getStartingPrice(), reservePrice,
-                    req.getStartTime(), req.getEndTime());
+                item.getId(), sellerId,
+                req.getStartingPrice(), reservePrice,
+                req.getStartTime(), req.getEndTime());
 
-            if (req.getImageBase64() != null && !req.getImageBase64().isEmpty()) {
+            // ── Lưu TẤT CẢ ảnh vào thư mục images/<auctionId>/ ──────────────
+            //    images/<auctionId>/0.jpg  → ảnh đại diện (thumbnail)
+            //    images/<auctionId>/1.jpg  → ảnh gallery 1
+            //    images/<auctionId>/2.jpg  → ảnh gallery 2
+            //    ...
+            List<String> imageList = req.getImagesBase64();
+            if (imageList != null && !imageList.isEmpty()) {
                 try {
-                    byte[] bytes = java.util.Base64.getDecoder().decode(req.getImageBase64());
-                    java.nio.file.Path dir = java.nio.file.Paths.get("images");
+                    java.nio.file.Path dir = java.nio.file.Paths.get("images", String.valueOf(auction.getId()));
                     if (!java.nio.file.Files.exists(dir)) java.nio.file.Files.createDirectories(dir);
-                    java.nio.file.Files.write(java.nio.file.Paths.get("images/" + auction.getId() + ".jpg"), bytes);
+
+                    for (int i = 0; i < imageList.size(); i++) {
+                        String b64 = imageList.get(i);
+                        if (b64 == null || b64.isEmpty()) continue;
+                        byte[] bytes = java.util.Base64.getDecoder().decode(b64);
+                        java.nio.file.Files.write(dir.resolve(i + ".jpg"), bytes);
+                    }
+                    log.info("Đã lưu {} ảnh cho auction {}", imageList.size(), auction.getId());
                 } catch (Exception e) {
                     log.warn("Không lưu được ảnh cho auction {}: {}", auction.getId(), e.getMessage());
                 }
             }
 
             AuctionDTO dto = mapToDTO(auction, item, session.getUsername());
-            send(out, new CreateAuctionResponse(true, "Tạo phiên đấu giá thành công. Vui lòng chờ Admin duyệt.", dto));
-            log.info("Tạo auction: id={}, item='{}', seller={}", auction.getId(), item.getName(), session.getUsername());
+            send(out, new CreateAuctionResponse(true,
+                "Tạo phiên đấu giá thành công. Vui lòng chờ Admin duyệt.", dto));
+            log.info("Tạo auction: id={}, item='{}', seller={}, images={}",
+                auction.getId(), item.getName(), session.getUsername(),
+                imageList != null ? imageList.size() : 0);
 
         } catch (IllegalArgumentException e) {
             send(out, new CreateAuctionResponse(false, "Danh mục sản phẩm không hợp lệ: " + e.getMessage(), null));
@@ -514,12 +528,34 @@ public class AuctionController {
         dto.setExtensionCount(a.getExtensionCount());
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
 
-        String imagePath = "images/" + a.getId() + ".jpg";
-        if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-            dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
-        } else {
-            dto.setImageUrl("https://picsum.photos/seed/" + a.getId() + "/300/200");
+        // ── Build danh sách URL ảnh từ thư mục images/<auctionId>/ ──────────
+        //    Quét tất cả file 0.jpg, 1.jpg, ... theo thứ tự.
+        //    Fallback về ảnh picsum nếu chưa có ảnh nào.
+        java.util.List<String> urls = new java.util.ArrayList<>();
+        java.nio.file.Path dir = java.nio.file.Paths.get("images", String.valueOf(a.getId()));
+        if (java.nio.file.Files.isDirectory(dir)) {
+            for (int i = 0; i < 10; i++) { // tối đa 10 ảnh phòng an toàn
+                java.nio.file.Path imgPath = dir.resolve(i + ".jpg");
+                if (java.nio.file.Files.exists(imgPath)) {
+                    urls.add(imgPath.toAbsolutePath().toUri().toString());
+                } else {
+                    break; // file không tồn tại → dừng, tránh gap
+                }
+            }
         }
+        // Backward-compat: thử đọc file cũ images/<auctionId>.jpg (trước khi migrate)
+        if (urls.isEmpty()) {
+            java.nio.file.Path legacyPath = java.nio.file.Paths.get("images", a.getId() + ".jpg");
+            if (java.nio.file.Files.exists(legacyPath)) {
+                urls.add(legacyPath.toAbsolutePath().toUri().toString());
+            }
+        }
+        // Fallback cuối: picsum placeholder
+        if (urls.isEmpty()) {
+            urls.add("https://picsum.photos/seed/" + a.getId() + "/300/200");
+        }
+
+        dto.setImageUrls(urls);
         return dto;
     }
 

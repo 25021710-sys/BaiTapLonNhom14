@@ -34,7 +34,6 @@ public class DashBoardController {
     @FXML private Button btnJoinedAuction;
     @FXML private Button btnMyAuction;
     @FXML private Button btnAuctionApproval;
-    @FXML private Button btnManageUsers;
     @FXML private Button btnManageRooms;
     @FXML private Button btnCreateAuction;
     @FXML private Circle profileCircle;
@@ -271,15 +270,6 @@ public class DashBoardController {
             setActiveMenu(btnManageRooms);
             rootPane.setCenter(new FXMLLoader(
                     getClass().getResource("/view/AdminRoomManagementView.fxml")).load());
-        } catch (IOException e) { e.printStackTrace(); }
-    }
-
-    @FXML
-    public void handleManageUsers(ActionEvent event) {
-        try {
-            setActiveMenu(btnManageUsers);
-            rootPane.setCenter(new FXMLLoader(
-                    getClass().getResource("/view/AdminUserManagementView.fxml")).load());
         } catch (IOException e) { e.printStackTrace(); }
     }
 

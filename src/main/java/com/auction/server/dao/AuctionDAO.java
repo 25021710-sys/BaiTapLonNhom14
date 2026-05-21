@@ -20,63 +20,33 @@ public class AuctionDAO {
     }
 
     public void saveAuction(Auction auction) {
-
         String sql = """
         INSERT INTO auctions (
-            item_id,
-            seller_id,
-            highest_bidder_id,
-            start_time,
-            end_time,
-            starting_price,
-            current_price,
-            reserve_price,
-            status,
-            extension_count
-        )
-        VALUES (?,?,?,?,?,?,?,?,?,?)
+            item_id, seller_id, highest_bidder_id,
+            start_time, end_time, starting_price,
+            current_price, reserve_price, status, extension_count
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
         """;
-
-        try (
-                Connection c = getConn();
-                // FIX: thêm RETURN_GENERATED_KEYS để lấy ID được DB tự sinh
-                PreparedStatement ps = c.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)
-        ) {
-
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, auction.getItemId());
             ps.setInt(2, auction.getSellerId());
-            if (auction.getHighestBidderId() == 0) {
-                ps.setNull(3, java.sql.Types.INTEGER);
-            } else {
-                ps.setInt(3, auction.getHighestBidderId());
-            }
-
+            if (auction.getHighestBidderId() == 0) ps.setNull(3, java.sql.Types.INTEGER);
+            else ps.setInt(3, auction.getHighestBidderId());
             ps.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
             ps.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
-
             ps.setBigDecimal(6, auction.getStartingPrice());
             ps.setBigDecimal(7, auction.getCurrentPrice());
             ps.setBigDecimal(8, auction.getReservePrice());
-
             ps.setString(9, auction.getStatus().name());
-
             ps.setInt(10, auction.getExtensionCount());
-
             ps.executeUpdate();
-
-            // FIX: lấy ID được sinh và gắn ngược vào object auction
             try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    auction.setId(generatedKeys.getInt(1));
-                }
+                if (generatedKeys.next()) auction.setId(generatedKeys.getInt(1));
             }
-
             logger.info("Đã lưu auction id={} cho item_id: {}", auction.getId(), auction.getItemId());
-
         } catch (SQLException e) {
-
             logger.error("Lỗi lưu auction", e);
-
             throw new RuntimeException(e);
         }
     }
@@ -92,24 +62,17 @@ public class AuctionDAO {
                     auction.setItemId(rs.getInt("item_id"));
                     auction.setSellerId(rs.getInt("seller_id"));
                     auction.setHighestBidderId(rs.getInt("highest_bidder_id"));
-
-                    // Xử lý ngày tháng
                     if (rs.getTimestamp("start_time") != null)
                         auction.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
                     if (rs.getTimestamp("end_time") != null)
                         auction.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
                     if (rs.getTimestamp("created_at") != null)
                         auction.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-
-                    // Xử lý tiền
                     auction.setStartingPrice(rs.getBigDecimal("starting_price"));
                     auction.setCurrentPrice(rs.getBigDecimal("current_price"));
                     auction.setReservePrice(rs.getBigDecimal("reserve_price"));
-
-                    // FIX: setStatus bị thiếu trước đây → auction luôn có status = OPEN (mặc định)
                     String statusStr = rs.getString("status");
                     if (statusStr != null) auction.setStatus(AuctionStatus.valueOf(statusStr));
-
                     auction.setExtensionCount(rs.getInt("extension_count"));
                     return auction;
                 }
@@ -119,8 +82,7 @@ public class AuctionDAO {
         }
         return null;
     }
-    /** Cập nhật trạng thái phiên đấu giá */
-    /** Gia hạn thời gian kết thúc (anti-sniping) */
+
     public void extendEndTime(int auctionId, LocalDateTime newEndTime) {
         String sql = "UPDATE auctions SET end_time = ?, extension_count = extension_count + 1 WHERE id = ?";
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
@@ -133,13 +95,7 @@ public class AuctionDAO {
             throw new RuntimeException(e);
         }
     }
-    /**
-     * Cập nhật giá hiện tại + người dẫn đầu sau mỗi bid hợp lệ.
-     * Điều kiện WHERE: current_price < newPrice (STRICTLY less than).
-     * → Đảm bảo chỉ bid CAO HƠN thực sự mới ghi được — không bao giờ 2 người
-     *   cùng giá đều thắng, dù request đến gần nhau trong cùng millisecond.
-     * Trả về true nếu update thành công (bid này thắng race).
-     */
+
     public boolean updateBidPrice(int auctionId, int highestBidderId, BigDecimal newPrice) {
         String sql = """
             UPDATE auctions
@@ -160,29 +116,23 @@ public class AuctionDAO {
 
     public void updateAuction(Auction auction) {
         String sql = """
-    UPDATE auctions
-    SET current_price = ?,
-        highest_bidder_id = ?,
-        status = ?,
-        extension_count = ?
-    WHERE id = ?
-    """;
+            UPDATE auctions
+            SET current_price = ?, highest_bidder_id = ?, status = ?, extension_count = ?
+            WHERE id = ?
+            """;
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-
             ps.setBigDecimal(1, auction.getCurrentPrice());
             ps.setInt(2, auction.getHighestBidderId());
             ps.setString(3, auction.getStatus().name());
             ps.setInt(4, auction.getExtensionCount());
             ps.setInt(5, auction.getId());
-
             ps.executeUpdate();
-
         } catch (Exception e) {
             logger.error("Lỗi cập nhật auction id: " + auction.getId(), e);
             throw new RuntimeException(e);
         }
     }
-    /** Lấy tất cả phiên đang OPEN hoặc RUNNING */
+
     public List<Auction> findActiveAuctions() {
         String sql = "SELECT * FROM auctions WHERE status IN ('OPEN','RUNNING') ORDER BY end_time ASC";
         List<Auction> list = new ArrayList<>();
@@ -196,7 +146,6 @@ public class AuctionDAO {
         return list;
     }
 
-    /** Lấy tất cả phiên (dùng cho Admin) */
     public List<Auction> findAll() {
         String sql = "SELECT * FROM auctions ORDER BY created_at DESC";
         List<Auction> list = new ArrayList<>();
@@ -209,11 +158,11 @@ public class AuctionDAO {
         }
         return list;
     }
+
     public void updateBidInfo(int auctionId, BigDecimal newPrice,
                               int highestBidderId, int extensionCount, Timestamp newEndTime) {
-        // FIX: bỏ cột current_highest_bid không tồn tại trong schema
         String sql = "UPDATE auctions SET current_price = ?, " +
-                "highest_bidder_id = ?, extension_count = ?, end_time = ?, status = 'RUNNING' WHERE id = ?";
+            "highest_bidder_id = ?, extension_count = ?, end_time = ?, status = 'RUNNING' WHERE id = ?";
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setBigDecimal(1, newPrice);
             ps.setInt(2, highestBidderId);
@@ -226,6 +175,7 @@ public class AuctionDAO {
             throw new RuntimeException(e);
         }
     }
+
     private Auction mapRow(ResultSet rs) throws SQLException {
         Auction a = new Auction();
         a.setId(rs.getInt("id"));
@@ -233,14 +183,12 @@ public class AuctionDAO {
         a.setSellerId(rs.getInt("seller_id"));
         int highestBidderId = rs.getInt("highest_bidder_id");
         a.setHighestBidderId(rs.wasNull() ? 0 : highestBidderId);
-
         Timestamp start = rs.getTimestamp("start_time");
         Timestamp end   = rs.getTimestamp("end_time");
         Timestamp created = rs.getTimestamp("created_at");
         if (start   != null) a.setStartTime(start.toLocalDateTime());
         if (end     != null) a.setEndTime(end.toLocalDateTime());
         if (created != null) a.setCreatedAt(created.toLocalDateTime());
-
         a.setStartingPrice(rs.getBigDecimal("starting_price"));
         a.setCurrentPrice(rs.getBigDecimal("current_price"));
         a.setReservePrice(rs.getBigDecimal("reserve_price"));
@@ -248,40 +196,20 @@ public class AuctionDAO {
         a.setExtensionCount(rs.getInt("extension_count"));
         return a;
     }
+
     public List<Auction> findPendingAuctions() {
-
-        String sql = """
-        SELECT *
-        FROM auctions
-        WHERE status = 'PENDING'
-        ORDER BY created_at DESC
-    """;
-
+        String sql = "SELECT * FROM auctions WHERE status = 'PENDING' ORDER BY created_at DESC";
         List<Auction> list = new ArrayList<>();
-
-        try (
-                Connection c = getConn();
-                PreparedStatement ps = c.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()
-        ) {
-
-            while (rs.next()) {
-                list.add(mapRow(rs));
-            }
-
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
-
             logger.error("Lỗi findPendingAuctions", e);
-
         }
-
         return list;
     }
 
-    /**
-     * Lấy danh sách phiên PENDING kèm thông tin item và seller (JOIN 1 query thay vì N+1).
-     * Được dùng bởi AuctionController.handleGetPendingAuctions() để gửi cho Admin.
-     */
     public List<com.auction.common.dto.AdminAuctionRequestDTO> findPendingWithDetails() {
         String sql = """
             SELECT
@@ -312,7 +240,7 @@ public class AuctionDAO {
 
             while (rs.next()) {
                 com.auction.common.dto.AdminAuctionRequestDTO dto =
-                        new com.auction.common.dto.AdminAuctionRequestDTO();
+                    new com.auction.common.dto.AdminAuctionRequestDTO();
 
                 dto.setRequestId(rs.getInt("auction_id"));
                 dto.setApprovalStatus("PENDING");
@@ -332,10 +260,20 @@ public class AuctionDAO {
                 if (rs.getTimestamp("auction_created_at") != null)
                     dto.setCreatedAt(rs.getTimestamp("auction_created_at").toLocalDateTime());
 
-                // Ảnh: thử đọc file theo quy ước images/<auctionId>.jpg
-                String imagePath = "images/" + dto.getRequestId() + ".jpg";
-                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
+                // ── Tìm ảnh đại diện theo thứ tự ưu tiên: ──────────────────
+                // 1. images/<id>/0.jpg  (format mới, nhiều ảnh)
+                // 2. images/<id>.jpg    (format cũ, 1 ảnh)
+                // 3. picsum placeholder
+                // Dùng .toUri().toString() để tạo URI hợp lệ trên Windows (tránh backslash)
+                java.nio.file.Path newPath    = java.nio.file.Paths.get("images",
+                    String.valueOf(dto.getRequestId()), "0.jpg");
+                java.nio.file.Path legacyPath = java.nio.file.Paths.get("images",
+                    dto.getRequestId() + ".jpg");
+
+                if (java.nio.file.Files.exists(newPath)) {
+                    dto.setImageUrl(newPath.toAbsolutePath().toUri().toString());
+                } else if (java.nio.file.Files.exists(legacyPath)) {
+                    dto.setImageUrl(legacyPath.toAbsolutePath().toUri().toString());
                 } else {
                     dto.setImageUrl("https://picsum.photos/seed/" + dto.getRequestId() + "/300/200");
                 }
@@ -348,11 +286,10 @@ public class AuctionDAO {
         return list;
     }
 
-    /**
-     * Lấy tất cả phiên đấu giá của một seller (dùng cho trang "My Auctions").
-     */
     public List<Auction> findBySeller(int sellerId) {
-        String sql = "SELECT * FROM auctions WHERE seller_id = ? AND status IN ('PENDING','OPEN','RUNNING','FINISHED') ORDER BY created_at DESC";        List<Auction> list = new ArrayList<>();
+        String sql = "SELECT * FROM auctions WHERE seller_id = ? " +
+            "AND status IN ('PENDING','OPEN','RUNNING','FINISHED') ORDER BY created_at DESC";
+        List<Auction> list = new ArrayList<>();
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, sellerId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -364,10 +301,6 @@ public class AuctionDAO {
         return list;
     }
 
-    /**
-     * Lấy danh sách auction mà user đã từng đặt giá (dùng cho màn "Phiên tham gia").
-     * JOIN với bid_transactions để xác định user có bid hay không.
-     */
     public List<Auction> findJoinedByBidder(int bidderId) {
         String sql = """
             SELECT DISTINCT a.*
@@ -389,8 +322,7 @@ public class AuctionDAO {
     }
 
     public List<Auction> findByStatusExcludeSeller(String status, int excludeSellerId) {
-        String sql = "SELECT * FROM auctions WHERE status = ? AND seller_id != ? " +
-                "ORDER BY created_at DESC";
+        String sql = "SELECT * FROM auctions WHERE status = ? AND seller_id != ? ORDER BY created_at DESC";
         List<Auction> list = new ArrayList<>();
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, status);
@@ -403,6 +335,7 @@ public class AuctionDAO {
         }
         return list;
     }
+
     public boolean updateStatus(int auctionId, AuctionStatus status) {
         String sql = "UPDATE auctions SET status = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();

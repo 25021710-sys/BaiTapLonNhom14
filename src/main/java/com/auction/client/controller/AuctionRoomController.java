@@ -122,6 +122,7 @@ public class AuctionRoomController {
   private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
   private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
   private final ObservableList<BidTransaction> bidHistoryList = FXCollections.observableArrayList();
+  private java.util.List<String> currentImageUrls = new java.util.ArrayList<>();
 
   // For bid price chart
   private XYChart.Series<Number, Number> priceSeries;
@@ -203,8 +204,7 @@ public class AuctionRoomController {
       updateYourStatus();
 
       // ── Load image
-      loadProductImage(auction.getImageUrl());
-
+      loadProductImages(auction.getImageUrls());
       // ───────────────────────────────────────────────
       // Sidebar PRICE TITLE + VALUE theo status
       // ───────────────────────────────────────────────
@@ -675,29 +675,65 @@ public class AuctionRoomController {
 
   // ── SETUP HELPERS ─────────────────────────────────────────────────────────
 
-  private void loadProductImage(String imageUrl) {
-    if (imageUrl == null || imageUrl.isBlank()) return;
-    new Thread(() -> {
-      try {
-        Image img = new Image(imageUrl, true); // background loading
-        Platform.runLater(() -> {
-          if (imgMainProduct != null) {
-            imgMainProduct.setImage(img);
-            imgMainProduct.setPreserveRatio(true);
-            imgMainProduct.setSmooth(true);
-          }
-          // Hiển thị cùng ảnh cho các thumbnail (hiện chỉ có 1 ảnh)
-          Image thumb = new Image(imageUrl, 80, 80, true, true, true);
-          if (imgThumb1 != null) imgThumb1.setImage(thumb);
-          if (imgThumb2 != null) imgThumb2.setImage(thumb);
-          if (imgThumb3 != null) imgThumb3.setImage(thumb);
-          if (imgThumb4 != null) imgThumb4.setImage(thumb);
-        });
-      } catch (Exception e) {
-        // Ảnh lỗi → giữ placeholder, không crash app
-        System.err.println("[AuctionRoom] Không tải được ảnh: " + imageUrl);
+  private void loadProductImages(java.util.List<String> imageUrls) {
+    if (imageUrls == null || imageUrls.isEmpty()) return;
+    this.currentImageUrls = imageUrls;
+
+    // Danh sách cặp (ImageView thumbnail, index ảnh tương ứng)
+    // imgThumb1 → index 0, imgThumb2 → index 1, ...
+    ImageView[] thumbs = { imgThumb1, imgThumb2, imgThumb3, imgThumb4 };
+
+    // Ẩn trước tất cả thumbnail để tránh hiển thị ảnh cũ
+    Platform.runLater(() -> {
+      for (ImageView thumb : thumbs) {
+        if (thumb != null) {
+          thumb.setImage(null);
+          thumb.setVisible(false);
+          thumb.setManaged(false);
+        }
       }
-    }, "load-product-image").start();
+    });
+
+    // Load từng ảnh trong background thread
+    new Thread(() -> {
+      for (int i = 0; i < imageUrls.size() && i < thumbs.length; i++) {
+        final int idx = i;
+        final String url = imageUrls.get(i);
+        if (url == null || url.isBlank()) continue;
+
+        try {
+          // Main image: full resolution
+          Image mainImg = new Image(url, true);
+          // Thumbnail: nhỏ hơn để tiết kiệm bộ nhớ
+          Image thumbImg = new Image(url, 80, 80, true, true, true);
+
+          Platform.runLater(() -> {
+            ImageView thumb = thumbs[idx];
+            if (thumb == null) return;
+
+            // Hiện thumbnail
+            thumb.setImage(thumbImg);
+            thumb.setVisible(true);
+            thumb.setManaged(true);
+
+            // Ảnh đầu tiên → hiển thị ngay lên main view
+            if (idx == 0 && imgMainProduct != null) {
+              imgMainProduct.setImage(mainImg);
+              imgMainProduct.setPreserveRatio(true);
+              imgMainProduct.setSmooth(true);
+            }
+
+            // Click thumbnail → đổi ảnh main và đánh dấu active
+            thumb.setOnMouseClicked(e -> switchMainImage(url, thumbs, idx));
+
+            // Style active cho thumbnail đầu tiên
+            if (idx == 0) markThumbActive(thumbs, 0);
+          });
+        } catch (Exception e) {
+          System.err.println("[AuctionRoom] Không tải được ảnh [" + idx + "]: " + url);
+        }
+      }
+    }, "load-product-images").start();
   }
 
   private void setupBidHistoryTable() {
@@ -1150,5 +1186,52 @@ public class AuctionRoomController {
 
     row.getChildren().addAll(keyLbl, valLbl);
     return row;
+  }
+
+  /**
+   * Đổi ảnh chính khi click thumbnail.
+   * Tải lại full-res ảnh được chọn và cập nhật border active.
+   */
+  private void switchMainImage(String url, ImageView[] thumbs, int activeIdx) {
+    // Đổi border ngay lập tức để user thấy phản hồi
+    markThumbActive(thumbs, activeIdx);
+
+    // Load full-res trong background
+    new Thread(() -> {
+      try {
+        Image fullImg = new Image(url, true);
+        Platform.runLater(() -> {
+          if (imgMainProduct != null) {
+            imgMainProduct.setImage(fullImg);
+            imgMainProduct.setPreserveRatio(true);
+            imgMainProduct.setSmooth(true);
+          }
+        });
+      } catch (Exception e) {
+        System.err.println("[AuctionRoom] Không load được ảnh full: " + url);
+      }
+    }, "switch-main-image").start();
+  }
+
+  /**
+   * Đánh dấu thumbnail active bằng cách thêm style border xanh.
+   * Các thumbnail còn lại trở về trạng thái bình thường.
+   */
+  private void markThumbActive(ImageView[] thumbs, int activeIdx) {
+    for (int i = 0; i < thumbs.length; i++) {
+      if (thumbs[i] == null) continue;
+      javafx.scene.layout.StackPane parent =
+          (thumbs[i].getParent() instanceof javafx.scene.layout.StackPane)
+              ? (javafx.scene.layout.StackPane) thumbs[i].getParent()
+              : null;
+      if (parent != null) {
+        if (i == activeIdx) {
+          if (!parent.getStyleClass().contains("thumb-active"))
+            parent.getStyleClass().add("thumb-active");
+        } else {
+          parent.getStyleClass().remove("thumb-active");
+        }
+      }
+    }
   }
 }

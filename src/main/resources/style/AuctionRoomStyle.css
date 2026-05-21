@@ -157,3 +157,16 @@
     -fx-fill: #000000;
     -fx-opacity: 1.0;
 }
+
+/* Thumbnail đang được chọn (active) */
+.thumb-active {
+    -fx-border-color: #1f93ff;
+    -fx-border-width: 2;
+    -fx-border-radius: 6;
+    -fx-effect: dropshadow(three-pass-box, rgba(31,147,255,0.45), 6, 0, 0, 0);
+}
+
+/* Thumbnail ẩn (không có ảnh) — managed=false nên không chiếm chỗ */
+.thumb-container:invisible {
+    -fx-opacity: 0;
+}

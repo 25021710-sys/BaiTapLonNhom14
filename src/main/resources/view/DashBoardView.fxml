@@ -103,14 +103,6 @@
                     styleClass="menu-button"
                     onAction="#handleManageRooms"/>
 
-            <Button fx:id="btnManageUsers"
-                    mnemonicParsing="false"
-                    prefWidth="180.0"
-                    prefHeight="35.0"
-                    text="Quản lý người dùng"
-                    styleClass="menu-button"
-                    onAction="#handleManageUsers"/>
-
          </VBox>
       </VBox>
    </left>

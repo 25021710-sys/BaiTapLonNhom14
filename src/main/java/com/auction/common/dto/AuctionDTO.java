@@ -5,13 +5,19 @@ import com.auction.server.model.AuctionStatus;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DTO đại diện cho một phiên đấu giá gửi từ Server → Client.
  * Chứa đủ thông tin để hiển thị trên Dashboard và màn hình đấu giá.
+ *
+ * THAY ĐỔI: imageUrl (String đơn) → imageUrls (List<String>).
+ * imageUrls.get(0) = ảnh đại diện dùng cho thumbnail Dashboard/Admin.
+ * Toàn bộ list chỉ được load khi vào AuctionRoom.
  */
 public class AuctionDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L; // tăng version vì thêm field
 
     private int auctionId;
     private String auctionCode;
@@ -31,7 +37,13 @@ public class AuctionDTO implements Serializable {
     private AuctionStatus status;
     private int extensionCount;
     private int totalBids;
-    private String imageUrl;
+
+    /**
+     * Danh sách URL ảnh của sản phẩm.
+     * - Index 0: ảnh đại diện (thumbnail) — luôn được truyền kèm DTO.
+     * - Index 1+: ảnh gallery — chỉ hiển thị khi vào AuctionRoom.
+     */
+    private List<String> imageUrls = new ArrayList<>();
 
     public AuctionDTO() {}
 
@@ -84,12 +96,29 @@ public class AuctionDTO implements Serializable {
     public int getTotalBids() { return totalBids; }
     public void setTotalBids(int totalBids) { this.totalBids = totalBids; }
 
-    public String getImageUrl() {return imageUrl;}
-    public void setImageUrl(String imageUrl) {this.imageUrl = imageUrl;}
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls != null ? imageUrls : new ArrayList<>();
+    }
 
-    public String getAuctionCode() {return auctionCode;}
-    public void setAuctionCode(String auctionCode) {this.auctionCode = auctionCode;}
+    /**
+     * Tiện ích: lấy URL ảnh đại diện (index 0).
+     * Dùng cho Dashboard card và Admin pending list.
+     * Trả về null nếu không có ảnh nào.
+     */
+    public String getThumbnailUrl() {
+        return (imageUrls != null && !imageUrls.isEmpty()) ? imageUrls.get(0) : null;
+    }
 
-    public int getSellerId() {return sellerId;}
-    public void setSellerId(int sellerId) {this.sellerId = sellerId;}
+    /**
+     * Backward-compat: một số nơi vẫn gọi getImageUrl().
+     * Trả về ảnh đầu tiên, tránh NullPointerException.
+     */
+    public String getImageUrl() { return getThumbnailUrl(); }
+
+    public String getAuctionCode() { return auctionCode; }
+    public void setAuctionCode(String auctionCode) { this.auctionCode = auctionCode; }
+
+    public int getSellerId() { return sellerId; }
+    public void setSellerId(int sellerId) { this.sellerId = sellerId; }
 }
