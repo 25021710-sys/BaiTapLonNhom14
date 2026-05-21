@@ -71,6 +71,10 @@ public class AutoBidConfig implements Serializable,Comparable<AutoBidConfig> {
         this.active = active;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     public void printInfo() {
         System.out.println("[AUTO-BID] Người dùng ID: " + bidderId
                 + " | Tự động đặt giá cho Phiên: " + auctionId

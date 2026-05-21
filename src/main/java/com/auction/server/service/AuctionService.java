@@ -300,16 +300,19 @@ public class AuctionService {
             // 15. Kích hoạt chuỗi auto-bid (nếu có config đang active)
             BidTransaction autoBidTx = autoBidEngine.triggerAutoBid(auctionId, userId, bidAmount);
             if (autoBidTx != null && auctionManager != null) {
-                // Lấy username thật của auto-bidder (không dùng chuỗi "auto-bid")
+                // Lấy auction mới nhất từ cache (placeAutoBid đã cập nhật endTime nếu anti-snipe)
+                Auction updatedAuction = auctionCache.getOrDefault(auctionId, auction);
                 String autoBidderName = resolveUsername(autoBidTx.getBidderId());
+                int participantCount = auctionManager.getParticipantCount(auctionId);
                 auctionManager.broadcastUpdate(auctionId, new AuctionUpdateDTO(
                         auctionId,
                         AuctionUpdateDTO.UpdateType.BID_PLACED,
                         autoBidTx.getAmount(),
                         autoBidTx.getBidderId(),
                         autoBidderName + " (auto)",
-                        auction.getEndTime(),
-                        "Auto-bid từ " + autoBidderName + "!"
+                        updatedAuction.getEndTime(),
+                        "Auto-bid từ " + autoBidderName + "!",
+                        participantCount
                 ));
             }
 
