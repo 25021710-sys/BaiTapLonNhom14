@@ -1,5 +1,6 @@
 package com.auction.client.controller;
 
+import com.auction.client.util.ImageUtil;
 import com.auction.common.dto.AuctionDTO;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -76,11 +77,17 @@ public class ProductCardController {
         }
 
         // Ảnh
-        if (dto.getImageUrl() != null && !dto.getImageUrl().isBlank()) {
-            try {
-                imgProduct.setImage(new Image(dto.getImageUrl(), true));
-                if (lblNoImage != null) lblNoImage.setVisible(false);
-            } catch (Exception ignored) {}
+        String thumbUrl = dto.getThumbnailUrl();
+        if (thumbUrl != null && !thumbUrl.isBlank()) {
+            new Thread(() -> {
+                Image img = ImageUtil.loadThumbnail(thumbUrl, 240, 160);
+                if (img != null) {
+                    javafx.application.Platform.runLater(() -> {
+                        imgProduct.setImage(img);
+                        if (lblNoImage != null) lblNoImage.setVisible(false);
+                    });
+                }
+            }, "load-card-image").start();
         }
 
         // Nút

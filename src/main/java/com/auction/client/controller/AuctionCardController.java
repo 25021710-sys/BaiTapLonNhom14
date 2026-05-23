@@ -1,5 +1,6 @@
 package com.auction.client.controller;
 
+import com.auction.client.util.ImageUtil;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.server.model.AuctionStatus;
 import javafx.animation.Animation;
@@ -84,7 +85,9 @@ public class AuctionCardController {
     // Ảnh
     try {
       if (dto.getImageUrl() != null && !dto.getImageUrl().isEmpty()) {
-        imgProduct.setImage(new Image(dto.getImageUrl(), true));
+        imgProduct.setImage(
+            ImageUtil.loadThumbnail(dto.getImageUrl(), 200, 150)
+        );
       }
     } catch (Exception e) {
       System.out.println("Không load được ảnh");

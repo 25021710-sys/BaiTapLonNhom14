@@ -1,5 +1,6 @@
 package com.auction.client.controller;
 
+import com.auction.client.util.ImageUtil;
 import com.auction.common.response.GetUserProfileResponse;
 import com.auction.client.network.SocketClient;
 import com.auction.common.dto.AuctionDTO;
@@ -714,10 +715,8 @@ public class AuctionRoomController {
         if (url == null || url.isBlank()) continue;
 
         try {
-          // Main image: full resolution
-          Image mainImg = new Image(url, true);
-          // Thumbnail: nhỏ hơn để tiết kiệm bộ nhớ
-          Image thumbImg = new Image(url, 80, 80, true, true, true);
+          Image mainImg  = ImageUtil.loadImage(url);
+          Image thumbImg = ImageUtil.loadThumbnail(url, 80, 80);
 
           Platform.runLater(() -> {
             ImageView thumb = thumbs[idx];
@@ -1212,7 +1211,7 @@ public class AuctionRoomController {
     // Load full-res trong background
     new Thread(() -> {
       try {
-        Image fullImg = new Image(url, true);
+        Image fullImg = ImageUtil.loadImage(url);
         Platform.runLater(() -> {
           if (imgMainProduct != null) {
             imgMainProduct.setImage(fullImg);
