@@ -527,18 +527,28 @@ public class AuctionController {
 
     private AuctionDTO mapToDTO(Auction a, Item item, String sellerName) {
         AuctionDTO dto = new AuctionDTO();
+
         dto.setAuctionId(a.getId());
         dto.setItemId(a.getItemId());
 
         if (item != null) {
             dto.setItemName(item.getName());
             dto.setItemDescription(item.getDescription());
-            dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
+            dto.setItemCategory(
+                item.getCategory() != null
+                    ? item.getCategory().name()
+                    : ""
+            );
         }
 
         dto.setSellerName(sellerName != null ? sellerName : "");
         dto.setStartingPrice(a.getStartingPrice());
-        dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
+        dto.setCurrentPrice(
+            a.getCurrentPrice() != null
+                ? a.getCurrentPrice()
+                : a.getStartingPrice()
+        );
+
         dto.setReservePrice(a.getReservePrice());
         dto.setHighestBidderId(a.getHighestBidderId());
         dto.setStartTime(a.getStartTime());
@@ -547,12 +557,17 @@ public class AuctionController {
         dto.setExtensionCount(a.getExtensionCount());
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
 
-        // ── Load ảnh full từ DB (dùng cho AuctionRoom gallery) ───────────────
-        // Fallback picsum nếu chưa có ảnh trong DB
-        List<String> urls = imageDAO.getFullImageUrls(a.getId());
-        if (urls.isEmpty()) {
+        // ✅ Thumbnail đầu tiên
+        List<String> urls = new ArrayList<>();
+
+        String thumb = imageDAO.getThumbnailUrl(a.getId());
+
+        if (thumb != null && !thumb.isBlank()) {
+            urls.add(thumb);
+        } else {
             urls.add("https://picsum.photos/seed/" + a.getId() + "/300/200");
         }
+
         dto.setImageUrls(urls);
 
         return dto;
