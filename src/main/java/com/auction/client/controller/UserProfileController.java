@@ -56,9 +56,6 @@ public class UserProfileController {
     }
 
     @FXML
-    public void showBidHistory() {setPage("BidHistoryView.fxml"); }
-
-    @FXML
     public void handleLogout(javafx.scene.input.MouseEvent event) {
 
         try {
