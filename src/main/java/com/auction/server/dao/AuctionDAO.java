@@ -14,6 +14,7 @@ import java.util.List;
 
 public class AuctionDAO {
     private static final Logger logger = LoggerFactory.getLogger(AuctionDAO.class);
+    private final ItemImageDAO imageDAO = new ItemImageDAO();
 
     private Connection getConn() throws SQLException {
         return DatabaseConnection.getConnection();
@@ -333,12 +334,9 @@ public class AuctionDAO {
                     dto.setCreatedAt(rs.getTimestamp("auction_created_at").toLocalDateTime());
 
                 // Ảnh: thử đọc file theo quy ước images/<auctionId>.jpg
-                String imagePath = "images/" + dto.getRequestId() + ".jpg";
-                if (java.nio.file.Files.exists(java.nio.file.Paths.get(imagePath))) {
-                    dto.setImageUrl("file:" + java.nio.file.Paths.get(imagePath).toAbsolutePath());
-                } else {
-                    dto.setImageUrl("https://picsum.photos/seed/" + dto.getRequestId() + "/300/200");
-                }
+                String thumbUrl = imageDAO.getThumbnailUrl(dto.getRequestId());
+                dto.setImageUrl(thumbUrl != null ? thumbUrl
+                    : "https://picsum.photos/seed/" + dto.getRequestId() + "/300/200");
 
                 list.add(dto);
             }
