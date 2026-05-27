@@ -527,28 +527,18 @@ public class AuctionController {
 
     private AuctionDTO mapToDTO(Auction a, Item item, String sellerName) {
         AuctionDTO dto = new AuctionDTO();
-
         dto.setAuctionId(a.getId());
         dto.setItemId(a.getItemId());
 
         if (item != null) {
             dto.setItemName(item.getName());
             dto.setItemDescription(item.getDescription());
-            dto.setItemCategory(
-                item.getCategory() != null
-                    ? item.getCategory().name()
-                    : ""
-            );
+            dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
         }
 
         dto.setSellerName(sellerName != null ? sellerName : "");
         dto.setStartingPrice(a.getStartingPrice());
-        dto.setCurrentPrice(
-            a.getCurrentPrice() != null
-                ? a.getCurrentPrice()
-                : a.getStartingPrice()
-        );
-
+        dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
         dto.setReservePrice(a.getReservePrice());
         dto.setHighestBidderId(a.getHighestBidderId());
         dto.setStartTime(a.getStartTime());
@@ -557,18 +547,19 @@ public class AuctionController {
         dto.setExtensionCount(a.getExtensionCount());
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
 
-        // ✅ Thumbnail đầu tiên
-        List<String> urls = new ArrayList<>();
-
-        String thumb = imageDAO.getThumbnailUrl(a.getId());
-
-        if (thumb != null && !thumb.isBlank()) {
-            urls.add(thumb);
-        } else {
-            urls.add("https://picsum.photos/seed/" + a.getId() + "/300/200");
+        // ── Set thumbnail URLs (nhỏ, nhẹ) ───────────────────────────────────
+        List<String> thumbUrls = imageDAO.getThumbnailUrls(a.getId());
+        if (thumbUrls.isEmpty()) {
+            thumbUrls.add("https://picsum.photos/seed/" + a.getId() + "/300/200");
         }
+        dto.setThumbnailUrls(thumbUrls);
 
-        dto.setImageUrls(urls);
+        // ── Set full image URLs (lớn hơn, chỉ load khi vào AuctionRoom) ─────
+        List<String> fullUrls = imageDAO.getFullImageUrls(a.getId());
+        if (fullUrls.isEmpty()) {
+            fullUrls.add("https://picsum.photos/seed/" + a.getId() + "/300/200");
+        }
+        dto.setFullImageUrls(fullUrls);
 
         return dto;
     }

@@ -125,6 +125,7 @@ public class AuctionRoomController {
   private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
   private final ObservableList<BidTransaction> bidHistoryList = FXCollections.observableArrayList();
   private java.util.List<String> currentImageUrls = new java.util.ArrayList<>();
+  private java.util.List<String> currentFullUrls    = new java.util.ArrayList<>();
 
   // For bid price chart
   private XYChart.Series<Number, Number> priceSeries;
@@ -206,8 +207,7 @@ public class AuctionRoomController {
       updateYourStatus();
 
       // ── Load image
-      loadProductImages(auction.getImageUrls());
-      // ───────────────────────────────────────────────
+      loadProductImages(auction.getThumbnailUrls(), auction.getFullImageUrls());      // ───────────────────────────────────────────────
       // Sidebar PRICE TITLE + VALUE theo status
       // ───────────────────────────────────────────────
       if (lblPriceTitleRight != null && lblCurrentPriceRight != null) {
@@ -688,60 +688,60 @@ public class AuctionRoomController {
 
   // ── SETUP HELPERS ─────────────────────────────────────────────────────────
 
-  private void loadProductImages(java.util.List<String> imageUrls) {
-    if (imageUrls == null || imageUrls.isEmpty()) return;
-    this.currentImageUrls = imageUrls;
+  private void loadProductImages(java.util.List<String> thumbUrls,
+                                 java.util.List<String> fullUrls) {
+    if (thumbUrls == null || thumbUrls.isEmpty()) return;
 
-    // Danh sách cặp (ImageView thumbnail, index ảnh tương ứng)
-    // imgThumb1 → index 0, imgThumb2 → index 1, ...
-    ImageView[] thumbs = { imgThumb1, imgThumb2, imgThumb3, imgThumb4 };
+    this.currentImageUrls = thumbUrls;
+    this.currentFullUrls  = (fullUrls != null && !fullUrls.isEmpty())
+        ? fullUrls : thumbUrls; // fallback nếu không có full
 
-    // Ẩn trước tất cả thumbnail để tránh hiển thị ảnh cũ
+    ImageView[] thumbViews = { imgThumb1, imgThumb2, imgThumb3, imgThumb4 };
+
+    // Ẩn tất cả thumbnail trước
     Platform.runLater(() -> {
-      for (ImageView thumb : thumbs) {
-        if (thumb != null) {
-          thumb.setImage(null);
-          thumb.setVisible(false);
-          thumb.setManaged(false);
-        }
+      for (ImageView tv : thumbViews) {
+        if (tv != null) { tv.setImage(null); tv.setVisible(false); tv.setManaged(false); }
       }
     });
 
-    // Load từng ảnh trong background thread
     new Thread(() -> {
-      for (int i = 0; i < imageUrls.size() && i < thumbs.length; i++) {
+      for (int i = 0; i < thumbUrls.size() && i < thumbViews.length; i++) {
         final int idx = i;
-        final String url = imageUrls.get(i);
-        if (url == null || url.isBlank()) continue;
+        final String thumbUrl = thumbUrls.get(i);
+        final String fullUrl  = (idx < currentFullUrls.size())
+            ? currentFullUrls.get(idx) : thumbUrl;
+
+        if (thumbUrl == null || thumbUrl.isBlank()) continue;
 
         try {
-          Image mainImg  = ImageUtil.loadImage(url);
-          Image thumbImg = ImageUtil.loadThumbnail(url, 80, 80);
+          // Thumbnail: dùng cho strip bên dưới ảnh chính
+          Image thumbImg = ImageUtil.loadThumbnail(thumbUrl, 80, 80);
+          // Full: dùng cho ảnh chính (chỉ load ảnh đầu tiên ngay lập tức)
+          Image mainImg  = (idx == 0) ? ImageUtil.loadImage(fullUrl) : null;
 
           Platform.runLater(() -> {
-            ImageView thumb = thumbs[idx];
-            if (thumb == null) return;
+            ImageView tv = thumbViews[idx];
+            if (tv == null) return;
 
-            // Hiện thumbnail
-            thumb.setImage(thumbImg);
-            thumb.setVisible(true);
-            thumb.setManaged(true);
+            tv.setImage(thumbImg);
+            tv.setVisible(true);
+            tv.setManaged(true);
 
-            // Ảnh đầu tiên → hiển thị ngay lên main view
-            if (idx == 0 && imgMainProduct != null) {
+            // Ảnh đầu tiên → hiển thị lên main view
+            if (idx == 0 && imgMainProduct != null && mainImg != null) {
               imgMainProduct.setImage(mainImg);
               imgMainProduct.setPreserveRatio(true);
               imgMainProduct.setSmooth(true);
             }
 
-            // Click thumbnail → đổi ảnh main và đánh dấu active
-            thumb.setOnMouseClicked(e -> switchMainImage(url, thumbs, idx));
+            // Click thumbnail → load full image tương ứng
+            tv.setOnMouseClicked(e -> switchMainImage(fullUrl, thumbViews, idx));
 
-            // Style active cho thumbnail đầu tiên
-            if (idx == 0) markThumbActive(thumbs, 0);
+            if (idx == 0) markThumbActive(thumbViews, 0);
           });
         } catch (Exception e) {
-          System.err.println("[AuctionRoom] Không tải được ảnh [" + idx + "]: " + url);
+          System.err.println("[AuctionRoom] Lỗi load ảnh [" + idx + "]: " + e.getMessage());
         }
       }
     }, "load-product-images").start();
@@ -1204,23 +1204,20 @@ public class AuctionRoomController {
    * Đổi ảnh chính khi click thumbnail.
    * Tải lại full-res ảnh được chọn và cập nhật border active.
    */
-  private void switchMainImage(String url, ImageView[] thumbs, int activeIdx) {
-    // Đổi border ngay lập tức để user thấy phản hồi
+  private void switchMainImage(String fullUrl, ImageView[] thumbs, int activeIdx) {
     markThumbActive(thumbs, activeIdx);
-
-    // Load full-res trong background
     new Thread(() -> {
       try {
-        Image fullImg = ImageUtil.loadImage(url);
+        Image fullImg = ImageUtil.loadImage(fullUrl);
         Platform.runLater(() -> {
-          if (imgMainProduct != null) {
+          if (imgMainProduct != null && fullImg != null) {
             imgMainProduct.setImage(fullImg);
             imgMainProduct.setPreserveRatio(true);
             imgMainProduct.setSmooth(true);
           }
         });
       } catch (Exception e) {
-        System.err.println("[AuctionRoom] Không load được ảnh full: " + url);
+        System.err.println("[AuctionRoom] Lỗi load full image: " + e.getMessage());
       }
     }, "switch-main-image").start();
   }
