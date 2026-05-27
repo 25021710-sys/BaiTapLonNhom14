@@ -5,6 +5,8 @@ import com.auction.client.session.ClientSession;
 import com.auction.common.dto.AuctionDTO;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.response.AuctionListResponse;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -53,6 +55,9 @@ public class DashBoardController {
     private Parent adminApprovalView;
     private AdminAuctionApprovalController adminApprovalController;
 
+    private Timeline autoRefresh;
+
+
     // ── INIT ──────────────────────────────────────────────────────────────────
 
     @FXML
@@ -77,6 +82,13 @@ public class DashBoardController {
 
         // Load data thật từ server (background thread)
         loadAuctionDataFromServer();
+
+        autoRefresh = new Timeline(new KeyFrame(
+            javafx.util.Duration.seconds(30),
+            e -> loadAuctionDataFromServer()
+        ));
+        autoRefresh.setCycleCount(Timeline.INDEFINITE);
+        autoRefresh.play();
         // ── Lắng nghe push update từ server khi đang ở Dashboard
         SocketClient.getInstance().addPushCallback(this::handleGlobalPushUpdate);
     }
@@ -309,22 +321,23 @@ public class DashBoardController {
      * (không ở trong phòng đấu giá cụ thể nào).
      */
     private void handleGlobalPushUpdate(com.auction.common.dto.AuctionUpdateDTO update) {
+        // Refresh dashboard khi có phiên mới bắt đầu
+        if (update.getType() == com.auction.common.dto.AuctionUpdateDTO.UpdateType.AUCTION_STARTED) {
+            Platform.runLater(this::loadAuctionDataFromServer);
+            return;
+        }
+
         if (update.getType() != com.auction.common.dto.AuctionUpdateDTO.UpdateType.AUCTION_ENDED)
             return;
 
-        // Chỉ thông báo nếu user đã từng tham gia phiên này
-        // (kiểm tra bằng cách so sánh với danh sách joined auctions — đơn giản hơn
-        //  là so winnerId vì user có thể đã bid nhưng không thắng)
         int myId = ClientSession.getCurrentUser() != null
-                ? ClientSession.getCurrentUser().getId() : -1;
+            ? ClientSession.getCurrentUser().getId() : -1;
         if (myId == -1) return;
 
         int winnerId = update.getHighestBidderId();
         boolean iWon = (winnerId == myId);
 
-        // Chỉ hiện thông báo nếu user liên quan (thắng hoặc thua)
-        // Nếu muốn thông báo tất cả mọi phiên thì bỏ điều kiện này
-        if (winnerId == 0) return; // không ai thắng → bỏ qua ở Dashboard
+        if (winnerId == 0) return;
 
         Platform.runLater(() -> showToastNotification(update, iWon, myId));
     }
@@ -402,6 +415,6 @@ public class DashBoardController {
      * Ví dụ: stage.setOnCloseRequest(e -> dashboardController.cleanup());
      */
     public void cleanup() {
+        if (autoRefresh != null) autoRefresh.stop();
         SocketClient.getInstance().removePushCallback(this::handleGlobalPushUpdate);
-    }
-}
+    }}
