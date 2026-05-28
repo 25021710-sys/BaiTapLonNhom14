@@ -50,12 +50,16 @@ public class DashBoardController {
     @FXML private Button btnRightUpComingBids;
     @FXML private BorderPane rootPane;
     @FXML private javafx.scene.layout.StackPane sceneRoot;
+    @FXML private javafx.scene.control.TextField txtSearch;
+
 
 
     private Parent adminApprovalView;
     private AdminAuctionApprovalController adminApprovalController;
 
     private Timeline autoRefresh;
+
+    private List<AuctionDTO> allAuctions = new java.util.ArrayList<>();
 
 
     // ── INIT ──────────────────────────────────────────────────────────────────
@@ -83,6 +87,12 @@ public class DashBoardController {
         // Load data thật từ server (background thread)
         loadAuctionDataFromServer();
 
+        if (txtSearch != null) {
+            txtSearch.textProperty().addListener((obs, oldVal, newVal) -> {
+                filterAndRender(newVal == null ? "" : newVal.trim());
+            });
+        }
+
         autoRefresh = new Timeline(new KeyFrame(
             javafx.util.Duration.seconds(30),
             e -> loadAuctionDataFromServer()
@@ -100,8 +110,12 @@ public class DashBoardController {
             try {
                 AuctionListResponse response = SocketClient.getInstance().getDashboardAuctions();
                 if (response != null && response.isSuccess() && response.getAuctions() != null) {
-                    Platform.runLater(() -> renderCardsFromData(response.getAuctions()));
-                } else {
+                    Platform.runLater(() -> {
+                        allAuctions = response.getAuctions();
+                        // Giữ nguyên keyword hiện tại khi auto-refresh
+                        String kw = txtSearch != null ? txtSearch.getText().trim() : "";
+                        filterAndRender(kw);
+                    });                } else {
                     Platform.runLater(this::renderPlaceholderCards);
                 }
             } catch (Exception e) {
@@ -417,4 +431,19 @@ public class DashBoardController {
     public void cleanup() {
         if (autoRefresh != null) autoRefresh.stop();
         SocketClient.getInstance().removePushCallback(this::handleGlobalPushUpdate);
-    }}
+    }
+
+    private void filterAndRender(String keyword) {
+        if (allAuctions == null) return;
+
+        List<AuctionDTO> filtered = keyword.isEmpty()
+            ? allAuctions
+            : allAuctions.stream()
+            .filter(dto -> dto.getItemName() != null &&
+                dto.getItemName().toLowerCase()
+                    .contains(keyword.toLowerCase()))
+            .collect(java.util.stream.Collectors.toList());
+
+        renderCardsFromData(filtered);
+    }
+}
