@@ -28,6 +28,7 @@ public class AuctionDTO implements Serializable {
     private AuctionStatus status;
     private int extensionCount;
     private int totalBids;
+    private BigDecimal stepPrice;
 
     // thumbnails: nhỏ, nhẹ — dùng cho Dashboard card + thumbnail strip AuctionRoom
     private List<String> thumbnailUrls = new ArrayList<>();
@@ -68,6 +69,8 @@ public class AuctionDTO implements Serializable {
     public void setExtensionCount(int extensionCount) { this.extensionCount = extensionCount; }
     public int getTotalBids() { return totalBids; }
     public void setTotalBids(int totalBids) { this.totalBids = totalBids; }
+    public BigDecimal getStepPrice() { return stepPrice; }
+    public void setStepPrice(BigDecimal stepPrice) { this.stepPrice = stepPrice; }
 
     public List<String> getThumbnailUrls() { return thumbnailUrls; }
     public void setThumbnailUrls(List<String> urls) { this.thumbnailUrls = urls != null ? urls : new ArrayList<>(); }

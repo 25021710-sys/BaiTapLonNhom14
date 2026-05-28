@@ -9,20 +9,16 @@ import java.util.List;
 
 public class CreateAuctionRequest implements Serializable {
     @Serial
-    private static final long serialVersionUID = 2L; // tăng version vì thay đổi field
+    private static final long serialVersionUID = 3L;
 
     private String itemName;
     private String itemDescription;
     private String itemCategory;
     private BigDecimal startingPrice;
     private BigDecimal reservePrice;
+    private BigDecimal stepPrice; // THÊM MỚI — bước giá tối thiểu
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-
-    /**
-     * Danh sách ảnh dạng Base64 (thay thế imageBase64 cũ chỉ chứa 1 ảnh).
-     * Index 0 = ảnh đại diện (thumbnail), các index sau = ảnh gallery.
-     */
     private List<String> imagesBase64 = new ArrayList<>();
 
     public CreateAuctionRequest() {}
@@ -42,6 +38,9 @@ public class CreateAuctionRequest implements Serializable {
     public BigDecimal getReservePrice() { return reservePrice; }
     public void setReservePrice(BigDecimal reservePrice) { this.reservePrice = reservePrice; }
 
+    public BigDecimal getStepPrice() { return stepPrice; }
+    public void setStepPrice(BigDecimal stepPrice) { this.stepPrice = stepPrice; }
+
     public LocalDateTime getStartTime() { return startTime; }
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
 
@@ -53,7 +52,6 @@ public class CreateAuctionRequest implements Serializable {
         this.imagesBase64 = imagesBase64 != null ? imagesBase64 : new ArrayList<>();
     }
 
-    /** Tiện ích: lấy ảnh đại diện (ảnh đầu tiên), null nếu không có ảnh nào. */
     public String getFirstImageBase64() {
         return (imagesBase64 != null && !imagesBase64.isEmpty()) ? imagesBase64.get(0) : null;
     }

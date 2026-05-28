@@ -54,19 +54,23 @@
                           promptText="Mô tả chi tiết sản phẩm"/>
             </VBox>
 
-            <!-- START PRICE -->
-            <VBox spacing="5">
-                <Label text="Giá khởi điểm"/>
-                <TextField fx:id="txtStartPrice" promptText="Ví dụ: 1000000"/>
-            </VBox>
+            <!-- START PRICE + STEP PRICE (cùng hàng) -->
+            <HBox spacing="20">
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label text="Giá khởi điểm"/>
+                    <TextField fx:id="txtStartPrice" promptText="Ví dụ: 1000000"/>
+                </VBox>
+                <VBox spacing="5" HBox.hgrow="ALWAYS">
+                    <Label text="Bước giá tối thiểu"/>
+                    <TextField fx:id="txtStepPrice" promptText="Ví dụ: 50000"/>
+                </VBox>
+            </HBox>
 
             <!-- START TIME -->
             <VBox spacing="5">
                 <Label text="Thời điểm bắt đầu"/>
-
                 <HBox spacing="10">
                     <DatePicker fx:id="dpStartDate"/>
-
                     <ComboBox fx:id="cbStartHour" prefWidth="70" promptText="Giờ"/>
                     <ComboBox fx:id="cbStartMinute" prefWidth="70" promptText="Phút"/>
                 </HBox>
@@ -75,10 +79,8 @@
             <!-- END TIME -->
             <VBox spacing="5">
                 <Label text="Thời điểm kết thúc"/>
-
                 <HBox spacing="10">
                     <DatePicker fx:id="dpEndDate"/>
-
                     <ComboBox fx:id="cbEndHour" prefWidth="70" promptText="Giờ"/>
                     <ComboBox fx:id="cbEndMinute" prefWidth="70" promptText="Phút"/>
                 </HBox>
@@ -87,26 +89,18 @@
             <!-- UPLOAD IMAGES -->
             <VBox spacing="8">
                 <Label text="Ảnh sản phẩm"/>
-
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Button text="Chọn ảnh"
                             onAction="#handleChooseImages"
                             style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
-
                     <Button text="Xóa ảnh đã chọn"
                             onAction="#handleRemoveSelectedImage"
                             style="-fx-background-color: #e74c3c; -fx-text-fill: white;"/>
                 </HBox>
-
                 <HBox spacing="15">
-
-                    <ListView fx:id="lvImages"
-                              prefHeight="90"
-                              prefWidth="300"/>
-
+                    <ListView fx:id="lvImages" prefHeight="90" prefWidth="300"/>
                     <ImageView fx:id="imgPreview"
-                               fitWidth="90"
-                               fitHeight="70"
+                               fitWidth="90" fitHeight="70"
                                preserveRatio="true"
                                style="-fx-border-color: #ccc; -fx-background-color: white;"/>
                 </HBox>

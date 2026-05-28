@@ -6,171 +6,75 @@ import java.time.LocalDateTime;
 
 public class AdminAuctionRequestDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
-    // ================= REQUEST INFO =================
+    private static final long serialVersionUID = 2L;
 
     private int requestId;
-
     private String approvalStatus;
-    // PENDING / APPROVED / REJECTED
-
     private String rejectReason;
-
     private LocalDateTime createdAt;
 
-    // ================= SELLER =================
-
     private int sellerId;
-
     private String sellerUsername;
 
-    // ================= ITEM INFO =================
-
     private int itemId;
-
     private String itemName;
-
     private String itemDescription;
-
     private String itemCategory;
-
     private String imageUrl;
 
-    // ================= AUCTION INFO =================
-
     private BigDecimal startingPrice;
-
     private BigDecimal reservePrice;
-
+    private BigDecimal stepPrice; // THÊM MỚI
     private LocalDateTime startTime;
-
     private LocalDateTime endTime;
 
-    public AdminAuctionRequestDTO() {
-    }
+    public AdminAuctionRequestDTO() {}
 
-    // =========================================================
-    // GETTERS & SETTERS
-    // =========================================================
+    public int getRequestId() { return requestId; }
+    public void setRequestId(int requestId) { this.requestId = requestId; }
 
-    public int getRequestId() {
-        return requestId;
-    }
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
 
-    public void setRequestId(int requestId) {
-        this.requestId = requestId;
-    }
+    public String getRejectReason() { return rejectReason; }
+    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
 
-    public String getApprovalStatus() {
-        return approvalStatus;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setApprovalStatus(String approvalStatus) {
-        this.approvalStatus = approvalStatus;
-    }
+    public int getSellerId() { return sellerId; }
+    public void setSellerId(int sellerId) { this.sellerId = sellerId; }
 
-    public String getRejectReason() {
-        return rejectReason;
-    }
+    public String getSellerUsername() { return sellerUsername; }
+    public void setSellerUsername(String sellerUsername) { this.sellerUsername = sellerUsername; }
 
-    public void setRejectReason(String rejectReason) {
-        this.rejectReason = rejectReason;
-    }
+    public int getItemId() { return itemId; }
+    public void setItemId(int itemId) { this.itemId = itemId; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public String getItemName() { return itemName; }
+    public void setItemName(String itemName) { this.itemName = itemName; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public String getItemDescription() { return itemDescription; }
+    public void setItemDescription(String itemDescription) { this.itemDescription = itemDescription; }
 
-    public int getSellerId() {
-        return sellerId;
-    }
+    public String getItemCategory() { return itemCategory; }
+    public void setItemCategory(String itemCategory) { this.itemCategory = itemCategory; }
 
-    public void setSellerId(int sellerId) {
-        this.sellerId = sellerId;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public String getSellerUsername() {
-        return sellerUsername;
-    }
+    public BigDecimal getStartingPrice() { return startingPrice; }
+    public void setStartingPrice(BigDecimal startingPrice) { this.startingPrice = startingPrice; }
 
-    public void setSellerUsername(String sellerUsername) {
-        this.sellerUsername = sellerUsername;
-    }
+    public BigDecimal getReservePrice() { return reservePrice; }
+    public void setReservePrice(BigDecimal reservePrice) { this.reservePrice = reservePrice; }
 
-    public int getItemId() {
-        return itemId;
-    }
+    public BigDecimal getStepPrice() { return stepPrice; }
+    public void setStepPrice(BigDecimal stepPrice) { this.stepPrice = stepPrice; }
 
-    public void setItemId(int itemId) {
-        this.itemId = itemId;
-    }
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
 
-    public String getItemName() {
-        return itemName;
-    }
-
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
-    }
-
-    public String getItemDescription() {
-        return itemDescription;
-    }
-
-    public void setItemDescription(String itemDescription) {
-        this.itemDescription = itemDescription;
-    }
-
-    public String getItemCategory() {
-        return itemCategory;
-    }
-
-    public void setItemCategory(String itemCategory) {
-        this.itemCategory = itemCategory;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public BigDecimal getStartingPrice() {
-        return startingPrice;
-    }
-
-    public void setStartingPrice(BigDecimal startingPrice) {
-        this.startingPrice = startingPrice;
-    }
-
-    public BigDecimal getReservePrice() {
-        return reservePrice;
-    }
-
-    public void setReservePrice(BigDecimal reservePrice) {
-        this.reservePrice = reservePrice;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
+    public LocalDateTime getEndTime() { return endTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
 }

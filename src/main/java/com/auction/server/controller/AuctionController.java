@@ -147,9 +147,15 @@ public class AuctionController {
                 ? req.getReservePrice() : req.getStartingPrice();
 
             Auction auction = auctionService.createAuction(
+                // Lưu bước giá vào auction nếu được cung cấp
                 item.getId(), sellerId,
                 req.getStartingPrice(), reservePrice,
                 req.getStartTime(), req.getEndTime());
+
+            if (req.getStepPrice() != null && req.getStepPrice().compareTo(BigDecimal.ZERO) > 0) {
+                auction.setMinBidIncrement(req.getStepPrice());
+                auctionDAO.updateMinBidIncrement(auction.getId(), req.getStepPrice());
+            }
 
             // ── Lưu ảnh vào DB (resize tự động trong ItemImageDAO) ────────────
             List<String> imageList = req.getImagesBase64();
@@ -545,6 +551,7 @@ public class AuctionController {
         dto.setEndTime(a.getEndTime());
         dto.setStatus(a.getStatus());
         dto.setExtensionCount(a.getExtensionCount());
+        dto.setStepPrice(a.getMinBidIncrement()); // getMinBidIncrement() trả về 1000 nếu null
         dto.setTotalBids(bidDAO.countByAuction(a.getId()));
 
         // ── Set thumbnail URLs (nhỏ, nhẹ) ───────────────────────────────────
