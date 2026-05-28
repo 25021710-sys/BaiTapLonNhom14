@@ -148,13 +148,6 @@
                         prefWidth="230.0"
                         HBox.hgrow="NEVER">
                      <children>
-                        <Button mnemonicParsing="false"
-                                style="-fx-background-radius: 10; -fx-background-color: #142932; -fx-cursor: hand;"
-                                prefHeight="36.0" prefWidth="42.0">
-                           <graphic>
-                              <FontAwesomeIcon fill="WHITE" glyphName="BELL_O" size="18"/>
-                           </graphic>
-                        </Button>
 
                         <Button fx:id="btnProfile" onAction="#handleGoToProfile"
                                 style="-fx-background-color: transparent; -fx-cursor: hand;">
