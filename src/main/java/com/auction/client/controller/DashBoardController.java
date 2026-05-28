@@ -232,7 +232,7 @@ public class DashBoardController {
     }
 
     private void setActiveMenu(Button activeButton) {
-        for (Button b : new Button[]{btnHome, btnJoinedAuction, btnMyAuction, btnCreateAuction}) {
+        for (Button b : new Button[]{btnHome, btnJoinedAuction, btnMyAuction, btnCreateAuction, btnManageRooms, btnAuctionApproval}) {
             if (b != null) b.getStyleClass().remove("active-menu");
         }
         if (activeButton != null) activeButton.getStyleClass().add("active-menu");
