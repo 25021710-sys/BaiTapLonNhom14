@@ -42,6 +42,8 @@ public class CreateAuctionController {
   @FXML private ComboBox<Integer> cbEndHour;
   @FXML private ComboBox<Integer> cbEndMinute;
 
+  @FXML private TextField txtStepPrice;
+
   // ======================
   // ERROR LABEL
   // ======================
@@ -182,6 +184,14 @@ public class CreateAuctionController {
       if (startPrice <= 0) { showError("Giá khởi điểm phải lớn hơn 0"); return; }
     } catch (NumberFormatException e) { showError("Giá khởi điểm phải là số hợp lệ"); return; }
 
+    // Validate step price
+    if (isEmpty(txtStepPrice)) { showError("Vui lòng nhập bước giá tối thiểu"); return; }
+    double stepPrice;
+    try {
+      stepPrice = Double.parseDouble(txtStepPrice.getText().trim());
+      if (stepPrice <= 0) { showError("Bước giá phải lớn hơn 0"); return; }
+    } catch (NumberFormatException e) { showError("Bước giá phải là số hợp lệ"); return; }
+
     // Validate time
     if (dpStartDate.getValue() == null || dpEndDate.getValue() == null) {
       showError("Vui lòng chọn ngày bắt đầu và ngày kết thúc"); return;
@@ -206,6 +216,7 @@ public class CreateAuctionController {
     req.setItemDescription(txtDescription.getText().trim());
     req.setItemCategory(cbCategory.getValue());
     req.setStartingPrice(BigDecimal.valueOf(startPrice));
+    req.setStepPrice(BigDecimal.valueOf(stepPrice));
     req.setStartTime(startTime);
     req.setEndTime(endTime);
 

@@ -283,11 +283,11 @@
 
                         <!-- Quick bid -->
                         <HBox spacing="6">
-                            <Button text="+10K"  onAction="#handleQuickBid10k"
+                            <Button text="+1x Bước"  onAction="#handleQuickBid1x"
                                     styleClass="btn-quick" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                            <Button text="+50K"  onAction="#handleQuickBid50k"
+                            <Button text="+2x Bước"  onAction="#handleQuickBid2x"
                                     styleClass="btn-quick" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                            <Button text="+100K" onAction="#handleQuickBid100k"
+                            <Button text="+5x Bước" onAction="#handleQuickBid5x"
                                     styleClass="btn-quick" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
                         </HBox>
 

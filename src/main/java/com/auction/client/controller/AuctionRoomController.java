@@ -160,6 +160,10 @@ public class AuctionRoomController {
     this.auctionEndTime = auction.getEndTime();
     this.chartStartMs = System.currentTimeMillis();
     this.currentHighestBidderId = auction.getHighestBidderId();
+    this.stepPrice = (auction.getStepPrice() != null
+        && auction.getStepPrice().compareTo(BigDecimal.ZERO) > 0)
+        ? auction.getStepPrice()
+        : new BigDecimal("50000");
 
     String status = auction.getStatus() != null ? auction.getStatus().name() : "";
 
@@ -526,9 +530,9 @@ public class AuctionRoomController {
   // ── QUICK BID ─────────────────────────────────────────────────────────────
 
   // FIX: luôn cộng vào currentPrice (giá server mới nhất), không đọc từ textfield
-  @FXML public void handleQuickBid10k()  { setBidAmount(currentPrice.add(new BigDecimal("10000"))); }
-  @FXML public void handleQuickBid50k()  { setBidAmount(currentPrice.add(new BigDecimal("50000"))); }
-  @FXML public void handleQuickBid100k() { setBidAmount(currentPrice.add(new BigDecimal("100000"))); }
+  @FXML public void handleQuickBid1x() { setBidAmount(currentPrice.add(stepPrice)); }
+  @FXML public void handleQuickBid2x() { setBidAmount(currentPrice.add(stepPrice.multiply(new BigDecimal("2")))); }
+  @FXML public void handleQuickBid5x() { setBidAmount(currentPrice.add(stepPrice.multiply(new BigDecimal("5")))); }
 
   private void setBidAmount(BigDecimal value) {
     if (txtBidAmount != null)

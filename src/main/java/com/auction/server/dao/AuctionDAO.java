@@ -112,6 +112,11 @@ public class AuctionDAO {
                     if (statusStr != null) auction.setStatus(AuctionStatus.valueOf(statusStr));
 
                     auction.setExtensionCount(rs.getInt("extension_count"));
+                    try {
+                        java.math.BigDecimal step = rs.getBigDecimal("min_bid_increment");
+                        if (step != null) auction.setMinBidIncrement(step);
+                    } catch (SQLException ignored) {}
+
                     return auction;
                 }
             }
@@ -247,6 +252,10 @@ public class AuctionDAO {
         a.setReservePrice(rs.getBigDecimal("reserve_price"));
         a.setStatus(AuctionStatus.valueOf(rs.getString("status")));
         a.setExtensionCount(rs.getInt("extension_count"));
+        try {
+            java.math.BigDecimal step = rs.getBigDecimal("min_bid_increment");
+            if (step != null) a.setMinBidIncrement(step);
+        } catch (SQLException ignored) {} // cột chưa tồn tại → bỏ qua
         return a;
     }
     public List<Auction> findPendingAuctions() {
@@ -290,6 +299,7 @@ public class AuctionDAO {
                 a.seller_id,
                 a.item_id,
                 a.starting_price,
+                a.min_bid_increment,
                 a.reserve_price,
                 a.start_time,
                 a.end_time,
@@ -325,6 +335,10 @@ public class AuctionDAO {
                 dto.setItemCategory(rs.getString("item_category"));
                 dto.setStartingPrice(rs.getBigDecimal("starting_price"));
                 dto.setReservePrice(rs.getBigDecimal("reserve_price"));
+
+                try {
+                    dto.setStepPrice(rs.getBigDecimal("min_bid_increment"));
+                } catch (SQLException ignored) {}
 
                 if (rs.getTimestamp("start_time") != null)
                     dto.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
@@ -411,6 +425,17 @@ public class AuctionDAO {
         } catch (Exception e) {
             logger.error("Lỗi updateStatus auction {}: {}", auctionId, e.getMessage());
             return false;
+        }
+    }
+
+    public void updateMinBidIncrement(int auctionId, java.math.BigDecimal stepPrice) {
+        String sql = "UPDATE auctions SET min_bid_increment = ? WHERE id = ?";
+        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setBigDecimal(1, stepPrice);
+            ps.setInt(2, auctionId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Lỗi updateMinBidIncrement auction {}: {}", auctionId, e.getMessage());
         }
     }
 }

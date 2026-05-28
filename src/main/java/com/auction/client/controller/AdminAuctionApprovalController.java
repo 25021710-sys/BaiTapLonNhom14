@@ -67,6 +67,7 @@ public class AdminAuctionApprovalController implements Initializable {
     @FXML private Label lblCreatedAt;
     @FXML private TextArea txtDescription;
     @FXML private TextArea txtRejectReason;
+    @FXML private Label lblStepPrice;
 
     // =====================================================
     // BUTTONS
@@ -208,6 +209,12 @@ public class AdminAuctionApprovalController implements Initializable {
 
         lblStartPrice.setText(
                 request.getStartingPrice() + " VNĐ"
+        );
+
+        lblStepPrice.setText(
+            request.getStepPrice() != null
+                ? request.getStepPrice().toPlainString() + " VNĐ"
+                : "---"
         );
 
         lblStartTime.setText(
