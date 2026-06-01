@@ -72,14 +72,16 @@
 .bid-table .table-row-cell:hover    { -fx-background-color: #EEF3FD; }
 .filter-label { -fx-text-fill: #546E7A; -fx-font-size: 12px; }
 .filter-combo { -fx-font-size: 12px; }
-.price-chart { -fx-background-color: transparent; -fx-padding: 0; }
-.price-chart .chart-plot-background { -fx-background-color: #FAFBFD; }
-.price-chart .chart-vertical-grid-lines   { -fx-stroke: #E8ECF0; }
-.price-chart .chart-horizontal-grid-lines { -fx-stroke: #E8ECF0; }
+.price-chart { -fx-background-color: white; -fx-padding: 8; -fx-border-color: #E0E4E8; -fx-border-width: 1px; -fx-border-radius: 4px; }
+.price-chart .chart-plot-background { -fx-background-color: white; }
+.price-chart .chart-vertical-grid-lines   { -fx-stroke: #E8ECF0; -fx-stroke-dash-array: 4 4; }
+.price-chart .chart-horizontal-grid-lines { -fx-stroke: #E8ECF0; -fx-stroke-dash-array: 4 4; }
 .price-chart .default-color0.chart-series-line { -fx-stroke: #E67E22; -fx-stroke-width: 2.5px; }
 .price-chart .default-color0.chart-line-symbol { -fx-background-color: #E67E22, white; -fx-background-insets: 0, 2; -fx-background-radius: 5px; -fx-padding: 5px; }
-.price-chart .axis       { -fx-font-size: 11px; -fx-text-fill: #78909C; }
-.price-chart .axis-label { -fx-font-size: 11px; -fx-text-fill: #90A4AE; }
+.price-chart .axis       { -fx-font-size: 11px; -fx-text-fill: #555; -fx-tick-label-fill: #555; }
+.price-chart .axis-label { -fx-font-size: 0px; }
+.price-chart .chart-title { -fx-font-size: 0px; }
+.price-chart > .chart-content { -fx-padding: 5 5 5 5; }
 .chat-list { -fx-background-color: #FAFBFC; -fx-border-color: transparent; -fx-font-size: 12px; }
 .chat-list .list-cell { -fx-padding: 6 10; -fx-text-fill: #37474F; -fx-border-color: transparent transparent #F0F2F5 transparent; -fx-background-color: transparent; }
 .chat-list .list-cell:odd { -fx-background-color: #F5F7FA; }

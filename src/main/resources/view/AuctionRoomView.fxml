@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.*?>
@@ -225,13 +226,11 @@
                                            VBox.vgrow="ALWAYS"
                                            prefHeight="240">
                                     <xAxis>
-                                        <NumberAxis fx:id="chartXAxis"
-                                                    label="Thời gian (giây)"
-                                                    autoRanging="true"/>
+                                        <CategoryAxis fx:id="chartXAxis"
+                                                      animated="false"/>
                                     </xAxis>
                                     <yAxis>
                                         <NumberAxis fx:id="chartYAxis"
-                                                    label="Giá (tỷ VNĐ)"
                                                     autoRanging="false"
                                                     forceZeroInRange="false"/>
                                     </yAxis>

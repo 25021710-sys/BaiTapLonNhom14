@@ -20,6 +20,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -94,8 +95,8 @@ public class AuctionRoomController {
   @FXML private Label lblParticipants;
 
   // ── BID HISTORY CHART (optional, nếu có fx:id trong FXML) ────────────────
-  @FXML private LineChart<Number, Number> bidHistoryChart;
-  @FXML private NumberAxis chartXAxis;
+  @FXML private LineChart<String, Number> bidHistoryChart;
+  @FXML private CategoryAxis chartXAxis;
   @FXML private NumberAxis chartYAxis;
 
   // Thêm field
@@ -128,7 +129,7 @@ public class AuctionRoomController {
   private java.util.List<String> currentFullUrls    = new java.util.ArrayList<>();
 
   // For bid price chart
-  private XYChart.Series<Number, Number> priceSeries;
+  private XYChart.Series<String, Number> priceSeries;
   private long chartStartMs;
 
   private final java.util.Map<Integer, String> usernameCache = new java.util.HashMap<>();
@@ -161,9 +162,9 @@ public class AuctionRoomController {
     this.chartStartMs = System.currentTimeMillis();
     this.currentHighestBidderId = auction.getHighestBidderId();
     this.stepPrice = (auction.getStepPrice() != null
-        && auction.getStepPrice().compareTo(BigDecimal.ZERO) > 0)
-        ? auction.getStepPrice()
-        : new BigDecimal("50000");
+            && auction.getStepPrice().compareTo(BigDecimal.ZERO) > 0)
+            ? auction.getStepPrice()
+            : new BigDecimal("50000");
 
     String status = auction.getStatus() != null ? auction.getStatus().name() : "";
 
@@ -698,7 +699,7 @@ public class AuctionRoomController {
 
     this.currentImageUrls = thumbUrls;
     this.currentFullUrls  = (fullUrls != null && !fullUrls.isEmpty())
-        ? fullUrls : thumbUrls; // fallback nếu không có full
+            ? fullUrls : thumbUrls; // fallback nếu không có full
 
     ImageView[] thumbViews = { imgThumb1, imgThumb2, imgThumb3, imgThumb4 };
 
@@ -714,7 +715,7 @@ public class AuctionRoomController {
         final int idx = i;
         final String thumbUrl = thumbUrls.get(i);
         final String fullUrl  = (idx < currentFullUrls.size())
-            ? currentFullUrls.get(idx) : thumbUrl;
+                ? currentFullUrls.get(idx) : thumbUrl;
 
         if (thumbUrl == null || thumbUrl.isBlank()) continue;
 
@@ -804,30 +805,32 @@ public class AuctionRoomController {
     bidHistoryChart.setLegendVisible(false);
     bidHistoryChart.setCreateSymbols(true);
     if (chartXAxis != null) {
-      chartXAxis.setLabel("Thời gian (phút)");
-      chartXAxis.setTickLabelFormatter(new javafx.util.StringConverter<Number>() {
-        public String toString(Number n) { return String.format("%.1f", n.doubleValue()); }
-        public Number fromString(String s) { return Double.parseDouble(s); }
-      });
+      chartXAxis.setLabel("");
+      chartXAxis.setAnimated(false);
     }
     if (chartYAxis != null) {
-      chartYAxis.setLabel("Giá (tỷ VNĐ)");
-      // Format Y axis: hiển thị đơn vị tỷ để tránh số quá dài
+      chartYAxis.setLabel("");
+      // Format Y axis: hiển thị dạng x.xxx.xxx đ
+      DecimalFormat vndFmt = new DecimalFormat("#,###");
       chartYAxis.setTickLabelFormatter(new javafx.util.StringConverter<Number>() {
         public String toString(Number n) {
-          double val = n.doubleValue() / 1_000_000_000.0;
-          return String.format("%.2f", val);
+          long val = n.longValue();
+          // Format: 2.500.000 đ style (dùng dấu chấm theo kiểu VN)
+          String formatted = vndFmt.format(val).replace(",", ".");
+          return formatted + " đ";
         }
-        public Number fromString(String s) { return Double.parseDouble(s) * 1_000_000_000; }
+        public Number fromString(String s) { return 0; }
       });
     }
   }
 
+  private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
+
   private void addChartPoint(BigDecimal price) {
     if (priceSeries == null || price == null) return;
-    double minutes = (System.currentTimeMillis() - chartStartMs) / 60_000.0;
+    String timeLabel = LocalDateTime.now().format(TIME_FMT);
     Platform.runLater(() -> {
-      priceSeries.getData().add(new XYChart.Data<>(minutes, price.doubleValue()));
+      priceSeries.getData().add(new XYChart.Data<>(timeLabel, price.doubleValue()));
       updateYAxisBounds();
     });
   }
@@ -836,41 +839,29 @@ public class AuctionRoomController {
   private void populateChartFromHistory(java.util.List<BidTransaction> bids) {
     if (priceSeries == null || bids == null || bids.isEmpty()) return;
 
-    // Lấy bid đầu tiên làm gốc thời gian (t=0)
-    LocalDateTime firstTime = bids.get(0).getCreatedAt();
-    long firstMs = firstTime != null
-            ? java.sql.Timestamp.valueOf(firstTime).getTime()
-            : chartStartMs;
-
-    java.util.List<XYChart.Data<Number, Number>> points = new java.util.ArrayList<>();
+    java.util.List<XYChart.Data<String, Number>> points = new java.util.ArrayList<>();
     double minPrice = Double.MAX_VALUE, maxPrice = Double.MIN_VALUE;
 
     for (BidTransaction b : bids) {
       if (b.getAmount() == null) continue;
       LocalDateTime bidTime = b.getCreatedAt();
-      long bidMs = bidTime != null
-              ? java.sql.Timestamp.valueOf(bidTime).getTime()
-              : firstMs;
-      double minutes = (bidMs - firstMs) / 60_000.0;
-      double amount  = b.getAmount().doubleValue();
-      points.add(new XYChart.Data<>(minutes, amount));
+      String timeLabel = bidTime != null ? bidTime.format(TIME_FMT) : LocalDateTime.now().format(TIME_FMT);
+      double amount = b.getAmount().doubleValue();
+      points.add(new XYChart.Data<>(timeLabel, amount));
       if (amount < minPrice) minPrice = amount;
       if (amount > maxPrice) maxPrice = amount;
     }
 
-    // Reset chartStartMs để addChartPoint() về sau căn đúng với lịch sử
-    chartStartMs = firstMs;
-
     // Tính padding Y: 5% của khoảng giá, tối thiểu 1 bước giá (tránh đường phẳng)
     double range   = maxPrice - minPrice;
-    double padding = range > 0 ? range * 0.15 : maxPrice * 0.001;
+    double padding = range > 0 ? range * 0.15 : maxPrice * 0.05;
     double yLow    = minPrice - padding;
     double yHigh   = maxPrice + padding;
 
     // tickUnit: chia ~5 tick đẹp
     double tickUnit = (yHigh - yLow) / 5.0;
 
-    final java.util.List<XYChart.Data<Number, Number>> finalPoints = points;
+    final java.util.List<XYChart.Data<String, Number>> finalPoints = points;
     final double finalLow = yLow, finalHigh = yHigh, finalTick = tickUnit;
 
     Platform.runLater(() -> {
@@ -1234,9 +1225,9 @@ public class AuctionRoomController {
     for (int i = 0; i < thumbs.length; i++) {
       if (thumbs[i] == null) continue;
       javafx.scene.layout.StackPane parent =
-          (thumbs[i].getParent() instanceof javafx.scene.layout.StackPane)
-              ? (javafx.scene.layout.StackPane) thumbs[i].getParent()
-              : null;
+              (thumbs[i].getParent() instanceof javafx.scene.layout.StackPane)
+                      ? (javafx.scene.layout.StackPane) thumbs[i].getParent()
+                      : null;
       if (parent != null) {
         if (i == activeIdx) {
           if (!parent.getStyleClass().contains("thumb-active"))
