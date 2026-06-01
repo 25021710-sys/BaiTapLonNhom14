@@ -47,7 +47,7 @@ public class SocketClient {
     public static SocketClient getInstance() {
         if (instance == null) {
             synchronized (SocketClient.class) {
-                if (instance == null) instance = new SocketClient(DEFAULT_HOST, DEFAULT_PORT);
+                if (instance == null) instance = new SocketClient(DEFAULT_HOST, DEFAULT_PORT); // Dùng double-checked locking
             }
         }
         return instance;

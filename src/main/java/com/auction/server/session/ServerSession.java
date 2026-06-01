@@ -86,8 +86,7 @@ public class ServerSession {
      * Cập nhật lại thông tin user trong session (ví dụ sau khi update profile hoặc nạp tiền).
      */
     public void updateUser(UserDTO updatedUser) {
-        if (loggedInUser != null && updatedUser != null
-                && loggedInUser.getId() == updatedUser.getId()) {
+        if (loggedInUser != null && updatedUser != null && loggedInUser.getId() == updatedUser.getId()) {
             this.loggedInUser = updatedUser;
         }
     }

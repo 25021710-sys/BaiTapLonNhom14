@@ -21,11 +21,11 @@ import java.sql.SQLException;
 public class DatabaseConnection {
 
     private static final String URL      = "jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/railway"
-            + "?serverTimezone=Asia/Ho_Chi_Minh"
-            + "&useSSL=true"
-            + "&cachePrepStmts=true"
-            + "&prepStmtCacheSize=250"
-            + "&prepStmtCacheSqlLimit=2048";
+            + "?serverTimezone=Asia/Ho_Chi_Minh" // múi giờ
+            + "&useSSL=true"                     // mã hoá kết nối
+            + "&cachePrepStmts=true"             // cache của câu SQL đã compile
+            + "&prepStmtCacheSize=250"           // cache tối đa 250 câu
+            + "&prepStmtCacheSqlLimit=2048";     // câu SQL tối đa 2048 ký tự
     private static final String DB_USER  = "2da7P72yRjHDRu2.root";
     private static final String PASSWORD = "dwxofeHifpCuB53s";
 

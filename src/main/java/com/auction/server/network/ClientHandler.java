@@ -120,15 +120,6 @@ public class ClientHandler implements Runnable, AuctionObserver {
         }
     }
 
-    public synchronized void sendNotification(String jsonPayload) throws Exception {
-        if (out != null && !socket.isClosed()) {
-            out.writeObject("PUSH_NOTIFICATION");
-            out.writeObject(jsonPayload);
-            out.flush();
-            out.reset(); // FIX 1
-        }
-    }
-
     private void closeConnections() {
         try { if (in     != null) in.close();                          } catch (Exception ignored) {}
         try { if (out    != null) out.close();                         } catch (Exception ignored) {}
