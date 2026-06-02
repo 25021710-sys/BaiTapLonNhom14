@@ -1,5 +1,6 @@
 package com.auction.server.model;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 // Implements Serializable để có thể truyền qua ObjectOutputStream (socket)
 public abstract class Entity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     protected int id;
     protected LocalDateTime createdAt;
