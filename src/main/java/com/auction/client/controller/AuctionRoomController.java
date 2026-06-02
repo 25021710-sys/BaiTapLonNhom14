@@ -852,14 +852,17 @@ public class AuctionRoomController {
       if (amount > maxPrice) maxPrice = amount;
     }
 
-    // Tính padding Y: 5% của khoảng giá, tối thiểu 1 bước giá (tránh đường phẳng)
+    // Tính tick unit tròn đẹp (bội số của 50.000, 100.000, 200.000, ...)
     double range   = maxPrice - minPrice;
-    double padding = range > 0 ? range * 0.15 : maxPrice * 0.05;
-    double yLow    = minPrice - padding;
-    double yHigh   = maxPrice + padding;
+    double rawTick = range > 0 ? range / 5.0 : maxPrice * 0.05;
+    double tickUnit = roundToNiceTickUnit(rawTick);
+    if (tickUnit <= 0) tickUnit = 50_000;
 
-    // tickUnit: chia ~5 tick đẹp
-    double tickUnit = (yHigh - yLow) / 5.0;
+    // Trừ thêm 1 tick phía dưới và cộng thêm 1 tick phía trên → điểm đầu/cuối không bị khuất sát mép
+    double yLow  = Math.floor(minPrice / tickUnit) * tickUnit - tickUnit;
+    if (yLow < 0) yLow = 0;
+    double yHigh = Math.ceil(maxPrice / tickUnit) * tickUnit + tickUnit;
+    if (yHigh <= yLow + tickUnit) yHigh = yLow + 2 * tickUnit;
 
     final java.util.List<XYChart.Data<String, Number>> finalPoints = points;
     final double finalLow = yLow, finalHigh = yHigh, finalTick = tickUnit;
@@ -883,12 +886,38 @@ public class AuctionRoomController {
             .mapToDouble(d -> d.getYValue().doubleValue()).min().orElse(0);
     double max = priceSeries.getData().stream()
             .mapToDouble(d -> d.getYValue().doubleValue()).max().orElse(0);
-    double range   = max - min;
-    double padding = range > 0 ? range * 0.15 : max * 0.001;
+
+    double range    = max - min;
+    double rawTick  = range > 0 ? range / 5.0 : max * 0.05;
+    double tickUnit = roundToNiceTickUnit(rawTick);
+    if (tickUnit <= 0) tickUnit = 50_000;
+
+    // Trừ thêm 1 tick phía dưới và cộng thêm 1 tick phía trên → điểm đầu/cuối không bị khuất sát mép
+    double lowerBound = Math.floor(min / tickUnit) * tickUnit - tickUnit;
+    if (lowerBound < 0) lowerBound = 0;
+    double upperBound = Math.ceil(max / tickUnit) * tickUnit + tickUnit;
+    if (upperBound <= lowerBound + tickUnit) upperBound = lowerBound + 2 * tickUnit;
+
     chartYAxis.setAutoRanging(false);
-    chartYAxis.setLowerBound(min - padding);
-    chartYAxis.setUpperBound(max + padding);
-    chartYAxis.setTickUnit((max - min + 2 * padding) / 5.0);
+    chartYAxis.setLowerBound(lowerBound);
+    chartYAxis.setUpperBound(upperBound);
+    chartYAxis.setTickUnit(tickUnit);
+  }
+
+  /**
+   * Làm tròn rawTick thành một giá trị "đẹp" (bội số của 1, 2, 5, 10 × 10^n).
+   * Ví dụ: 87_000 → 100_000; 123_000 → 200_000; 45_000 → 50_000
+   */
+  private double roundToNiceTickUnit(double rawTick) {
+    if (rawTick <= 0) return 50_000;
+    double magnitude = Math.pow(10, Math.floor(Math.log10(rawTick)));
+    double normalized = rawTick / magnitude; // trong [1, 10)
+    double niceMult;
+    if      (normalized <= 1.5) niceMult = 1;
+    else if (normalized <= 3.0) niceMult = 2;
+    else if (normalized <= 7.0) niceMult = 5;
+    else                        niceMult = 10;
+    return niceMult * magnitude;
   }
 
   private void setupAutoBidToggle() {
