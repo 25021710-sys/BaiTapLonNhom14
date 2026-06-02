@@ -78,7 +78,7 @@ public class ClientHandler implements Runnable, AuctionObserver {
                     switch (prefix) {
                         case "USER"                -> userController.processRequest(action, in, out);
                         case "ITEM"                -> itemController.processRequest(action, in, out);
-                        case "BID", "AUCTION", "AUTOBID", "ADMIN" ->
+                        case "BID", "AUCTION", "ADMIN" ->
                                 auctionController.processRequest(action, in, out, session, this);
                         default -> {
                             log.warn("[{}] Action không xác định: {}", clientAddr, action);

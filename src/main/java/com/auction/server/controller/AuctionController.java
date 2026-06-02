@@ -11,7 +11,6 @@ import com.auction.server.model.*;
 import com.auction.server.network.ClientHandler;
 import com.auction.server.service.AuctionManager;
 import com.auction.server.service.AuctionService;
-import com.auction.server.service.AutoBidEngine;
 import com.auction.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +33,6 @@ import java.util.*;
  *   AUCTION_SUBSCRIBE           – đăng ký nhận realtime update
  *   AUCTION_UNSUBSCRIBE         – hủy đăng ký realtime update
  *   AUCTION_GET_BIDS            – lấy lịch sử đặt giá
- *   AUTOBID_REGISTER            – đăng ký đấu giá tự động
- *   AUTOBID_CANCEL              – hủy đấu giá tự động
- *
- * Các fix so với phiên bản cũ:
- *   1. Phân quyền đầy đủ: APPROVE/REJECT yêu cầu ADMIN
- *   2. AUTOBID_REGISTER/CANCEL dùng AuctionManager.getAutoBidEngine() thay vì tạo instance mới
- *      (bản cũ tạo AutoBidEngine mới → không share state với engine đang chạy thực)
- *   3. handleRegisterAutoBid kiểm tra phiên tồn tại và đang mở trước khi đăng ký
- *   4. handleRegisterAutoBid override bidderId bằng session (tránh giả mạo)
- *   5. handleCancelAutoBid override bidderId bằng session
- *   6. mapToDTO điền thêm highestBidderUsername
- *   7. session được truyền vào constructor thay vì field mutable
  */
 public class AuctionController {
 
@@ -61,7 +48,6 @@ public class AuctionController {
     // ── Dependencies ──────────────────────────────────────────────────────────
     private final AuctionManager auctionManager = AuctionManager.getInstance();
     private final AuctionService auctionService  = auctionManager.getAuctionService();
-    private final AutoBidEngine  autoBidEngine   = auctionManager.getAutoBidEngine();
     private final ItemDAO        itemDAO          = new ItemDAO();
     private final UserDAO        userDAO          = new UserDAO();
     private final BidDAO         bidDAO           = new BidDAO();
@@ -88,8 +74,6 @@ public class AuctionController {
             case "ADMIN_UNSUBSCRIBE_ALL"        -> handleAdminUnsubscribeAll(in, out, session, handler);
             case "AUCTION_UNSUBSCRIBE"          -> handleUnsubscribe(in, out, handler);
             case "AUCTION_GET_BIDS"             -> handleGetBidHistory(in, out);
-            case "AUTOBID_REGISTER"             -> handleRegisterAutoBid(in, out, session);
-            case "AUTOBID_CANCEL"               -> handleCancelAutoBid(in, out, session);
             case "AUCTION_GET_JOINED"           -> handleGetJoinedAuctions(out, session);
             case "AUCTION_GET_MY"               -> handleGetMyAuctions(out, session);
             case "AUCTION_GET_DASHBOARD"        -> handleGetDashboard(out, session);
@@ -144,13 +128,13 @@ public class AuctionController {
             }
 
             BigDecimal reservePrice = req.getReservePrice() != null
-                ? req.getReservePrice() : req.getStartingPrice();
+                    ? req.getReservePrice() : req.getStartingPrice();
 
             Auction auction = auctionService.createAuction(
-                // Lưu bước giá vào auction nếu được cung cấp
-                item.getId(), sellerId,
-                req.getStartingPrice(), reservePrice,
-                req.getStartTime(), req.getEndTime());
+                    // Lưu bước giá vào auction nếu được cung cấp
+                    item.getId(), sellerId,
+                    req.getStartingPrice(), reservePrice,
+                    req.getStartTime(), req.getEndTime());
 
             if (req.getStepPrice() != null && req.getStepPrice().compareTo(BigDecimal.ZERO) > 0) {
                 auction.setMinBidIncrement(req.getStepPrice());
@@ -169,10 +153,10 @@ public class AuctionController {
 
             AuctionDTO dto = mapToDTO(auction, item, session.getUsername());
             send(out, new CreateAuctionResponse(true,
-                "Tạo phiên đấu giá thành công. Vui lòng chờ Admin duyệt.", dto));
+                    "Tạo phiên đấu giá thành công. Vui lòng chờ Admin duyệt.", dto));
             log.info("Tạo auction: id={}, item='{}', seller={}, images={}",
-                auction.getId(), item.getName(), session.getUsername(),
-                imageList != null ? imageList.size() : 0);
+                    auction.getId(), item.getName(), session.getUsername(),
+                    imageList != null ? imageList.size() : 0);
 
         } catch (IllegalArgumentException e) {
             send(out, new CreateAuctionResponse(false, "Danh mục sản phẩm không hợp lệ: " + e.getMessage(), null));
@@ -325,52 +309,6 @@ public class AuctionController {
         } catch (Exception e) {
             log.error("Lỗi AUCTION_GET_BIDS: {}", e.getMessage(), e);
             send(out, new BidHistoryResponse(false, "Lỗi server: " + e.getMessage(), null));
-        }
-    }
-
-    private void handleRegisterAutoBid(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
-        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
-        try {
-            AutoBidConfig config = (AutoBidConfig) in.readObject();
-            config.setBidderId(session.getUserId());
-            config.setBidderUsername(session.getUsername());
-
-            Auction auction;
-            try { auction = auctionService.getAuction(config.getAuctionId()); }
-            catch (Exception e) { send(out, new SimpleResponse(false, "Phiên đấu giá không tồn tại.")); return; }
-
-            AuctionStatus status = auction.getStatus();
-            if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-                send(out, new SimpleResponse(false, "Không thể đăng ký auto-bid: phiên đang ở trạng thái " + status.getDisplay() + ".")); return;
-            }
-            if (auction.getSellerId() == session.getUserId()) {
-                send(out, new SimpleResponse(false, "Người bán không thể tự đấu giá sản phẩm của mình.")); return;
-            }
-            BigDecimal currentPrice = auction.getCurrentPrice() != null ? auction.getCurrentPrice() : auction.getStartingPrice();
-            if (config.getMaxBid().compareTo(currentPrice) <= 0) {
-                send(out, new SimpleResponse(false, "Giá tối đa phải cao hơn giá hiện tại (" + currentPrice + ").")); return;
-            }
-
-            autoBidEngine.registerAutoBid(config);
-            send(out, new SimpleResponse(true, "Đăng ký auto-bid thành công."));
-            log.info("AutoBid đăng ký: user={} auction={} maxBid={}", session.getUsername(), config.getAuctionId(), config.getMaxBid());
-        } catch (Exception e) {
-            log.error("Lỗi AUTOBID_REGISTER: {}", e.getMessage(), e);
-            send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
-        }
-    }
-
-    private void handleCancelAutoBid(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
-        if (!requireLogin(session, out, new SimpleResponse(false, "Bạn chưa đăng nhập."))) return;
-        try {
-            in.readInt(); // bỏ qua bidderId client gửi lên
-            int auctionId = in.readInt();
-            autoBidEngine.cancelAutoBid(session.getUserId(), auctionId);
-            send(out, new SimpleResponse(true, "Đã hủy auto-bid thành công."));
-            log.info("AutoBid hủy: user={} auction={}", session.getUsername(), auctionId);
-        } catch (Exception e) {
-            log.error("Lỗi AUTOBID_CANCEL: {}", e.getMessage(), e);
-            send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
         }
     }
 
@@ -747,77 +685,77 @@ public class AuctionController {
     }
     // ── HELPER: Build AdminRoomDTO ────────────────────────────────────────────
 
-/**
- * Xây dựng AdminRoomDTO từ Auction.
- * @param withDetail nếu true → nạp thêm participantUsernames + recentBidLogs
- */
+    /**
+     * Xây dựng AdminRoomDTO từ Auction.
+     * @param withDetail nếu true → nạp thêm participantUsernames + recentBidLogs
+     */
 
-private AdminRoomDTO buildAdminRoomDTO(Auction a, boolean withDetail) {
-    AdminRoomDTO dto = new AdminRoomDTO();
-    dto.setAuctionId(a.getId());
-    dto.setStatus(a.getStatus());
-    dto.setStartingPrice(a.getStartingPrice());
-    dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
-    dto.setStartTime(a.getStartTime());
-    dto.setEndTime(a.getEndTime());
-    dto.setTotalBids(bidDAO.countByAuction(a.getId()));
-    dto.setSellerName(resolveUsername(a.getSellerId()));
+    private AdminRoomDTO buildAdminRoomDTO(Auction a, boolean withDetail) {
+        AdminRoomDTO dto = new AdminRoomDTO();
+        dto.setAuctionId(a.getId());
+        dto.setStatus(a.getStatus());
+        dto.setStartingPrice(a.getStartingPrice());
+        dto.setCurrentPrice(a.getCurrentPrice() != null ? a.getCurrentPrice() : a.getStartingPrice());
+        dto.setStartTime(a.getStartTime());
+        dto.setEndTime(a.getEndTime());
+        dto.setTotalBids(bidDAO.countByAuction(a.getId()));
+        dto.setSellerName(resolveUsername(a.getSellerId()));
 
-    if (a.getHighestBidderId() != 0) {
-        dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
-    }
-
-    Item item = itemDAO.findById(a.getItemId());
-    if (item != null) {
-        dto.setItemName(item.getName());
-        dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
-    }
-
-    dto.setParticipantCount(auctionManager.getParticipantCount(a.getId()));
-
-    if (withDetail) {
-        List<BidTransaction> bids = bidDAO.findByAuction(a.getId());
-
-        // Batch load tất cả username 1 lần thay vì gọi resolveUsername() trong vòng lặp
-        java.util.Set<Integer> bidderIds = new java.util.HashSet<>();
-        for (BidTransaction bid : bids) bidderIds.add(bid.getBidderId());
-
-        java.util.Map<Integer, String> usernameMap = new java.util.HashMap<>();
-        if (!bidderIds.isEmpty()) {
-            try {
-                usernameMap = userDAO.findUsernamesByIds(bidderIds);
-            } catch (Exception e) {
-                log.warn("Không batch load được username cho phòng {}: {}", a.getId(), e.getMessage());
-            }
-            // Fallback: id nào không tìm được thì hiện "User#id" thay vì trống
-            for (int id : bidderIds) usernameMap.putIfAbsent(id, "User#" + id);
+        if (a.getHighestBidderId() != 0) {
+            dto.setHighestBidderUsername(resolveUsername(a.getHighestBidderId()));
         }
 
-        java.util.LinkedHashSet<String> participantSet = new java.util.LinkedHashSet<>();
-        java.util.List<String> recentLogs = new java.util.ArrayList<>();
-        int logCount = 0;
-
-        for (int i = bids.size() - 1; i >= 0; i--) {
-            BidTransaction bid = bids.get(i);
-            // Lấy từ map đã batch load, không gọi DB nữa
-            String username = usernameMap.getOrDefault(bid.getBidderId(), "User#" + bid.getBidderId());
-            participantSet.add(username);
-            if (logCount < 10) {
-                recentLogs.add(String.format("[%s] %s đặt giá %,.0f đ",
-                        bid.getCreatedAt() != null
-                                ? bid.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
-                                : "--:--:--",
-                        username,
-                        bid.getAmount().doubleValue()));
-                logCount++;
-            }
+        Item item = itemDAO.findById(a.getItemId());
+        if (item != null) {
+            dto.setItemName(item.getName());
+            dto.setItemCategory(item.getCategory() != null ? item.getCategory().name() : "");
         }
 
-        java.util.Collections.reverse(recentLogs);
-        dto.setParticipantUsernames(new java.util.ArrayList<>(participantSet));
-        dto.setRecentBidLogs(recentLogs);
-    }
+        dto.setParticipantCount(auctionManager.getParticipantCount(a.getId()));
 
-    return dto;
-}
+        if (withDetail) {
+            List<BidTransaction> bids = bidDAO.findByAuction(a.getId());
+
+            // Batch load tất cả username 1 lần thay vì gọi resolveUsername() trong vòng lặp
+            java.util.Set<Integer> bidderIds = new java.util.HashSet<>();
+            for (BidTransaction bid : bids) bidderIds.add(bid.getBidderId());
+
+            java.util.Map<Integer, String> usernameMap = new java.util.HashMap<>();
+            if (!bidderIds.isEmpty()) {
+                try {
+                    usernameMap = userDAO.findUsernamesByIds(bidderIds);
+                } catch (Exception e) {
+                    log.warn("Không batch load được username cho phòng {}: {}", a.getId(), e.getMessage());
+                }
+                // Fallback: id nào không tìm được thì hiện "User#id" thay vì trống
+                for (int id : bidderIds) usernameMap.putIfAbsent(id, "User#" + id);
+            }
+
+            java.util.LinkedHashSet<String> participantSet = new java.util.LinkedHashSet<>();
+            java.util.List<String> recentLogs = new java.util.ArrayList<>();
+            int logCount = 0;
+
+            for (int i = bids.size() - 1; i >= 0; i--) {
+                BidTransaction bid = bids.get(i);
+                // Lấy từ map đã batch load, không gọi DB nữa
+                String username = usernameMap.getOrDefault(bid.getBidderId(), "User#" + bid.getBidderId());
+                participantSet.add(username);
+                if (logCount < 10) {
+                    recentLogs.add(String.format("[%s] %s đặt giá %,.0f đ",
+                            bid.getCreatedAt() != null
+                                    ? bid.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
+                                    : "--:--:--",
+                            username,
+                            bid.getAmount().doubleValue()));
+                    logCount++;
+                }
+            }
+
+            java.util.Collections.reverse(recentLogs);
+            dto.setParticipantUsernames(new java.util.ArrayList<>(participantSet));
+            dto.setRecentBidLogs(recentLogs);
+        }
+
+        return dto;
+    }
 }

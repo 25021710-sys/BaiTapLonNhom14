@@ -3,7 +3,6 @@ package com.auction.client.network;
 import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.request.*;
 import com.auction.common.response.*;
-import com.auction.server.model.AutoBidConfig;
 import com.auction.common.request.AdminGetRoomsRequest;
 import com.auction.common.request.AdminGetRoomDetailRequest;
 import com.auction.common.request.AdminPauseRoomRequest;
@@ -198,7 +197,7 @@ public class SocketClient {
         }
     }
 
-    /** Đọc không lọc kiểu – dùng cho unsubscribe, cancelAutoBid. */
+    /** Đọc không lọc kiểu – dùng cho unsubscribe. */
     @SuppressWarnings("unchecked")
     private <T> T readResponse() throws Exception {
         Object resp = responseQueue.poll(RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
@@ -320,31 +319,6 @@ public class SocketClient {
     public BidHistoryResponse getBidHistory(int auctionId) {
         try { sendRequestWithInt("AUCTION_GET_BIDS", auctionId); return readTypedResponse(BidHistoryResponse.class); }
         catch (Exception e) { return new BidHistoryResponse(false, "Lỗi kết nối: " + e.getMessage(), null); }
-    }
-
-    // ── AUTO BID ──────────────────────────────────────────────────────────────
-
-    public SimpleResponse registerAutoBid(AutoBidConfig config) {
-        try { sendRequest("AUTOBID_REGISTER", config); return readTypedResponse(SimpleResponse.class); }
-        catch (Exception e) { return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage()); }
-    }
-
-    public SimpleResponse cancelAutoBid(int bidderId, int auctionId) {
-        try {
-            ensureConnected();
-            writeLock.lock();
-            try {
-                out.writeObject("AUTOBID_CANCEL");
-                out.writeInt(bidderId);
-                out.writeInt(auctionId);
-                out.flush();
-            } finally {
-                writeLock.unlock();
-            }
-            return readResponse();
-        } catch (Exception e) {
-            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
     }
 
     public AuctionListResponse getMyAuctions() {

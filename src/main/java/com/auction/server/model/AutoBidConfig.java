@@ -1,4 +1,4 @@
-package com.auction.server.model;
+/*package com.auction.server.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -82,4 +82,4 @@ public class AutoBidConfig implements Serializable,Comparable<AutoBidConfig> {
                 + " | Bước giá: " + increment);
     }
 
-}
+}*/

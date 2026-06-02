@@ -9,7 +9,6 @@ import com.auction.common.request.BidRequest;
 import com.auction.common.response.BidHistoryResponse;
 import com.auction.common.response.BidResponse;
 import com.auction.common.response.CreateAuctionResponse;
-import com.auction.server.model.AutoBidConfig;
 import com.auction.server.model.BidTransaction;
 import com.auction.client.session.ClientSession;
 
@@ -79,12 +78,6 @@ public class AuctionRoomController {
   @FXML private TextField txtBidAmount;
   @FXML private Label lblBidError;
 
-  // ── AUTO BID ──────────────────────────────────────────────────────────────
-  @FXML private CheckBox chkAutoBid;
-  @FXML private TextField txtAutoBidMax;
-  @FXML private TextField txtAutoBidIncrement;
-  @FXML private javafx.scene.control.Button btnRegisterAutoBid;
-
   // ── SELLER INFO ───────────────────────────────────────────────────────────
   @FXML private Label lblSellerName;
 
@@ -107,7 +100,6 @@ public class AuctionRoomController {
   @FXML private VBox countdownSection;
   @FXML private VBox priceSection;
   @FXML private VBox placeBidSection;
-  @FXML private VBox autoBidSection;
 
   @FXML private Label lblPriceTitleRight;
 
@@ -139,7 +131,6 @@ public class AuctionRoomController {
   @FXML
   public void initialize() {
     setupBidHistoryTable();
-    setupAutoBidToggle();
     setupNumberOnlyFields();
     cbBidFilter.setItems(FXCollections.observableArrayList("Tất cả", "Chỉ của tôi", "Auto-bid"));
     cbBidFilter.setValue("Tất cả");
@@ -265,11 +256,6 @@ public class AuctionRoomController {
       if (placeBidSection != null) {
         placeBidSection.setVisible(isRunning);
         placeBidSection.setManaged(isRunning);
-      }
-
-      if (autoBidSection != null) {
-        autoBidSection.setVisible(isRunning);
-        autoBidSection.setManaged(isRunning);
       }
 
       if (lblYourStatus != null) {
@@ -408,10 +394,6 @@ public class AuctionRoomController {
           placeBidSection.setVisible(false);
           placeBidSection.setManaged(false);
         }
-        if (autoBidSection != null) {
-          autoBidSection.setVisible(false);
-          autoBidSection.setManaged(false);
-        }
         if (countdownSection != null) {
           countdownSection.setVisible(false);
           countdownSection.setManaged(false);
@@ -522,10 +504,6 @@ public class AuctionRoomController {
 
   private void disableBidActions() {
     txtBidAmount.setDisable(true);
-    chkAutoBid.setDisable(true);
-    txtAutoBidMax.setDisable(true);
-    if (txtAutoBidIncrement != null) txtAutoBidIncrement.setDisable(true);
-    if (btnRegisterAutoBid != null) btnRegisterAutoBid.setDisable(true);
   }
 
   // ── QUICK BID ─────────────────────────────────────────────────────────────
@@ -608,60 +586,6 @@ public class AuctionRoomController {
         }
       });
     }, "place-bid-thread").start();
-  }
-
-  // ── AUTO BID ──────────────────────────────────────────────────────────────
-
-  @FXML
-  public void handleEnableAutoBid() {
-    lblBidError.setVisible(false);
-    if (!chkAutoBid.isSelected()) { showBidError("Bạn chưa bật Auto-bid"); return; }
-    if (txtAutoBidMax.getText().trim().isEmpty()) { showBidError("Nhập giá tối đa auto-bid"); return; }
-
-    BigDecimal max;
-    try { max = new BigDecimal(txtAutoBidMax.getText().trim()); }
-    catch (NumberFormatException e) { showBidError("Giá tối đa không hợp lệ"); return; }
-
-    if (max.compareTo(currentPrice) <= 0) {
-      showBidError("Giá tối đa phải lớn hơn giá hiện tại");
-      return;
-    }
-
-    BigDecimal increment = stepPrice;
-    if (txtAutoBidIncrement != null && !txtAutoBidIncrement.getText().trim().isEmpty()) {
-      try { increment = new BigDecimal(txtAutoBidIncrement.getText().trim()); }
-      catch (NumberFormatException ignored) {}
-    }
-
-    if (currentAuction == null || ClientSession.getCurrentUser() == null) {
-      showBidError("Lỗi session"); return;
-    }
-
-    AutoBidConfig config = new AutoBidConfig(
-            ClientSession.getCurrentUser().getId(),
-            ClientSession.getCurrentUser().getUsername(),
-            currentAuction.getAuctionId(),
-            max, increment
-    );
-
-    final BigDecimal maxFinal = max;
-    new Thread(() -> {
-      com.auction.common.response.SimpleResponse res =
-              SocketClient.getInstance().registerAutoBid(config);
-      Platform.runLater(() -> {
-        if (res.isSuccess()) {
-          // Thông báo thành công và reset UI
-          showBidError(""); // xóa lỗi cũ (nếu có)
-          lblBidError.setStyle("-fx-text-fill: #2ecc71;");
-          lblBidError.setText("✅ Đã đăng ký Auto-bid (tối đa: " + maxFinal.toPlainString() + " VNĐ)");
-          lblBidError.setVisible(true);
-          // Giữ nguyên checkbox để user biết auto-bid đang bật
-        } else {
-          lblBidError.setStyle("-fx-text-fill: #e74c3c;");
-          showBidError("Lỗi auto-bid: " + res.getMessage());
-        }
-      });
-    }, "register-autobid-thread").start();
   }
 
   // ── BID HISTORY REFRESH ───────────────────────────────────────────────────
@@ -920,18 +844,8 @@ public class AuctionRoomController {
     return niceMult * magnitude;
   }
 
-  private void setupAutoBidToggle() {
-    chkAutoBid.selectedProperty().addListener((obs, oldVal, newVal) -> {
-      txtAutoBidMax.setDisable(!newVal);
-      if (txtAutoBidIncrement != null) txtAutoBidIncrement.setDisable(!newVal);
-      if (btnRegisterAutoBid != null) btnRegisterAutoBid.setDisable(!newVal);
-    });
-  }
-
   private void setupNumberOnlyFields() {
     addNumberOnlyListener(txtBidAmount);
-    addNumberOnlyListener(txtAutoBidMax);
-    if (txtAutoBidIncrement != null) addNumberOnlyListener(txtAutoBidIncrement);
   }
 
   private void addNumberOnlyListener(TextField field) {

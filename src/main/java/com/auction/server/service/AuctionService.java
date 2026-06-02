@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * Trách nhiệm:
  *   - Tạo / duyệt / từ chối phiên đấu giá
- *   - Xử lý đặt giá thủ công (placeBid) và tự động (placeAutoBid)
+ *   - Xử lý đặt giá thủ công (placeBid)
  *   - Quản lý cache phiên và lock per-auction (thread-safe)
  *   - Anti-sniping: gia hạn phiên khi bid sát giờ kết thúc
  *   - Broadcast realtime update qua AuctionManager (Observer pattern)
@@ -43,7 +43,6 @@ public class AuctionService {
     // ── Dependencies ──────────────────────────────────────────────────────────
     private final AuctionDAO    auctionDAO;
     private final BidDAO        bidDAO;
-    private final AutoBidEngine autoBidEngine;
     private final UserDAO       userDAO = new UserDAO();
 
     /** Được inject sau khi khởi tạo (tránh circular dependency với AuctionManager) */
@@ -57,10 +56,9 @@ public class AuctionService {
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO, AutoBidEngine autoBidEngine) {
+    public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO) {
         this.auctionDAO    = auctionDAO;
         this.bidDAO        = bidDAO;
-        this.autoBidEngine = autoBidEngine;
     }
 
     public void setAuctionManager(AuctionManager manager) {
@@ -297,25 +295,6 @@ public class AuctionService {
                 ));
             }
 
-            // 15. Kích hoạt chuỗi auto-bid (nếu có config đang active)
-            BidTransaction autoBidTx = autoBidEngine.triggerAutoBid(auctionId, userId, bidAmount);
-            if (autoBidTx != null && auctionManager != null) {
-                // Lấy auction mới nhất từ cache (placeAutoBid đã cập nhật endTime nếu anti-snipe)
-                Auction updatedAuction = auctionCache.getOrDefault(auctionId, auction);
-                String autoBidderName = resolveUsername(autoBidTx.getBidderId());
-                int participantCount = auctionManager.getParticipantCount(auctionId);
-                auctionManager.broadcastUpdate(auctionId, new AuctionUpdateDTO(
-                        auctionId,
-                        AuctionUpdateDTO.UpdateType.BID_PLACED,
-                        autoBidTx.getAmount(),
-                        autoBidTx.getBidderId(),
-                        autoBidderName + " (auto)",
-                        updatedAuction.getEndTime(),
-                        "Auto-bid từ " + autoBidderName + "!",
-                        participantCount
-                ));
-            }
-
             log.info("Bid thành công: userId={} đặt {} VND cho auctionId={}", userId, bidAmount, auctionId);
             return new BidResponse(true,
                     "Giao dịch thành công. Mức giá mới: " + bidAmount + " VND.", bidAmount);
@@ -324,130 +303,6 @@ public class AuctionService {
             log.error("Lỗi nghiêm trọng trong placeBid (auctionId={}, userId={}): {}",
                     auctionId, userId, e.getMessage(), e);
             return new BidResponse(false, "Lỗi server, vui lòng thử lại sau.", BigDecimal.ZERO);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    // ── PLACE AUTO BID (nội bộ, gọi từ AutoBidEngine) ────────────────────────
-
-    /**
-     * Đặt auto-bid thay người dùng. Được AutoBidEngine gọi sau khi có bid thủ công.
-     *
-     * Khác với placeBid:
-     *  - KHÔNG gọi triggerAutoBid lại (tránh đệ quy vô hạn)
-     *  - Có lock riêng để thread-safe với placeBid đang chạy song song
-     *
-     * @return BidTransaction nếu thành công, null nếu thất bại (không đủ tiền, phiên đóng, ...)
-     */
-    public BidTransaction placeAutoBid(int auctionId, int bidderId, BigDecimal amount) {
-        ReentrantLock lock = auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
-        lock.lock();
-
-        try {
-            // 1. Kiểm tra phiên tồn tại
-            Auction auction;
-            try {
-                auction = getAuction(auctionId);
-            } catch (AuctionException e) {
-                log.warn("Auto-bid thất bại: phiên {} không tồn tại.", auctionId);
-                return null;
-            }
-
-            // 2. Kiểm tra trạng thái phiên
-            AuctionStatus status = auction.getStatus();
-            if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-                log.warn("Auto-bid thất bại: phiên {} ở trạng thái {}.", auctionId, status);
-                return null;
-            }
-
-            // 3. Kiểm tra thời gian (phiên có thể vừa đóng lúc auto-bid kích hoạt)
-            LocalDateTime now = LocalDateTime.now();
-            if (now.isAfter(auction.getEndTime())) {
-                log.warn("Auto-bid thất bại: phiên {} đã hết giờ.", auctionId);
-                return null;
-            }
-
-            // 4. Seller không tự auto-bid auction của mình
-            if (auction.getSellerId() == bidderId) {
-                log.warn("Auto-bid thất bại: bidderId {} là seller của phiên {}.", bidderId, auctionId);
-                return null;
-            }
-
-            // 5. Giá auto-bid phải cao hơn giá hiện tại
-            BigDecimal currentPrice = auction.getCurrentPrice() != null
-                    ? auction.getCurrentPrice()
-                    : auction.getStartingPrice();
-            if (amount.compareTo(currentPrice) <= 0) {
-                log.warn("Auto-bid thất bại: amount={} không cao hơn currentPrice={}.", amount, currentPrice);
-                return null;
-            }
-
-            // 6. Hoàn tiền cho người dẫn đầu trước đó
-            int previousBidderId = auction.getHighestBidderId();
-            if (previousBidderId != 0 && previousBidderId != bidderId) {
-                refundPreviousBidder(previousBidderId, currentPrice);
-            }
-
-            // 7. Kiểm tra và trừ tiền auto-bidder
-            User bidder;
-            try {
-                bidder = userDAO.findById(bidderId);
-            } catch (Exception e) {
-                log.warn("Auto-bid thất bại: không lấy được user {}: {}", bidderId, e.getMessage());
-                // Rollback: hoàn lại tiền cho previousBidder
-                if (previousBidderId != 0 && previousBidderId != bidderId) {
-                    chargeUser(previousBidderId, currentPrice);
-                }
-                return null;
-            }
-
-            if (bidder == null) {
-                log.warn("Auto-bid thất bại: user {} không tồn tại.", bidderId);
-                return null;
-            }
-            if (bidder.getBalance().compareTo(amount) < 0) {
-                log.warn("Auto-bid thất bại: user {} không đủ tiền (balance={}, cần={}).",
-                        bidderId, bidder.getBalance(), amount);
-                // Rollback hoàn tiền
-                if (previousBidderId != 0 && previousBidderId != bidderId) {
-                    chargeUser(previousBidderId, currentPrice);
-                }
-                return null;
-            }
-
-            try {
-                bidder.setBalance(bidder.getBalance().subtract(amount));
-                userDAO.updateBalance(bidderId, bidder.getBalance());
-            } catch (Exception e) {
-                log.warn("Auto-bid thất bại: lỗi trừ tiền user {}: {}", bidderId, e.getMessage());
-                if (previousBidderId != 0 && previousBidderId != bidderId) {
-                    chargeUser(previousBidderId, currentPrice);
-                }
-                return null;
-            }
-
-            // 8. Lưu BidTransaction
-            BidTransaction bid = new BidTransaction(0, now, auctionId, bidderId, amount, true);
-            bidDAO.saveBid(bid);
-
-            // 9. Cập nhật auction (DB trước, rồi cache)
-            auctionDAO.updateBidPrice(auctionId, bidderId, amount);
-            auction.setCurrentPrice(amount);
-            auction.setHighestBidderId(bidderId);
-            auction.setStatus(AuctionStatus.RUNNING);
-            auctionCache.put(auctionId, auction);
-
-            // 10. Anti-sniping
-            checkAndExtend(auction);
-
-            log.info("Auto-bid thành công: auctionId={} bidderId={} amount={}", auctionId, bidderId, amount);
-            return bid;
-
-        } catch (Exception e) {
-            log.error("Lỗi nghiêm trọng trong placeAutoBid (auctionId={}, bidderId={}): {}",
-                    auctionId, bidderId, e.getMessage(), e);
-            return null;
         } finally {
             lock.unlock();
         }
@@ -523,7 +378,6 @@ public class AuctionService {
         auctionDAO.updateStatus(auctionId, AuctionStatus.OPEN);
         auctionCache.put(auctionId, auction);
         auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock(true));
-        autoBidEngine.loadFromDb(auctionId);
 
         log.info("Admin {} duyệt phiên {}.", adminId, auctionId);
         return true;
@@ -588,7 +442,6 @@ public class AuctionService {
             }
             auctionCache.put(a.getId(), a);
             auctionLocks.put(a.getId(), new ReentrantLock(true));
-            autoBidEngine.loadFromDb(a.getId());
         }
         log.info("Đã load {} phiên vào cache ({} phiên tự mở do qua startTime).",
                 active.size(), autoOpened);
