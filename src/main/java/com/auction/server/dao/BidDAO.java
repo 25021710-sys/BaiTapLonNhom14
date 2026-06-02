@@ -94,7 +94,7 @@ public class BidDAO {
         b.setAuctionId(rs.getInt("auction_id"));
         b.setBidderId(rs.getInt("bidder_id"));
         b.setAmount(rs.getBigDecimal("amount"));
-        b.setAutoBid(rs.getBoolean("is_auto_bid"));
+        //b.setAutoBid(rs.getBoolean("is_auto_bid"));
         Timestamp ts = rs.getTimestamp("created_at");
         if (ts != null) b.setCreatedAt(ts.toLocalDateTime());
         return b;

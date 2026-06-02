@@ -33,9 +33,6 @@ public class BidTransaction extends Entity {
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
 
-    public boolean isAutoBid() { return isAutoBid; }
-    public void setAutoBid(boolean autoBid) { this.isAutoBid = autoBid; }
-
     @Override
     public void printInfo() {
         String type = isAutoBid ? "[AUTO]" : "[MANUAL]";
