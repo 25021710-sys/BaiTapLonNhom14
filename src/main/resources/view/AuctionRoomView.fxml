@@ -304,38 +304,6 @@
                     </VBox>
                     <Separator styleClass="panel-sep"/>
 
-                    <!-- ④ Auto-bid -->
-                    <VBox fx:id="autoBidSection" styleClass="panel-section" spacing="8">
-                        <Label text="🤖  Auto-Bid" styleClass="panel-section-title"/>
-
-                        <CheckBox fx:id="chkAutoBid"
-                                  text="Bật Auto-bid tự động"
-                                  styleClass="auto-bid-check"/>
-
-                        <TextField fx:id="txtAutoBidMax"
-                                   promptText="Giá tối đa (VNĐ)"
-                                   disable="true"
-                                   styleClass="auto-bid-input"/>
-
-                        <TextField fx:id="txtAutoBidIncrement"
-                                   promptText="Bước tăng (mặc định = bước giá)"
-                                   disable="true"
-                                   styleClass="auto-bid-input"/>
-
-
-                        <Label text="Hệ thống tự đặt thay bạn khi bị vượt giá, không vượt giá tối đa."
-                               styleClass="auto-bid-hint"
-                               wrapText="true"/>
-
-                        <Button text="✅  Đăng ký Auto-bid"
-                                onAction="#handleEnableAutoBid"
-                                styleClass="btn-bid"
-                                maxWidth="Infinity"
-                                disable="true"
-                                fx:id="btnRegisterAutoBid"/>
-                    </VBox>
-                    <Separator styleClass="panel-sep"/>
-
                     <!-- ⑤ Seller info -->
                     <VBox fx:id="sellerSection" styleClass="panel-section" spacing="6">
                         <Label text="🏪  Người bán" styleClass="panel-section-title"/>

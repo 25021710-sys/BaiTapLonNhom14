@@ -48,17 +48,14 @@ public class AuctionManager {
     // ── Dependencies ──────────────────────────────────────────────────────────
     private AuctionDAO    auctionDAO;
     private BidDAO        bidDAO;
-    private AutoBidEngine autoBidEngine;
     private AuctionService auctionService;
 
     private void init() {
         this.auctionDAO    = new AuctionDAO();
         this.bidDAO        = new BidDAO();
-        this.autoBidEngine = new AutoBidEngine(bidDAO);
-        this.auctionService = new AuctionService(auctionDAO, bidDAO, autoBidEngine);
+        this.auctionService = new AuctionService(auctionDAO, bidDAO);
 
         // Inject circular references
-        this.autoBidEngine.setAuctionService(auctionService);
         this.auctionService.setAuctionManager(this);
 
         auctionService.loadActiveAuctions();
@@ -82,10 +79,6 @@ public class AuctionManager {
 
     public AuctionService getAuctionService() { return auctionService; }
 
-    /** Trả về AutoBidEngine đang thực sự chạy (dùng cho AutoBid registration). */
-    public AutoBidEngine getAutoBidEngine() {
-        return autoBidEngine; // trả về instance đang dùng thật
-    }
     /**
      * Đăng ký client nhận realtime update của một phiên.
      */
@@ -203,9 +196,6 @@ public class AuctionManager {
                     // Cập nhật cache trong AuctionService
                     auction.setStatus(AuctionStatus.RUNNING);
                     auctionService.getAuctionCache().put(auction.getId(), auction);
-
-                    // Load auto-bid configs cho phiên vừa mở (nếu chưa load)
-                    autoBidEngine.loadFromDb(auction.getId());
 
                     // Broadcast cho client biết phiên đã bắt đầu
                     AuctionUpdateDTO update = new AuctionUpdateDTO(

@@ -1,7 +1,6 @@
 package com.auction.server.dao;
 
 import com.auction.server.config.DatabaseConnection;
-import com.auction.server.model.AutoBidConfig;
 import com.auction.server.model.BidTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,76 +98,5 @@ public class BidDAO {
         Timestamp ts = rs.getTimestamp("created_at");
         if (ts != null) b.setCreatedAt(ts.toLocalDateTime());
         return b;
-    }
-
-    // ── AUTO BID CONFIG ───────────────────────────────────────────────────────
-
-    /**
-     * Lưu hoặc cập nhật auto-bid config.
-     * Fix: đúng số tham số (6 ? tương ứng 6 giá trị).
-     */
-    public void saveAutoBidConfig(AutoBidConfig config) {
-        String sql = """
-            INSERT INTO auto_bid_configs (auction_id, bidder_id, bidder_username, max_bid, `increment`, registered_at, active)
-            VALUES (?,?,?,?,?,?,1)
-            ON DUPLICATE KEY UPDATE max_bid = VALUES(max_bid), `increment` = VALUES(`increment`),
-                                    bidder_username = VALUES(bidder_username), active = 1
-            """;
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, config.getAuctionId());
-            ps.setInt(2, config.getBidderId());
-            ps.setString(3, config.getBidderUsername() != null ? config.getBidderUsername() : "");
-            ps.setBigDecimal(4, config.getMaxBid());
-            ps.setBigDecimal(5, config.getIncrement());
-            ps.setTimestamp(6, Timestamp.valueOf(config.getRegisteredAt()));
-            ps.executeUpdate();
-            log.info("Lưu auto-bid config: bidder={}, auction={}", config.getBidderId(), config.getAuctionId());
-        } catch (SQLException e) {
-            log.error("Lỗi lưu auto-bid config", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean deactivateAutoBid(int bidderId, int auctionId) {
-        String sql = "UPDATE auto_bid_configs SET active = FALSE WHERE bidder_id = ? AND auction_id = ?";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, bidderId);
-            ps.setInt(2, auctionId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            log.error("Lỗi deactivateAutoBid bidderId={} auctionId={}", bidderId, auctionId, e);
-            return false;
-        }
-    }
-
-    public List<AutoBidConfig> findActiveConfigsByAuction(int auctionId) {
-        String sql = """
-            SELECT * FROM auto_bid_configs
-            WHERE auction_id = ? AND active = TRUE
-            ORDER BY max_bid DESC, registered_at ASC
-            """;
-        List<AutoBidConfig> list = new ArrayList<>();
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, auctionId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapAutoBid(rs));
-            }
-        } catch (SQLException e) {
-            log.error("Lỗi findActiveConfigsByAuction auctionId={}", auctionId, e);
-        }
-        return list;
-    }
-
-    private AutoBidConfig mapAutoBid(ResultSet rs) throws SQLException {
-        AutoBidConfig cfg = new AutoBidConfig();
-        cfg.setBidderId(rs.getInt("bidder_id"));
-        cfg.setBidderUsername(rs.getString("bidder_username"));
-        cfg.setAuctionId(rs.getInt("auction_id"));
-        cfg.setMaxBid(rs.getBigDecimal("max_bid"));
-        cfg.setIncrement(rs.getBigDecimal("increment"));
-        Timestamp ts = rs.getTimestamp("registered_at");
-        if (ts != null) cfg.setRegisteredAt(ts.toLocalDateTime());
-        cfg.setActive(rs.getBoolean("active"));
-        return cfg;
     }
 }

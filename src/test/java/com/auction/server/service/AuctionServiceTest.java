@@ -28,8 +28,7 @@ class AuctionServiceTest {
     void setUp() throws Exception {
         AuctionDAO auctionDAO = new AuctionDAO();
         BidDAO bidDAO = new BidDAO();
-        AutoBidEngine autoBidEngine = new AutoBidEngine(bidDAO);
-        auctionService = new AuctionService(auctionDAO, bidDAO, autoBidEngine);
+        auctionService = new AuctionService(auctionDAO, bidDAO);
 
         // test toàn bộ Logic mà không cần bật Database MySQL
         Field cacheField = AuctionService.class.getDeclaredField("auctionCache");
