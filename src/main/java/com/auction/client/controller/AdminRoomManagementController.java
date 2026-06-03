@@ -409,6 +409,36 @@ public class AdminRoomManagementController implements Initializable {
                 }
         );
     }
+    @javafx.fxml.FXML
+    public void handleCancelRoom(ActionEvent event) {
+        if (selectedRoom == null) {
+            showAlert(Alert.AlertType.WARNING, "Chưa chọn phòng", "Vui lòng chọn một phòng từ bảng.");
+            return;
+        }
+
+        // Xác nhận — nhấn mạnh đây là hủy hoàn toàn, không có winner
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Xác nhận hủy phòng");
+        confirm.setHeaderText("Hủy hoàn toàn phòng #" + selectedRoom.getAuctionId() + "?");
+        confirm.setContentText("Phòng sẽ bị HỦY — không có người thắng.\nDùng khi item vi phạm hoặc có gian lận.");
+        if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+
+        String reason = showInputDialog("Lý do hủy phòng", "Nhập lý do hủy phòng #" + selectedRoom.getAuctionId() + ":");
+        if (reason == null) return;
+
+        runAsync("ADMIN_CANCEL_ROOM", () ->
+                        SocketClient.getInstance().adminCancelRoom(selectedRoom.getAuctionId(), reason),
+                resp -> {
+                    appendLog("[ADMIN] " + (resp.isSuccess() ? "Đã hủy phòng (không có winner)" : "Lỗi: " + resp.getMessage())
+                            + " #" + selectedRoom.getAuctionId() + "\n");
+                    if (resp.isSuccess()) {
+                        selectedRoom = null;
+                        clearDetailPanel();
+                        loadRooms();
+                    }
+                }
+        );
+    }
 
     // ======================================================================
     // HELPERS

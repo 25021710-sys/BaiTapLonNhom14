@@ -683,6 +683,42 @@ public class AuctionController {
             send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
         }
     }
+    /**
+     * Admin HỦY phòng — status = CANCELED, không có người thắng.
+     * Dùng khi item vi phạm, gian lận, hoặc có vấn đề nghiêm trọng.
+     */
+    private void handleAdminCancelRoom(ObjectInputStream in, ObjectOutputStream out, ServerSession session) {
+        try {
+            com.auction.common.request.AdminCancelRoomRequest req =
+                    (com.auction.common.request.AdminCancelRoomRequest) in.readObject();
+            Auction auction = auctionService.getAuction(req.getAuctionId());
+
+            if (auction.getStatus() == AuctionStatus.FINISHED
+                    || auction.getStatus() == AuctionStatus.CANCELED) {
+                send(out, new SimpleResponse(false, "Phòng đã ở trạng thái kết thúc: "
+                        + auction.getStatus().getDisplay()));
+                return;
+            }
+
+            // Set CANCELED — không set winner
+            boolean ok = auctionDAO.updateStatus(req.getAuctionId(), AuctionStatus.CANCELED);
+            if (!ok) {
+                send(out, new SimpleResponse(false, "Không thể hủy phòng."));
+                return;
+            }
+
+            // Broadcast kết thúc với highestBidderId = 0 → client biết không có winner
+            auctionManager.broadcastAuctionEnd(req.getAuctionId(), 0, 0);
+
+            send(out, new SimpleResponse(true, "Đã hủy phòng đấu giá #" + req.getAuctionId()
+                    + " | Lý do: " + req.getReason()));
+            log.info("Admin {} HỦY phòng {} | Lý do: {}",
+                    session.getUsername(), req.getAuctionId(), req.getReason());
+        } catch (Exception e) {
+            log.error("Lỗi ADMIN_CANCEL_ROOM: {}", e.getMessage(), e);
+            send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));
+        }
+    }
     // ── HELPER: Build AdminRoomDTO ────────────────────────────────────────────
 
     /**

@@ -396,6 +396,16 @@ public class SocketClient {
             return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
+    /** Hủy phòng — CANCELED, không có người thắng */
+    public SimpleResponse adminCancelRoom(int auctionId, String reason) {
+        try {
+            sendRequest("ADMIN_CANCEL_ROOM",
+                    new com.auction.common.request.AdminCancelRoomRequest(auctionId, reason));
+            return readTypedResponse(SimpleResponse.class);
+        } catch (Exception e) {
+            return new SimpleResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
+    }
 
     public java.util.Map<Integer, String> resolveUsernames(java.util.Set<Integer> ids) {
         try {

@@ -1,20 +1,25 @@
 package com.auction.common.request;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Request để Admin kết thúc sớm một phòng đấu giá.
- * Người bid cao nhất tại thời điểm đóng sẽ thắng.
- * Status → FINISHED (không phải CANCELED).
+ * Request để Admin HỦY một phòng đấu giá.
+ * Khác với adminCloseRoom (kết thúc sớm, có winner):
+ * - Status → CANCELED
+ * - Không có người thắng
+ * - Dùng khi item vi phạm, gian lận, hoặc có vấn đề nghiêm trọng
  */
-public class AdminCloseRoomRequest implements Serializable {
+public class AdminCancelRoomRequest implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private int auctionId;
     private String reason;
-    public AdminCloseRoomRequest() {}
 
-    public AdminCloseRoomRequest(int auctionId, String reason) {
+    public AdminCancelRoomRequest() {}
+
+    public AdminCancelRoomRequest(int auctionId, String reason) {
         this.auctionId = auctionId;
         this.reason = reason;
     }
