@@ -153,7 +153,7 @@ public class AuctionManager {
                 AuctionUpdateDTO.UpdateType.AUCTION_ENDED,
                 BigDecimal.valueOf(finalPrice),
                 winnerId,
-                winnerUsername,   // ← có tên rồi
+                winnerUsername,
                 null,
                 message
         );

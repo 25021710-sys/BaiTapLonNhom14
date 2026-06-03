@@ -82,6 +82,7 @@ public class AuctionController {
             case "ADMIN_PAUSE_ROOM"       -> handleAdminPauseRoom(in, out, session);
             case "ADMIN_RESUME_ROOM"      -> handleAdminResumeRoom(in, out, session);
             case "ADMIN_CLOSE_ROOM"       -> handleAdminCloseRoom(in, out, session);
+            case "ADMIN_CANCEL_ROOM"       -> handleAdminCancelRoom(in, out, session);
             default -> {
                 log.warn("Action không hỗ trợ: {}", action);
                 send(out, new SimpleResponse(false, "Action không hỗ trợ: " + action));
