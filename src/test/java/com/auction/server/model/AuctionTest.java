@@ -95,4 +95,52 @@ class AuctionTest {
         assertNotNull(a.getMinBidIncrement());
         assertTrue(a.getMinBidIncrement().compareTo(BigDecimal.ZERO) > 0);
     }
+
+    @Test
+    @DisplayName("Thời gian kết thúc phải sau thời gian bắt đầu")
+    void testEndTimeAfterStartTime() {
+        assertTrue(auction.getEndTime().isAfter(auction.getStartTime()));
+    }
+
+    @Test
+    @DisplayName("reservePrice được set đúng")
+    void testReservePriceSet() {
+        assertEquals(new BigDecimal("2000000"), auction.getReservePrice());
+    }
+
+    @Test
+    @DisplayName("currentPrice < reservePrice → chưa đạt giá sàn")
+    void testCurrentPriceBelowReserve() {
+        auction.setCurrentPrice(new BigDecimal("1500000"));
+        assertTrue(auction.getCurrentPrice().compareTo(auction.getReservePrice()) < 0);
+    }
+
+    @Test
+    @DisplayName("currentPrice >= reservePrice → đạt giá sàn")
+    void testCurrentPriceMeetsReserve() {
+        auction.setCurrentPrice(new BigDecimal("2000000"));
+        assertTrue(auction.getCurrentPrice().compareTo(auction.getReservePrice()) >= 0);
+    }
+
+    @Test
+    @DisplayName("sellerId được lưu đúng")
+    void testSellerIdStored() {
+        assertEquals(2, auction.getSellerId());
+    }
+
+    @Test
+    @DisplayName("Phiên PENDING không thể đặt giá")
+    void testPendingStatusIsNotBiddable() {
+        auction.setStatus(AuctionStatus.PENDING);
+        assertNotEquals(AuctionStatus.OPEN, auction.getStatus());
+        assertNotEquals(AuctionStatus.RUNNING, auction.getStatus());
+    }
+
+    @Test
+    @DisplayName("Phiên CANCELED không thể đặt giá")
+    void testCanceledStatusIsNotBiddable() {
+        auction.setStatus(AuctionStatus.CANCELED);
+        assertNotEquals(AuctionStatus.OPEN, auction.getStatus());
+        assertNotEquals(AuctionStatus.RUNNING, auction.getStatus());
+    }
 }
