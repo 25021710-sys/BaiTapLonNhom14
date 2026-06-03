@@ -132,7 +132,7 @@ public class AuctionRoomController {
   public void initialize() {
     setupBidHistoryTable();
     setupNumberOnlyFields();
-    cbBidFilter.setItems(FXCollections.observableArrayList("Tất cả", "Chỉ của tôi", "Auto-bid"));
+    cbBidFilter.setItems(FXCollections.observableArrayList("Tất cả", "Chỉ của tôi"));
     cbBidFilter.setValue("Tất cả");
     setupChart();
     lblBidError.setVisible(false);
