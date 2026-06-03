@@ -22,15 +22,14 @@ public class BidDAO {
 
     public void saveBid(BidTransaction bid) {
         String sql = """
-            INSERT INTO bid_transactions (auction_id, bidder_id, amount, is_auto_bid, created_at)
-            VALUES (?,?,?,?,?)
+            INSERT INTO bid_transactions (auction_id, bidder_id, amount, created_at)
+            VALUES (?,?,?,?)
             """;
         try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, bid.getAuctionId());
             ps.setInt(2, bid.getBidderId());
             ps.setBigDecimal(3, bid.getAmount());
-            ps.setBoolean(4, bid.isAutoBid());
-            ps.setTimestamp(5, Timestamp.valueOf(bid.getCreatedAt()));
+            ps.setTimestamp(4, Timestamp.valueOf(bid.getCreatedAt()));
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error("Lỗi lưu bid", e);
@@ -94,7 +93,6 @@ public class BidDAO {
         b.setAuctionId(rs.getInt("auction_id"));
         b.setBidderId(rs.getInt("bidder_id"));
         b.setAmount(rs.getBigDecimal("amount"));
-        b.setAutoBid(rs.getBoolean("is_auto_bid"));
         Timestamp ts = rs.getTimestamp("created_at");
         if (ts != null) b.setCreatedAt(ts.toLocalDateTime());
         return b;

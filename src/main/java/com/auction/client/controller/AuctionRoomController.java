@@ -691,7 +691,7 @@ public class AuctionRoomController {
     colBidAmount.setCellValueFactory(data ->
             new SimpleStringProperty(formatMoney(data.getValue().getAmount()) + " VND"));
     colBidType.setCellValueFactory(data ->
-            new SimpleStringProperty(data.getValue().isAutoBid() ? "AUTO" : "MANUAL"));
+            new SimpleStringProperty("MANUAL"));
 
     // Force mau chu trang ro
     javafx.util.Callback<TableColumn<BidTransaction, String>,
