@@ -255,6 +255,26 @@
     -fx-effect: none;
 }
 
+.btn-cancel-room {
+    -fx-background-color: #7c3aed;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-cursor: hand;
+    -fx-padding: 8 14;
+    -fx-effect: dropshadow(gaussian, rgba(124,58,237,0.45), 8, 0, 0, 3);
+}
+.btn-cancel-room:hover {
+    -fx-background-color: #8b5cf6;
+    -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.65), 10, 0, 0, 4);
+}
+.btn-cancel-room:pressed {
+    -fx-background-color: #6d28d9;
+    -fx-effect: none;
+}
+
 /* =======================
    TITLED PANE
 ======================= */

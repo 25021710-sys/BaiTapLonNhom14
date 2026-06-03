@@ -4,7 +4,6 @@ import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.server.dao.AuctionDAO;
 import com.auction.server.dao.BidDAO;
 import com.auction.server.network.ClientHandler;
-import com.auction.server.model.Auction;
 import com.auction.server.model.AuctionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -91,6 +91,10 @@
                             styleClass="btn-close-room"
                             text="⛔ Đóng Phòng"
                             prefWidth="120"/>
+                    <Button onAction="#handleCancelRoom"
+                            styleClass="btn-cancel-room"
+                            text="🚫 Hủy Phòng"
+                            prefWidth="120"/>
                 </HBox>
 
                 <!-- Live Bid Activity Log -->

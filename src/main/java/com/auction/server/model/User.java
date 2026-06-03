@@ -7,7 +7,7 @@ public class User extends Entity {
     private String username;
     private String passwordHash;
     private String email;
-    private BigDecimal balance;      // Dùng khi người này mua (Bidder)
+    private BigDecimal balance;
     private UserRole role;         // Phân quyền chính: ADMIN, USER
     private boolean active;
     private String salt;
@@ -15,8 +15,6 @@ public class User extends Entity {
     private String location;
 
     // Các trạng thái hoạt động thực tế của User
-    public enum UserStatus { IDLE, BIDDING, SELLING }
-    private UserStatus status = UserStatus.IDLE;
 
     public User(String username, String passwordHash, String email) {
         this.username = username;
@@ -45,21 +43,9 @@ public class User extends Entity {
         this.description = description;
         this.location = location;
     }
-    public boolean canBid(){
-        return this.role == UserRole.BIDDER;
-    }
-    public boolean canSell(){
-        return this.role == UserRole.SELLER;
-    }
-    public boolean canManageSystem(){
-        return this.role == UserRole.ADMIN;
-    }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
-
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -68,7 +54,6 @@ public class User extends Entity {
     public void setBalance(BigDecimal balance) { this.balance = balance; }
 
     public UserRole getRole() { return role; }
-    public void setRole(UserRole role) { this.role = role; }
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
@@ -78,17 +63,6 @@ public class User extends Entity {
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
-
-    public UserStatus getStatus() { return status; }
-    public void setStatus(UserStatus status) {
-        if (status == UserStatus.SELLING && this.role != UserRole.SELLER) {
-            throw new IllegalStateException("Chỉ SELLER mới có thể ở trạng thái SELLING");
-        }
-        if (status == UserStatus.BIDDING && this.role != UserRole.BIDDER) {
-            throw new IllegalStateException("Chỉ BIDDER mới có thể ở trạng thái BIDDING");
-        }
-        this.status = status;
-    }
 
     // Logic nghiệp vụ bổ sung
     public void deposit(BigDecimal amount) {
@@ -112,8 +86,7 @@ public class User extends Entity {
     public void printInfo() {
         System.out.println("User: " + username +
                 " | Role: " + role +
-                " | Balance: " + balance +
-                " | Status: " + status);
+                " | Balance: " + balance);
     }
 
 }

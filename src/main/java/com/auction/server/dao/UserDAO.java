@@ -70,33 +70,29 @@ public class UserDAO {
     }
 
     public User login(String email, String password) throws SQLException {
-        String checkSql = "SELECT * FROM users WHERE email = ?";
+        String sql = "SELECT * FROM users WHERE email = ?";
+
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement checkPs = connection.prepareStatement(checkSql)) {
-            checkPs.setString(1, email);
-            ResultSet rs = checkPs.executeQuery();
-            if (rs.next()) {
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (!rs.next()) {
+                    return null;
+                }
+
                 String storedHash = rs.getString("password_hash");
                 String salt = rs.getString("salt");
-                // verify
+
                 if (PasswordUtil.verify(password, salt, storedHash)) {
-                    return new User(rs.getInt("id"),
-                            rs.getString("username"),
-                            storedHash,
-                            rs.getString("email"),
-                            rs.getBigDecimal("balance"),
-                            UserRole.valueOf(rs.getString("role")),
-                            rs.getBoolean("active"),
-                            rs.getTimestamp("created_at").toLocalDateTime(), // lấy từ DB)
-                            rs.getString("salt"),
-                            rs.getString("description"),
-                            rs.getString("location"));
+                    return mapRow(rs);
                 }
+
+                return null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
     }
     public void updateBalance(int userId, BigDecimal newBalance) throws SQLException {
         String sql = "UPDATE users SET balance = ? WHERE id = ?";
@@ -149,29 +145,20 @@ public class UserDAO {
     }
     public User findById(int userId) throws SQLException {
         String sql = "SELECT * FROM users WHERE id = ?";
+
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
 
-            if (rs.next()) {
-                return new User(
-                        rs.getInt("id"),
-                        rs.getString("username"),
-                        rs.getString("password_hash"),
-                        rs.getString("email"),
-                        rs.getBigDecimal("balance"),
-                        UserRole.valueOf(rs.getString("role")),
-                        rs.getBoolean("active"),
-                        rs.getTimestamp("created_at").toLocalDateTime(),
-                        rs.getString("salt"),
-                        rs.getString("description"),
-                        rs.getString("location")
-                );
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
             }
         }
-        return null; // Không tìm thấy user
+
+        return null;
     }
     public Map<Integer, String> findUsernamesByIds(Set<Integer> ids) throws SQLException {
         Map<Integer, String> result = new HashMap<>();
@@ -211,12 +198,19 @@ public class UserDAO {
 
     public User findByUsername(String username) throws SQLException {
         String sql = "SELECT * FROM users WHERE username = ?";
+
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapRow(rs);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
         }
+
         return null;
     }
 
