@@ -23,25 +23,33 @@ class AuctionServiceTest {
     private AuctionService auctionService;
     private ConcurrentHashMap<Integer, Auction> mockCache;
 
-    @BeforeEach
-    @SuppressWarnings("unchecked")
-    void setUp() throws Exception {
-        AuctionDAO auctionDAO = new AuctionDAO();
-        BidDAO bidDAO = new BidDAO();
-        auctionService = new AuctionService(auctionDAO, bidDAO);
+    // Helper tạo phiên hợp lệ đang RUNNING
+    private Auction runningAuction(int id, int sellerId, BigDecimal currentPrice) {
+        Auction a = new Auction();
+        a.setId(id);
+        a.setSellerId(sellerId);
+        a.setStatus(AuctionStatus.RUNNING);
+        a.setStartTime(LocalDateTime.now().minusMinutes(10));
+        a.setEndTime(LocalDateTime.now().plusMinutes(30));
+        a.setCurrentPrice(currentPrice);
+        return a;
+    }
 
-        // test toàn bộ Logic mà không cần bật Database MySQL
-        Field cacheField = AuctionService.class.getDeclaredField("auctionCache");
-        cacheField.setAccessible(true);
-        mockCache = (ConcurrentHashMap<Integer, Auction>) cacheField.get(auctionService);
+    // 1) đầu vào cơ bản
+    @Test
+    @DisplayName("Từ chối số tiền âm")
+    void testPlaceBid_NegativeAmount_ShouldFail() {
+        BidRequest req = new BidRequest(10, "1", new BigDecimal("-100"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+        assertEquals("Giao dịch bị từ chối: Số tiền đặt giá không hợp lệ.", res.getMessage());
     }
 
     @Test
-    @DisplayName("Từ chối số tiền âm hoặc bằng 0")
-    void testPlaceBidFailsWhenAmountIsInvalid() {
-        BidRequest req = new BidRequest(10, "1", new BigDecimal("-100"));
+    @DisplayName("Từ chối số tiền bằng 0")
+    void testPlaceBid_ZeroAmount_ShouldFail() {
+        BidRequest req = new BidRequest(10, "1", BigDecimal.ZERO);
         BidResponse res = auctionService.placeBid(req);
-
         assertFalse(res.isSuccess());
         assertEquals("Giao dịch bị từ chối: Số tiền đặt giá không hợp lệ.", res.getMessage());
     }
@@ -51,67 +59,156 @@ class AuctionServiceTest {
     void testPlaceBidFailsWhenAuctionNotFound() {
         BidRequest req = new BidRequest(10, "999", new BigDecimal("500000"));
         BidResponse res = auctionService.placeBid(req);
-
         assertFalse(res.isSuccess());
         assertTrue(res.getMessage().contains("Phiên đấu giá không tồn tại"));
     }
 
+    // 2) trạng thái và thời gian phiên
     @Test
-    @DisplayName("Chặn người bán tự mua đồ của chính mình")
-    void testPlaceBidFailsWhenSellerBidsOnOwnItem() {
-        // Giả lập phiên đấu giá trong RAM: Người bán có ID = 5
-        Auction a = new Auction();
-        a.setId(1);
-        a.setSellerId(5);
-        a.setStatus(AuctionStatus.RUNNING);
-        a.setStartTime(LocalDateTime.now().minusMinutes(10));
-        a.setEndTime(LocalDateTime.now().plusMinutes(10));
-        mockCache.put(1, a);
-
-        BidRequest req = new BidRequest(5, "1", new BigDecimal("200000"));
-        BidResponse res = auctionService.placeBid(req);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.getMessage().contains("Người bán không thể tự đấu giá"));
-    }
-
-    @Test
-    @DisplayName("Từ chối khi mức giá đặt <= giá hiện tại")
-    void testPlaceBidFailsWhenPriceTooLow() {
-        // Giả lập phiên đấu giá: Giá hiện tại đang là 500k
-        Auction a = new Auction();
-        a.setId(2);
-        a.setSellerId(1);
-        a.setStatus(AuctionStatus.RUNNING);
-        a.setStartTime(LocalDateTime.now().minusMinutes(10));
-        a.setEndTime(LocalDateTime.now().plusMinutes(10));
-        a.setCurrentPrice(new BigDecimal("500000"));
-        mockCache.put(2, a);
-
-        BidRequest req = new BidRequest(10, "2", new BigDecimal("400000"));
-        BidResponse res = auctionService.placeBid(req);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.getMessage().contains("Mức giá đề xuất phải cao hơn"));
-    }
-
-    @Test
-    @DisplayName("Ngoại lệ 5: Từ chối khi phiên đấu giá đã kết thúc")
+    @DisplayName("Từ chối khi phiên đã kết thúc (endTime đã qua)")
     void testPlaceBidFailsWhenAuctionEnded() {
-        // Giả lập phiên đấu giá đã hết hạn từ ngày hôm qua
         Auction a = new Auction();
         a.setId(3);
         a.setSellerId(1);
         a.setStatus(AuctionStatus.RUNNING);
         a.setStartTime(LocalDateTime.now().minusDays(2));
-        a.setEndTime(LocalDateTime.now().minusDays(1)); // Đã hết hạn
+        a.setEndTime(LocalDateTime.now().minusDays(1));
         a.setCurrentPrice(new BigDecimal("500000"));
         mockCache.put(3, a);
 
         BidRequest req = new BidRequest(10, "3", new BigDecimal("600000"));
         BidResponse res = auctionService.placeBid(req);
-
         assertFalse(res.isSuccess());
-        assertTrue(res.getMessage().contains("Phiên đấu giá đã kết thúc"));
+        assertTrue(res.getMessage().contains("đã kết thúc"));
+    }
+
+    @Test
+    @DisplayName("Từ chối khi phiên chưa bắt đầu")
+    void testPlaceBid_AuctionNotStartedYet_ShouldFail() {
+        Auction a = new Auction();
+        a.setId(4);
+        a.setSellerId(1);
+        a.setStatus(AuctionStatus.OPEN);
+        a.setStartTime(LocalDateTime.now().plusHours(2));
+        a.setEndTime(LocalDateTime.now().plusHours(5));
+        a.setCurrentPrice(new BigDecimal("500000"));
+        mockCache.put(4, a);
+
+        BidRequest req = new BidRequest(10, "4", new BigDecimal("600000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("chưa bắt đầu"));
+    }
+
+    @Test
+    @DisplayName("Từ chối khi phiên ở trạng thái FINISHED")
+    void testPlaceBid_StatusFinished_ShouldFail() {
+        Auction a = runningAuction(5, 1, new BigDecimal("500000"));
+        a.setStatus(AuctionStatus.FINISHED);
+        mockCache.put(5, a);
+
+        BidRequest req = new BidRequest(10, "5", new BigDecimal("600000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+    }
+
+    @Test
+    @DisplayName("Từ chối khi phiên ở trạng thái CANCELED")
+    void testPlaceBid_StatusCanceled_ShouldFail() {
+        Auction a = runningAuction(6, 1, new BigDecimal("500000"));
+        a.setStatus(AuctionStatus.CANCELED);
+        mockCache.put(6, a);
+
+        BidRequest req = new BidRequest(10, "6", new BigDecimal("600000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+    }
+
+    @Test
+    @DisplayName("Từ chối khi phiên ở trạng thái PENDING")
+    void testPlaceBid_StatusPending_ShouldFail() {
+        Auction a = runningAuction(7, 1, new BigDecimal("500000"));
+        a.setStatus(AuctionStatus.PENDING);
+        mockCache.put(7, a);
+
+        BidRequest req = new BidRequest(10, "7", new BigDecimal("600000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+    }
+
+    // 3) nghiệp vụ đặt giá
+    @Test
+    @DisplayName("Chặn người bán tự đấu giá sản phẩm của mình")
+    void testPlaceBidFailsWhenSellerBidsOnOwnItem() {
+        Auction a = runningAuction(1, 5, new BigDecimal("500000"));
+        mockCache.put(1, a);
+
+        BidRequest req = new BidRequest(5, "1", new BigDecimal("600000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("Người bán không thể tự đấu giá"));
+    }
+
+    @Test
+    @DisplayName("Từ chối khi giá đặt thấp hơn giá hiện tại")
+    void testPlaceBidFailsWhenPriceTooLow() {
+        Auction a = runningAuction(2, 1, new BigDecimal("500000"));
+        mockCache.put(2, a);
+
+        BidRequest req = new BidRequest(10, "2", new BigDecimal("400000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("Mức giá đề xuất phải cao hơn"));
+    }
+
+    @Test
+    @DisplayName("Từ chối khi giá đặt bằng giá hiện tại")
+    void testPlaceBid_PriceEqualCurrent_ShouldFail() {
+        Auction a = runningAuction(8, 1, new BigDecimal("500000"));
+        mockCache.put(8, a);
+
+        BidRequest req = new BidRequest(10, "8", new BigDecimal("500000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("Mức giá đề xuất phải cao hơn"));
+    }
+
+    @Test
+    @DisplayName("Từ chối khi người đang dẫn đầu tự nâng giá thêm")
+    void testPlaceBid_SelfRaise_ShouldFail() {
+        Auction a = runningAuction(11, 1, new BigDecimal("500000"));
+        a.setHighestBidderId(10);
+        mockCache.put(11, a);
+
+        BidRequest req = new BidRequest(10, "11", new BigDecimal("700000"));
+        BidResponse res = auctionService.placeBid(req);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("đang dẫn đầu"));
+    }
+
+    // 4) createAuction validation
+    @Test
+    @DisplayName("createAuction: ném exception khi endTime trước startTime")
+    void testCreateAuction_EndBeforeStart_ShouldThrow() {
+        LocalDateTime start = LocalDateTime.now().plusHours(2);
+        LocalDateTime end   = LocalDateTime.now().plusHours(1);
+        assertThrows(Exception.class, () ->
+                auctionService.createAuction(1, 2, new BigDecimal("500000"), null, start, end));
+    }
+
+    @Test
+    @DisplayName("createAuction: ném exception khi startingPrice <= 0")
+    void testCreateAuction_InvalidPrice_ShouldThrow() {
+        LocalDateTime start = LocalDateTime.now().plusHours(1);
+        LocalDateTime end   = LocalDateTime.now().plusHours(2);
+        assertThrows(Exception.class, () ->
+                auctionService.createAuction(1, 2, BigDecimal.ZERO, null, start, end));
+    }
+
+    @Test
+    @DisplayName("createAuction: ném exception khi startTime hoặc endTime null")
+    void testCreateAuction_NullTime_ShouldThrow() {
+        assertThrows(Exception.class, () ->
+                auctionService.createAuction(1, 2, new BigDecimal("500000"), null, null, null));
     }
 }
