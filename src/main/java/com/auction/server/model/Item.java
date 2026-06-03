@@ -14,11 +14,11 @@ public abstract class Item extends Entity {
 
     public Item(int id, String name, String description, BigDecimal startingPrice, int sellerId, ItemCategory category, LocalDateTime createdAt){
         super(id, createdAt);
-        this.name=name;
+        this.name = name;
         this.description = description;
-        this.startingPrice=startingPrice;
-        this.sellerId=sellerId;
-        this.category=category;
+        this.startingPrice = startingPrice;
+        this.sellerId = sellerId;
+        this.category = category;
     }
 
     public String getName() { return name; }

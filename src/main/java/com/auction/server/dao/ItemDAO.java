@@ -21,28 +21,27 @@ public class ItemDAO {
 
         // Kết nối Database và chuẩn bị lệnh
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
-            pstmt.setString(1, item.getName());
-            pstmt.setString(2, item.getDescription());
-            pstmt.setBigDecimal(3, item.getStartingPrice());
-            pstmt.setInt(4, item.getSellerId());
+            stmt.setString(1, item.getName());
+            stmt.setString(2, item.getDescription());
+            stmt.setBigDecimal(3, item.getStartingPrice());
+            stmt.setInt(4, item.getSellerId());
             // Chuyển Enum (ví dụ: ELECTRONICS) thành dạng chữ "ELECTRONICS" để lưu vào DB
-            pstmt.setString(5, item.getCategory().name());
+            stmt.setString(5, item.getCategory().name());
 
             // lệnh cho MySQL thực thi câu lệnh
-            int affectedRows = pstmt.executeUpdate();
+            int affectedRows = stmt.executeUpdate();
 
             // Nếu lưu thành công, MySQL sẽ tự tạo ra ID. Lấy ID đó gắn ngược lại cho item
             if (affectedRows > 0) {
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         item.setId(generatedKeys.getInt(1));
                     }
                 }
                 return true; // Lưu thành công
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Lỗi khi lưu Item vào kho: " + e.getMessage());
@@ -70,30 +69,6 @@ public class ItemDAO {
         return itemList;
     }
 
-    // Sửa thông tin của item
-    public boolean updateItem(Item item) {
-        // Cập nhật tên, mô tả, giá... dựa vào cái ID của sản phẩm đó
-        String sql = "UPDATE items SET name = ?, description = ?, starting_price = ?, category = ? WHERE id = ?";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, item.getName());
-            pstmt.setString(2, item.getDescription());
-            pstmt.setBigDecimal(3, item.getStartingPrice());
-            pstmt.setString(4, item.getCategory().name());
-            pstmt.setInt(5, item.getId());
-
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0; // Nếu > 0 tức là đã sửa thành công ít nhất 1 dòng
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("Lỗi khi cập nhật Item: " + e.getMessage());
-        }
-        return false;
-    }
-
     // Xóa item
     public boolean deleteItem(int itemId) {
         String sql = "DELETE FROM items WHERE id = ?";
@@ -112,6 +87,7 @@ public class ItemDAO {
         }
         return false;
     }
+    // Dành cho cái phiên đấu giá của tôi
     public List<Item> getItemsBySeller(int sellerId) {
         String sql = "SELECT * FROM items WHERE seller_id = ? ORDER BY created_at DESC";
         List<Item> list = new ArrayList<>();

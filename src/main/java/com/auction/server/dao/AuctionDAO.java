@@ -84,45 +84,23 @@ public class AuctionDAO {
 
     public Auction findById(int id) {
         String sql = "SELECT * FROM auctions WHERE id = ?";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setInt(1, id);
+
             try (ResultSet rs = ps.executeQuery()) {
+
                 if (rs.next()) {
-                    Auction auction = new Auction();
-                    auction.setId(rs.getInt("id"));
-                    auction.setItemId(rs.getInt("item_id"));
-                    auction.setSellerId(rs.getInt("seller_id"));
-                    auction.setHighestBidderId(rs.getInt("highest_bidder_id"));
-
-                    // Xử lý ngày tháng
-                    if (rs.getTimestamp("start_time") != null)
-                        auction.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
-                    if (rs.getTimestamp("end_time") != null)
-                        auction.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
-                    if (rs.getTimestamp("created_at") != null)
-                        auction.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-
-                    // Xử lý tiền
-                    auction.setStartingPrice(rs.getBigDecimal("starting_price"));
-                    auction.setCurrentPrice(rs.getBigDecimal("current_price"));
-                    auction.setReservePrice(rs.getBigDecimal("reserve_price"));
-
-                    // FIX: setStatus bị thiếu trước đây → auction luôn có status = OPEN (mặc định)
-                    String statusStr = rs.getString("status");
-                    if (statusStr != null) auction.setStatus(AuctionStatus.valueOf(statusStr));
-
-                    auction.setExtensionCount(rs.getInt("extension_count"));
-                    try {
-                        java.math.BigDecimal step = rs.getBigDecimal("min_bid_increment");
-                        if (step != null) auction.setMinBidIncrement(step);
-                    } catch (SQLException ignored) {}
-
-                    return auction;
+                    return mapRow(rs);
                 }
             }
+
         } catch (Exception e) {
             logger.error("Lỗi tìm auction theo id: " + id, e);
         }
+
         return null;
     }
     /** Cập nhật trạng thái phiên đấu giá */
@@ -163,32 +141,7 @@ public class AuctionDAO {
             throw new RuntimeException(e);
         }
     }
-
-    public void updateAuction(Auction auction) {
-        String sql = """
-    UPDATE auctions
-    SET current_price = ?,
-        highest_bidder_id = ?,
-        status = ?,
-        extension_count = ?
-    WHERE id = ?
-    """;
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setBigDecimal(1, auction.getCurrentPrice());
-            ps.setInt(2, auction.getHighestBidderId());
-            ps.setString(3, auction.getStatus().name());
-            ps.setInt(4, auction.getExtensionCount());
-            ps.setInt(5, auction.getId());
-
-            ps.executeUpdate();
-
-        } catch (Exception e) {
-            logger.error("Lỗi cập nhật auction id: " + auction.getId(), e);
-            throw new RuntimeException(e);
-        }
-    }
-    /** Lấy tất cả phiên đang OPEN hoặc RUNNING */
+    /** Lấy tất cả phiên đang OPEN, PAUSED, RUNNING */
     public List<Auction> findActiveAuctions() {
         String sql = "SELECT * FROM auctions WHERE status IN ('OPEN','RUNNING', 'PAUSED') ORDER BY end_time ASC";
         List<Auction> list = new ArrayList<>();
@@ -200,37 +153,6 @@ public class AuctionDAO {
             logger.error("Lỗi findActiveAuctions", e);
         }
         return list;
-    }
-
-    /** Lấy tất cả phiên (dùng cho Admin) */
-    public List<Auction> findAll() {
-        String sql = "SELECT * FROM auctions ORDER BY created_at DESC";
-        List<Auction> list = new ArrayList<>();
-        try (Connection c = getConn();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
-        } catch (SQLException e) {
-            logger.error("Lỗi findAll auctions", e);
-        }
-        return list;
-    }
-    public void updateBidInfo(int auctionId, BigDecimal newPrice,
-                              int highestBidderId, int extensionCount, Timestamp newEndTime) {
-        // FIX: bỏ cột current_highest_bid không tồn tại trong schema
-        String sql = "UPDATE auctions SET current_price = ?, " +
-                "highest_bidder_id = ?, extension_count = ?, end_time = ?, status = 'RUNNING' WHERE id = ?";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setBigDecimal(1, newPrice);
-            ps.setInt(2, highestBidderId);
-            ps.setInt(3, extensionCount);
-            ps.setTimestamp(4, newEndTime);
-            ps.setInt(5, auctionId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            logger.error("Error updating bid info for auction {}", auctionId, e);
-            throw new RuntimeException(e);
-        }
     }
     private Auction mapRow(ResultSet rs) throws SQLException {
         Auction a = new Auction();
