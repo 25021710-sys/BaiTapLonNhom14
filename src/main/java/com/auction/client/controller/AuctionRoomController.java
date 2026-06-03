@@ -252,7 +252,7 @@ public class AuctionRoomController {
         priceSection.setManaged(true);
       }
 
-// Place bid + Auto bid: chỉ hiện khi RUNNING
+// Place bid : chỉ hiện khi RUNNING
       if (placeBidSection != null) {
         placeBidSection.setVisible(isRunning);
         placeBidSection.setManaged(isRunning);
