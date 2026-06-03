@@ -27,7 +27,6 @@ import java.util.concurrent.locks.ReentrantLock;
  *   - Quản lý cache phiên và lock per-auction (thread-safe)
  *   - Anti-sniping: gia hạn phiên khi bid sát giờ kết thúc
  *   - Broadcast realtime update qua AuctionManager (Observer pattern)
- *   - Kích hoạt chuỗi auto-bid sau mỗi bid thủ công
  *
  */
 public class AuctionService {
@@ -121,7 +120,6 @@ public class AuctionService {
      *  10. Lưu BidTransaction
      *  11. Anti-sniping
      *  12. Broadcast realtime update
-     *  13. Kích hoạt chuỗi auto-bid
      */
     public BidResponse placeBid(BidRequest request) {
         int        auctionId = Integer.parseInt(request.getAuctionId());
@@ -272,7 +270,7 @@ public class AuctionService {
             auctionCache.put(auctionId, auction);
 
             // 12. Lưu lịch sử giao dịch
-            BidTransaction transaction = new BidTransaction(0, now, auctionId, userId, bidAmount, false);
+            BidTransaction transaction = new BidTransaction(0, now, auctionId, userId, bidAmount);
             bidDAO.saveBid(transaction);
 
             // 13. Anti-sniping
@@ -358,7 +356,6 @@ public class AuctionService {
 
     /**
      * Admin duyệt phiên đấu giá: PENDING → OPEN.
-     * Sau khi duyệt, phiên được load vào cache và auto-bid config được nạp.
      *
      * @return true nếu thành công, false nếu phiên không tồn tại hoặc không đúng trạng thái
      */
