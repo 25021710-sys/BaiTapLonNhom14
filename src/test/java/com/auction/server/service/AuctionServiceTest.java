@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+
 @DisplayName("AuctionService Validation Tests")
 class AuctionServiceTest {
 
@@ -33,6 +36,21 @@ class AuctionServiceTest {
         a.setEndTime(LocalDateTime.now().plusMinutes(30));
         a.setCurrentPrice(currentPrice);
         return a;
+    }
+
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void setUp() throws Exception {
+        AuctionDAO auctionDAO = mock(AuctionDAO.class);
+        BidDAO bidDAO = mock(BidDAO.class);
+        // Giả lập findById trả null (auction không tồn tại) cho mọi id
+        when(auctionDAO.findById(anyInt())).thenReturn(null);
+
+        auctionService = new AuctionService(auctionDAO, bidDAO);
+
+        Field cacheField = AuctionService.class.getDeclaredField("auctionCache");
+        cacheField.setAccessible(true);
+        mockCache = (ConcurrentHashMap<Integer, Auction>) cacheField.get(auctionService);
     }
 
     // 1) đầu vào cơ bản
