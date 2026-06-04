@@ -3,6 +3,7 @@ package com.auction.client.controller;
 import com.auction.client.network.SocketClient;
 import com.auction.client.session.ClientSession;
 import com.auction.common.dto.AuctionDTO;
+import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.response.AuctionListResponse;
 import javafx.animation.KeyFrame;
@@ -57,6 +58,15 @@ public class DashBoardController {
     private Parent adminApprovalView;
     private AdminAuctionApprovalController adminApprovalController;
 
+    private Parent joinedAuctionView;
+    private JoinedAuctionController joinedAuctionController;
+
+    private Parent myAuctionView;
+    private MyAuctionController myAuctionController;
+
+    private javafx.scene.Node dashboardCenter;
+
+
     private Timeline autoRefresh;
 
     private List<AuctionDTO> allAuctions = new java.util.ArrayList<>();
@@ -94,13 +104,15 @@ public class DashBoardController {
         }
 
         autoRefresh = new Timeline(new KeyFrame(
-            javafx.util.Duration.seconds(30),
+            javafx.util.Duration.seconds(5),
             e -> loadAuctionDataFromServer()
         ));
         autoRefresh.setCycleCount(Timeline.INDEFINITE);
         autoRefresh.play();
         // ── Lắng nghe push update từ server khi đang ở Dashboard
         SocketClient.getInstance().addPushCallback(this::handleGlobalPushUpdate);
+        dashboardCenter = rootPane.getCenter();
+        preloadAllViews();
     }
 
     // ── LOAD DATA TỪ SERVER ───────────────────────────────────────────────────
@@ -264,14 +276,8 @@ public class DashBoardController {
 
     @FXML
     private void handleGoToDashboard() {
-        try {
-            setActiveMenu(btnHome);
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DashBoardView.fxml"));
-            Stage stage = (Stage) rootPane.getScene().getWindow();
-            stage.setScene(new Scene(loader.load()));
-            stage.setTitle("Dashboard");
-            stage.show();
-        } catch (Exception e) { e.printStackTrace(); }
+        setActiveMenu(btnHome);
+        rootPane.setCenter(dashboardCenter);
     }
 
     @FXML
@@ -303,12 +309,15 @@ public class DashBoardController {
     public void handleJoinedAuctionView() {
         try {
             setActiveMenu(btnJoinedAuction);
-            FXMLLoader loader = new FXMLLoader(
+            if (joinedAuctionView == null) {
+                FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/JoinedAuctionView.fxml"));
-            Parent view = loader.load();
-            JoinedAuctionController ctrl = loader.getController();
-            ctrl.setOpenRoomCallback(this::openAuctionRoom);
-            rootPane.setCenter(view);
+                joinedAuctionView = loader.load();
+                joinedAuctionController = loader.getController();
+                joinedAuctionController.setOpenRoomCallback(this::openAuctionRoom);
+            }
+            // Không load lại — chỉ set vào center
+            rootPane.setCenter(joinedAuctionView);
         } catch (IOException e) {
             System.out.println("Lỗi load JoinedAuction: " + e.getMessage());
         }
@@ -319,23 +328,35 @@ public class DashBoardController {
     public void handleMyAuctionView() {
         try {
             setActiveMenu(btnMyAuction);
-            FXMLLoader loader = new FXMLLoader(
+            if (myAuctionView == null) {
+                FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/MyAuctionView.fxml"));
-            Parent view = loader.load();
-            MyAuctionController ctrl = loader.getController();
-            ctrl.setOpenRoomCallback(this::openAuctionRoom);
-            rootPane.setCenter(view);
+                myAuctionView = loader.load();
+                myAuctionController = loader.getController();
+                myAuctionController.setOpenRoomCallback(this::openAuctionRoom);
+            }
+            rootPane.setCenter(myAuctionView);
+            // Nếu cache đã bị invalidate → tự động load lại
+            myAuctionController.refreshIfVisible();
         } catch (IOException e) {
             System.out.println("Lỗi load MyAuction: " + e.getMessage());
         }
     }
-
     /**
      * Nhận push update từ server khi user đang ở Dashboard
      * (không ở trong phòng đấu giá cụ thể nào).
      */
     private void handleGlobalPushUpdate(com.auction.common.dto.AuctionUpdateDTO update) {
         // Refresh dashboard khi có phiên mới bắt đầu
+        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_STARTED) {
+            Platform.runLater(() -> {
+                loadAuctionDataFromServer(); // refresh dashboard
+                // Invalidate cache MyAuction để lần sau bấm vào sẽ load lại
+                if (myAuctionController != null) myAuctionController.invalidateCache();
+            });
+            return;
+        }
+
         if (update.getType() == com.auction.common.dto.AuctionUpdateDTO.UpdateType.AUCTION_STARTED) {
             Platform.runLater(this::loadAuctionDataFromServer);
             return;
@@ -445,5 +466,30 @@ public class DashBoardController {
             .collect(java.util.stream.Collectors.toList());
 
         renderCardsFromData(filtered);
+    }
+
+    private void preloadAllViews() {
+        loadAuctionDataFromServer();
+
+        // Delay 200ms để UI render xong trước, rồi mới preload các view phụ
+        javafx.animation.PauseTransition delay =
+            new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
+        delay.setOnFinished(e -> {
+            // Load lần lượt nhưng sau khi UI đã hiện xong → không cảm thấy lag
+            try {
+                FXMLLoader l1 = new FXMLLoader(getClass().getResource("/view/JoinedAuctionView.fxml"));
+                joinedAuctionView = l1.load();
+                joinedAuctionController = l1.getController();
+                joinedAuctionController.setOpenRoomCallback(this::openAuctionRoom);
+            } catch (Exception ex) { System.err.println("Lỗi preload Joined: " + ex.getMessage()); }
+
+            try {
+                FXMLLoader l2 = new FXMLLoader(getClass().getResource("/view/MyAuctionView.fxml"));
+                myAuctionView = l2.load();
+                myAuctionController = l2.getController();
+                myAuctionController.setOpenRoomCallback(this::openAuctionRoom);
+            } catch (Exception ex) { System.err.println("Lỗi preload My: " + ex.getMessage()); }
+        });
+        delay.play();
     }
 }

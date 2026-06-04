@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  */
 public class SocketClient {
 
-    private static final String DEFAULT_HOST        = "10.11.16.141";
+    private static final String DEFAULT_HOST        = "localhost";
     private static final int    DEFAULT_PORT        = 8080;
     private static final int    RESPONSE_TIMEOUT_MS = 10_000;
 
