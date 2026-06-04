@@ -13,25 +13,48 @@
 <?import javafx.scene.text.TextFlow?>
 
         <!-- Outer: full screen background  -->
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.layout.Pane?>
 <StackPane
-style="-fx-background-color: linear-gradient(to bottom right, #e8f4f4, #c8e6e6);"
 stylesheets="@../style/style.css"
 xmlns="http://javafx.com/javafx/25"
 xmlns:fx="http://javafx.com/fxml/1"
 fx:controller="com.auction.client.controller.RegisterController">
+    <ImageView fitWidth="1920"
+               fitHeight="1080"
+               preserveRatio="false">
+
+        <image>
+            <Image url="@../image/background.jpg"/>
+        </image>
+
+    </ImageView>
+
 <padding>
     <Insets top="40" bottom="40" left="60" right="60"/>
 </padding>
 
 <!-- Frosted glass card -->
 <VBox alignment="CENTER_LEFT" spacing="12"
-      maxWidth="420" minWidth="340"
-      style="-fx-background-color: rgba(255,255,255,0.75);
-                 -fx-background-radius: 18;
-                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.13), 24, 0, 0, 6);
-                 -fx-border-color: rgba(255,255,255,0.9);
-                 -fx-border-width: 1.5;
-                 -fx-border-radius: 18;">
+      maxWidth="520" minWidth="420"
+      style="
+    -fx-background-color: rgba(255,255,255,0.78);
+    -fx-background-radius: 20;
+
+    -fx-border-color: rgba(255,255,255,0.9);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 20;
+
+    -fx-effect: dropshadow(
+        gaussian,
+        rgba(0,0,0,0.15),
+        25,
+        0,
+        0,
+        8
+    );
+">
     <padding>
         <Insets top="40" bottom="40" left="36" right="36"/>
     </padding>

@@ -1,5 +1,6 @@
 package com.auction.client.controller;
 
+import com.auction.client.MainApp;
 import com.auction.client.network.SocketClient;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.LoginRequest;
@@ -27,9 +28,6 @@ public class LoginController {
     @FXML private TextField     emailField;
     @FXML private PasswordField passwordField;
     @FXML private Label         errorLabel;
-
-    private static final double APP_WIDTH = 1200;
-    private static final double APP_HEIGHT = 750;
 
     @FXML
     public void handleLogin(ActionEvent event) {
@@ -88,21 +86,31 @@ public class LoginController {
         emailField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
     }
 
-    private void navigate(ActionEvent event, String fxmlPath, String title) {
+    private void navigate(ActionEvent event,
+                          String fxmlPath,
+                          String title) {
+
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+
+            FXMLLoader loader =
+                new FXMLLoader(
+                    getClass().getResource(fxmlPath));
+
             Parent root = loader.load();
 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Stage stage =
+                (Stage) ((Node) event.getSource())
+                    .getScene()
+                    .getWindow();
 
-            Scene scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+            Scene scene = new Scene(
+                root,
+                MainApp.WIDTH,
+                MainApp.HEIGHT
+            );
 
             stage.setScene(scene);
             stage.setTitle(title);
-
-            stage.setWidth(APP_WIDTH);
-            stage.setHeight(APP_HEIGHT);
-            stage.centerOnScreen();
 
         } catch (IOException e) {
             e.printStackTrace();

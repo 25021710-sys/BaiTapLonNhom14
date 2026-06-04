@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<StackPane
+        xmlns="http://javafx.com/javafx/25"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="com.auction.client.controller.WelcomeController">
+
+    <!-- BACKGROUND IMAGE -->
+
+    <ImageView fitWidth="1920"
+               fitHeight="1080"
+               preserveRatio="false">
+
+        <image>
+            <Image url="@../image/background.jpg"/>
+        </image>
+
+    </ImageView>
+
+    <!-- OVERLAY -->
+
+
+    <padding>
+        <Insets top="40" bottom="40" left="60" right="60"/>
+    </padding>
+
+    <!-- MAIN CARD -->
+
+    <VBox alignment="CENTER"
+          spacing="16"
+          maxWidth="520"
+          minWidth="420"
+
+          style="
+            -fx-background-color: rgba(255,255,255,0.78);
+            -fx-background-radius: 20;
+
+            -fx-border-color: rgba(255,255,255,0.9);
+            -fx-border-width: 1.5;
+            -fx-border-radius: 20;
+
+            -fx-effect: dropshadow(
+                gaussian,
+                rgba(0,0,0,0.15),
+                25,
+                0,
+                0,
+                8
+            );
+          ">
+
+        <padding>
+            <Insets top="45"
+                    right="40"
+                    bottom="45"
+                    left="40"/>
+        </padding>
+
+        <!-- LOGO -->
+
+        <Label text="🔨">
+            <font>
+                <Font size="70"/>
+            </font>
+        </Label>
+
+        <!-- TITLE -->
+
+        <Label text="ONLINE AUCTION"
+               textFill="#298a85">
+
+            <font>
+                <Font name="Arial Bold"
+                      size="32"/>
+            </font>
+
+        </Label>
+
+        <!-- SUBTITLE -->
+
+        <Label text="Buy • Sell • Bid • Win"
+               style="
+                    -fx-font-size: 15px;
+                    -fx-text-fill: #5f7f7f;
+               "/>
+
+        <Label text="Welcome to the modern online auction platform"
+               wrapText="true"
+               style="
+                    -fx-font-size: 13px;
+                    -fx-text-fill: #7a9a9a;
+               "/>
+
+        <!-- LOGIN BUTTON -->
+
+        <Button text="SIGN IN"
+                prefWidth="260"
+                prefHeight="45"
+                onAction="#goToLogin"
+
+                style="
+                    -fx-background-color: #298a85;
+                    -fx-text-fill: white;
+
+                    -fx-font-weight: bold;
+                    -fx-font-size: 14px;
+
+                    -fx-background-radius: 10;
+
+                    -fx-cursor: hand;
+                ">
+
+            <VBox.margin>
+                <Insets top="10"/>
+            </VBox.margin>
+
+        </Button>
+
+        <!-- REGISTER -->
+
+        <Hyperlink text="Don't have an account? Register here"
+                   onAction="#goToRegister"
+
+                   style="
+                        -fx-text-fill: #298a85;
+                        -fx-font-weight: bold;
+                        -fx-font-size: 12px;
+                   "/>
+
+    </VBox>
+
+</StackPane>
