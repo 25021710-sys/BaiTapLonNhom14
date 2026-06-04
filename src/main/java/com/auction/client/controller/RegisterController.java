@@ -1,5 +1,6 @@
 package com.auction.client.controller;
 
+import com.auction.client.MainApp;
 import com.auction.client.network.SocketClient;
 import com.auction.common.request.RegisterRequest;
 import com.auction.common.response.RegisterResponse;
@@ -70,17 +71,41 @@ public class RegisterController {
         }
     }
 
-    @FXML
-    public void goToLogin(ActionEvent event) {
+    private void navigate(ActionEvent event,
+                          String fxmlPath,
+                          String title) {
+
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+
+            FXMLLoader loader =
+                new FXMLLoader(getClass().getResource(fxmlPath));
+
             Parent root = loader.load();
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.setTitle("Login");
+
+            Stage stage =
+                (Stage) ((Node) event.getSource())
+                    .getScene()
+                    .getWindow();
+
+            Scene scene = new Scene(
+                root,
+                MainApp.WIDTH,
+                MainApp.HEIGHT
+            );
+
+            stage.setScene(scene);
+            stage.setTitle(title);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    public void goToLogin(ActionEvent event) {
+        navigate(event,
+            "/view/LoginView.fxml",
+            "Login");
     }
 
     private void showError(String message) {

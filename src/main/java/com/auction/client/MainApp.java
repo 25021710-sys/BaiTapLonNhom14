@@ -30,7 +30,7 @@ public class MainApp extends Application {
 
         // 2. Load giao diện
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/LoginView.fxml")
+                getClass().getResource("/view/Welcome.fxml")
         );
 
         Parent root = loader.load();
