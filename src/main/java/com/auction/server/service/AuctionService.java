@@ -513,20 +513,6 @@ public class AuctionService {
         }
     }
 
-    /**
-     * Tra cứu username theo userId. Trả về chuỗi rỗng nếu thất bại.
-     */
-    private String resolveUsername(int userId) {
-        if (userId == 0) return "";
-        try {
-            User u = userDAO.findById(userId);
-            return u != null ? u.getUsername() : "";
-        } catch (Exception e) {
-            log.debug("Không lấy được username userId={}: {}", userId, e.getMessage());
-            return "";
-        }
-    }
-
     public List<Auction> getJoinedAuctions(int bidderId) {
         return auctionDAO.findJoinedByBidder(bidderId);
     }
