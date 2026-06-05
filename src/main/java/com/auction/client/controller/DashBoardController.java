@@ -71,6 +71,11 @@ public class DashBoardController {
 
     private List<AuctionDTO> allAuctions = new java.util.ArrayList<>();
 
+    private final java.util.Map<Integer, ProductCardController> cardControllers =
+        new java.util.HashMap<>();
+
+    private final java.util.Map<Integer, Node> cardNodes =
+        new java.util.HashMap<>();
 
     // ── INIT ──────────────────────────────────────────────────────────────────
 
@@ -123,19 +128,16 @@ public class DashBoardController {
                 AuctionListResponse response = SocketClient.getInstance().getDashboardAuctions();
                 if (response != null && response.isSuccess() && response.getAuctions() != null) {
                     Platform.runLater(() -> {
-                        allAuctions = response.getAuctions();
-                        // Giữ nguyên keyword hiện tại khi auto-refresh
-                        String kw = txtSearch != null ? txtSearch.getText().trim() : "";
-                        filterAndRender(kw);
-                    });                } else {
-                    Platform.runLater(this::renderPlaceholderCards);
+                        List<AuctionDTO> newList = response.getAuctions();
+                        syncAuctions(newList); // chỉ đồng bộ, không clear panel
+                    });
                 }
             } catch (Exception e) {
                 System.err.println("Lỗi load auctions: " + e.getMessage());
-                Platform.runLater(this::renderPlaceholderCards);
             }
         }, "load-auctions-thread").start();
     }
+
 
     /** Render card với AuctionDTO thật – hiển thị tất cả auctions ở cả 2 section */
     private void renderCardsFromData(List<AuctionDTO> auctions) {
@@ -492,4 +494,85 @@ public class DashBoardController {
         });
         delay.play();
     }
+
+    private void createNewCard(AuctionDTO dto) {
+
+        try {
+
+            FXMLLoader loader =
+                new FXMLLoader(
+                    getClass().getResource("/view/ProductCard.fxml")
+                );
+
+            Node card = loader.load();
+
+            ProductCardController ctrl =
+                loader.getController();
+
+            ctrl.setData(dto);
+
+            ctrl.setOnJoinCallback(this::openAuctionRoom);
+
+            cardControllers.put(
+                dto.getAuctionId(),
+                ctrl
+            );
+
+            cardNodes.put(
+                dto.getAuctionId(),
+                card
+            );
+
+            String status =
+                dto.getStatus() != null
+                    ? dto.getStatus().name()
+                    : "";
+
+            switch (status) {
+
+                case "RUNNING" ->
+                    pnlOpenBids.getChildren().add(card);
+
+                case "OPEN" ->
+                    pnlUpComingBids.getChildren().add(card);
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
+
+    private void syncAuctions(List<AuctionDTO> newList) {
+        for (AuctionDTO dto : newList) {
+            ProductCardController ctrl = cardControllers.get(dto.getAuctionId());
+            Node card = cardNodes.get(dto.getAuctionId());
+
+            String status = dto.getStatus() != null ? dto.getStatus().name() : "";
+
+            if (ctrl == null) {
+                createNewCard(dto); // tạo mới nếu chưa có
+            } else {
+                ctrl.updateData(dto); // cập nhật dữ liệu
+
+                // Di chuyển card sang đúng panel nếu trạng thái thay đổi
+                if ("RUNNING".equals(status)) {
+                    if (card != null && !pnlOpenBids.getChildren().contains(card)) {
+                        pnlUpComingBids.getChildren().remove(card);
+                        pnlOpenBids.getChildren().add(card);
+                    }
+                } else if ("OPEN".equals(status)) {
+                    if (card != null && !pnlUpComingBids.getChildren().contains(card)) {
+                        pnlOpenBids.getChildren().remove(card);
+                        pnlUpComingBids.getChildren().add(card);
+                    }
+                }
+            }
+        }
+
+        allAuctions = newList;
+    }
+
+
+
 }

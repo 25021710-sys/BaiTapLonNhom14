@@ -466,19 +466,30 @@ public class AuctionService {
      *
      * @return true nếu đã gia hạn
      */
+    /**
+     * Anti-sniping: nếu bid xuất hiện trong X giây cuối → gia hạn thêm Y giây.
+     * Giới hạn tối đa 5 lần gia hạn.
+     *
+     * @return true nếu đã gia hạn
+     */
     private boolean checkAndExtend(Auction auction) {
         long secondsLeft = Duration.between(LocalDateTime.now(), auction.getEndTime()).getSeconds();
-        if (secondsLeft > 0 && secondsLeft < ANTI_SNIPE_THRESHOLD_SECONDS) {
+        if (secondsLeft > 0
+            && secondsLeft < ANTI_SNIPE_THRESHOLD_SECONDS
+            && auction.getExtensionCount() < 5) {   // ✅ thêm điều kiện giới hạn 5 lần
+
             LocalDateTime newEnd = auction.getEndTime().plusSeconds(ANTI_SNIPE_EXTEND_SECONDS);
             auction.setEndTime(newEnd);
             auction.setExtensionCount(auction.getExtensionCount() + 1);
             auctionDAO.extendEndTime(auction.getId(), newEnd);
+
             log.info("Anti-snipe: phiên {} gia hạn đến {} (lần {})",
-                    auction.getId(), newEnd, auction.getExtensionCount());
+                auction.getId(), newEnd, auction.getExtensionCount());
             return true;
         }
         return false;
     }
+
 
     /**
      * Hoàn tiền cho người dẫn đầu trước khi bị outbid.

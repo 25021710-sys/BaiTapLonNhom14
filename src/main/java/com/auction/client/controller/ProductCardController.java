@@ -102,6 +102,41 @@ public class ProductCardController {
                 .replace("-fx-effect: dropshadow(gaussian,rgba(41,128,185,0.45),18,0,0,4);", "")));
     }
 
+    public void updateData(AuctionDTO dto) {
+        this.auctionData = dto;
+
+        String status = dto.getStatus() != null ? dto.getStatus().name() : "";
+
+        if ("OPEN".equals(status)) {
+            safe(lblCurrentPriceTitle, "Thời lượng");
+            if (dto.getStartTime() != null && dto.getEndTime() != null) {
+                long durationSeconds = java.time.Duration.between(
+                    dto.getStartTime(), dto.getEndTime()
+                ).getSeconds();
+                safe(lblCurrentPrice, formatDurationSmart(durationSeconds));
+            } else {
+                safe(lblCurrentPrice, "--");
+            }
+            startCountdownToStart(dto.getStartTime());
+        } else if ("RUNNING".equals(status)) {
+            safe(lblCurrentPriceTitle, "Hiện tại");
+            if (dto.getCurrentPrice() != null) {
+                safe(lblCurrentPrice, MONEY.format(dto.getCurrentPrice()));
+            }
+            startCountdownToEnd(dto.getEndTime());
+        } else {
+            safe(lblCurrentPriceTitle, "Kết thúc");
+            safe(lblCurrentPrice, "--");
+            if (btnJoin != null) {
+                btnJoin.setText("Đã kết thúc");
+                btnJoin.setDisable(true);
+            }
+        }
+
+        styleJoinButton(status);
+    }
+
+
     @FXML
     public void handleJoin() {
         if (onJoinCallback != null && auctionData != null)
