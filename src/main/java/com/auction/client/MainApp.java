@@ -42,7 +42,7 @@ public class MainApp extends Application {
         primaryStage.setScene(scene);
 
         // Không cho resize
-        primaryStage.setResizable(false);
+        primaryStage.setResizable(true);
 
         // Hiển thị giữa màn hình
         primaryStage.centerOnScreen();

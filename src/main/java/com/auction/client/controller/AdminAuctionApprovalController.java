@@ -10,6 +10,8 @@ import com.auction.common.response.ApproveAuctionResponse;
 import com.auction.common.response.GetPendingAuctionRequestsResponse;
 
 import com.auction.common.response.RejectAuctionResponse;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
@@ -19,11 +21,14 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.util.Duration;
 
 import java.net.URL;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class AdminAuctionApprovalController implements Initializable {
@@ -77,6 +82,9 @@ public class AdminAuctionApprovalController implements Initializable {
     @FXML private Button btnReject;
     @FXML private Button btnRefresh;
 
+    private final Map<String, Image> imageCache = new HashMap<>();
+    private Timeline autoRefresh;
+
     // =====================================================
     // INITIALIZE
     // =====================================================
@@ -91,6 +99,16 @@ public class AdminAuctionApprovalController implements Initializable {
         tblAuctionRequests.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
         );
+
+        autoRefresh = new Timeline(
+            new KeyFrame(
+                Duration.seconds(5),
+                e -> loadPendingRequests()
+            )
+        );
+
+        autoRefresh.setCycleCount(Timeline.INDEFINITE);
+        autoRefresh.play();
     }
 
     // =====================================================
@@ -161,7 +179,24 @@ public class AdminAuctionApprovalController implements Initializable {
                     return;
                 }
                 ObservableList<AdminAuctionRequestDTO> list =
-                        FXCollections.observableArrayList(response.getRequests());
+                    FXCollections.observableArrayList(response.getRequests());
+
+// preload ảnh
+                for (AdminAuctionRequestDTO dto : list) {
+
+                    String url = dto.getImageUrl();
+
+                    if (url != null
+                        && !url.isBlank()
+                        && !imageCache.containsKey(url)) {
+
+                        imageCache.put(
+                            url,
+                            new Image(url)
+                        );
+                    }
+                }
+
                 tblAuctionRequests.setItems(list);
             });
         }, "load-pending-thread").start();
@@ -235,9 +270,20 @@ public class AdminAuctionApprovalController implements Initializable {
 
         try {
 
-            imgProduct.setImage(
-                    new Image(request.getImageUrl())
-            );
+            String url = request.getImageUrl();
+
+            if (url != null) {
+
+                Image image = imageCache.get(url);
+
+                if (image != null) {
+                    imgProduct.setImage(image);
+                } else {
+                    image = new Image(url);
+                    imageCache.put(url, image);
+                    imgProduct.setImage(image);
+                }
+            }
 
         } catch (Exception e) {
 

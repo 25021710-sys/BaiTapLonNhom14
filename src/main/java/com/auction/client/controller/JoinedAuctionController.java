@@ -9,30 +9,26 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-/**
- * Controller màn hình "Phiên đấu giá đang tham gia".
- * Load danh sách phiên từ server, lọc theo trạng thái,
- * và cho phép mở AuctionRoom từng phiên.
- */
 public class JoinedAuctionController {
 
   @FXML private ComboBox<String> cbStatus;
   @FXML private VBox auctionListContainer;
-  @FXML private Label lblEmpty;
 
-  /** Callback truyền từ DashBoardController để mở phòng đấu giá */
   private Consumer<AuctionDTO> openRoomCallback;
-  private List<AuctionDTO> allAuctions;
+
+  /** Cache — không gọi server lại khi chỉ đổi filter */
+  private List<AuctionDTO> cachedAuctions = null;
 
   public void setOpenRoomCallback(Consumer<AuctionDTO> callback) {
     this.openRoomCallback = callback;
@@ -40,142 +36,119 @@ public class JoinedAuctionController {
 
   @FXML
   public void initialize() {
-    cbStatus.getItems().addAll(
-            "Tất cả", "Đang diễn ra", "Đã kết thúc", "Bạn thắng", "Bạn thua"
-    );
+    cbStatus.getItems().addAll("Tất cả", "Đang diễn ra", "Đã kết thúc", "Bạn thắng", "Bạn thua");
     cbStatus.setValue("Tất cả");
-    cbStatus.setOnAction(e -> applyFilter());
+    // Đổi filter → chỉ render lại từ cache, không gọi server
+    cbStatus.setOnAction(e -> renderFromCache());
     loadJoinedAuctions();
   }
 
-  // ── LOAD DATA TỪ SERVER ───────────────────────────────────────────────────
+  // ── LOAD từ server (chỉ gọi 1 lần hoặc khi Refresh) ─────────────────────
 
   private void loadJoinedAuctions() {
-    clear();
     showLoading();
     new Thread(() -> {
       try {
         AuctionListResponse res = SocketClient.getInstance().getJoinedAuctions();
-        if (res != null && res.isSuccess() && res.getAuctions() != null) {
-          List<AuctionDTO> all = res.getAuctions();
-          allAuctions = all;
-          Platform.runLater(this::applyFilter);
-        } else {
-          Platform.runLater(this::showDemoData);
-        }
+        Platform.runLater(() -> {
+          if (res != null && res.isSuccess() && res.getAuctions() != null) {
+            cachedAuctions = res.getAuctions();
+          } else {
+            cachedAuctions = new ArrayList<>();
+          }
+          renderFromCache();
+        });
       } catch (Exception e) {
         System.err.println("Lỗi load joined auctions: " + e.getMessage());
-        Platform.runLater(this::showDemoData);
+        Platform.runLater(() -> {
+          cachedAuctions = new ArrayList<>();
+          showEmpty("Không thể kết nối server.");
+        });
       }
     }, "load-joined-thread").start();
   }
 
-  private void applyFilter() {
+  // ── RENDER từ cache (nhanh, không gọi server) ─────────────────────────────
 
-    clear();
+  private void renderFromCache() {
+    if (cachedAuctions == null) { showLoading(); return; }
 
-    if (allAuctions == null
-            || allAuctions.isEmpty()) {
-
-      showEmpty(
-              "Bạn chưa tham gia phiên đấu giá nào."
-      );
-
+    if (cachedAuctions.isEmpty()) {
+      showEmpty("Bạn chưa tham gia phiên đấu giá nào.");
       return;
     }
 
-    String filter =
-            cbStatus.getValue();
+    int myId = myId();
+    String filter = cbStatus.getValue();
 
-    List<AuctionDTO> filtered;
+    List<AuctionDTO> filtered = cachedAuctions.stream()
+        .filter(dto -> {
+          if (filter == null || filter.equals("Tất cả")) return true;
+          AuctionStatus s = dto.getStatus();
+          return switch (filter) {
+            case "Đang diễn ra" -> s == AuctionStatus.RUNNING;
+            case "Đã kết thúc"  -> s == AuctionStatus.FINISHED;
+            case "Bạn thắng"    -> s == AuctionStatus.FINISHED && dto.getHighestBidderId() == myId;
+            case "Bạn thua"     -> s == AuctionStatus.FINISHED && dto.getHighestBidderId() != myId;
+            default -> true;
+          };
+        })
+        .collect(Collectors.toList());
 
-    switch (filter == null
-            ? "Tất cả"
-            : filter) {
-
-      case "Đang diễn ra" ->
-              filtered = allAuctions.stream().filter(a ->
-                      a.getStatus() == AuctionStatus.RUNNING).collect(Collectors.toList());
-      case "Đã kết thúc" ->
-              filtered = allAuctions.stream().filter(a -> a.getStatus() == AuctionStatus.FINISHED)
-
-                      .collect(Collectors.toList());
-      case "Bạn thắng" -> {
-        int myId = myId();
-        filtered = allAuctions.stream().filter(a ->
-                a.getHighestBidderId() == myId && a.getStatus() == AuctionStatus.FINISHED
-        ).collect(Collectors.toList());
-      }
-      case "Bạn thua" -> {
-        int myId = myId();
-        filtered = allAuctions.stream()
-                .filter(a -> a.getHighestBidderId() != myId && a.getStatus() == AuctionStatus.FINISHED)
-                .collect(Collectors.toList());
-      }
-      default -> filtered = allAuctions;
-    }
-
-    if (filtered.isEmpty()) {showEmpty("Không có phiên nào trong danh mục này.");
+    if (filtered.isEmpty()) {
+      showEmpty("Không có phiên nào trong danh mục này.");
       return;
     }
 
-    for (AuctionDTO dto : filtered) {
-      addAuctionCard(dto);
-    }
-  }
-
-  /** Hiển thị demo data khi không có kết nối server */
-  private void showDemoData() {
-    allAuctions = List.of(); // danh sách rỗng
-    showEmpty("Không thể kết nối server. Vui lòng thử lại.");
-  }
-
-  // ── RENDER ────────────────────────────────────────────────────────────────
-
-  private void addAuctionCard(AuctionDTO dto) {
-    try {
-      FXMLLoader loader = new FXMLLoader(
+    // Load tất cả FXML cards trong background, add vào UI 1 lần
+    final List<AuctionDTO> toRender = filtered;
+    new Thread(() -> {
+      List<Node> cards = new ArrayList<>();
+      for (AuctionDTO dto : toRender) {
+        try {
+          FXMLLoader loader = new FXMLLoader(
               getClass().getResource("/view/AuctionCard.fxml"));
-      Parent cardNode = loader.load();
-      AuctionCardController ctrl = loader.getController();
-      ctrl.setData(dto);
-      ctrl.setOnJoinCallback(this::handleOpenRoom);
-      auctionListContainer.getChildren().add(cardNode);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+          Node card = loader.load();
+          AuctionCardController ctrl = loader.getController();
+          ctrl.setData(dto);
+          ctrl.setOnJoinCallback(this::handleOpenRoom);
+          cards.add(card);
+        } catch (IOException e) {
+          System.err.println("Lỗi load AuctionCard: " + e.getMessage());
+        }
+      }
+      Platform.runLater(() -> {
+        auctionListContainer.getChildren().setAll(cards);
+      });
+    }, "render-joined-auctions").start();
+  }
+
+  // ── UI HELPERS ────────────────────────────────────────────────────────────
+
+  private void showLoading() {
+    Label lbl = new Label("Đang tải dữ liệu...");
+    lbl.setStyle("-fx-text-fill: #78909C; -fx-font-size: 14px; -fx-padding: 20;");
+    auctionListContainer.getChildren().setAll(lbl);
+  }
+
+  private void showEmpty(String msg) {
+    Label lbl = new Label(msg);
+    lbl.setStyle("-fx-text-fill: #90A4AE; -fx-font-size: 14px; -fx-padding: 30;");
+    auctionListContainer.getChildren().setAll(lbl);
+  }
+
+  private int myId() {
+    return ClientSession.getCurrentUser() != null
+        ? ClientSession.getCurrentUser().getId() : -1;
   }
 
   private void handleOpenRoom(AuctionDTO dto) {
     if (openRoomCallback != null) openRoomCallback.accept(dto);
   }
 
-  // ── UI HELPERS ────────────────────────────────────────────────────────────
-
-  private void clear() {
-    auctionListContainer.getChildren().clear();
-  }
-
-  private void showLoading() {
-    Label loading = new Label("Đang tải dữ liệu...");
-    loading.setStyle("-fx-text-fill: #78909C; -fx-font-size: 14px; -fx-padding: 20;");
-    auctionListContainer.getChildren().add(loading);
-  }
-
-  private void showEmpty(String msg) {
-    Label empty = new Label(msg);
-    empty.setStyle("-fx-text-fill: #90A4AE; -fx-font-size: 14px; -fx-padding: 30;");
-    auctionListContainer.getChildren().add(empty);
-  }
-
-  private int myId() {
-    return ClientSession.getCurrentUser() != null
-            ? ClientSession.getCurrentUser().getId() : -1;
-  }
-
   @FXML
   private void handleRefresh(ActionEvent event) {
-    allAuctions = null;
+    cachedAuctions = null; // xóa cache → gọi server lại
     loadJoinedAuctions();
   }
 }

@@ -26,7 +26,7 @@ fx:controller="com.auction.client.controller.RegisterController">
                preserveRatio="false">
 
         <image>
-            <Image url="@../image/background.jpg"/>
+            <Image url="@../image/anh.jpg"/>
         </image>
 
     </ImageView>
