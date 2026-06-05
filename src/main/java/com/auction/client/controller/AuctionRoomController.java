@@ -113,7 +113,6 @@ public class AuctionRoomController {
   private Timeline bidHistoryDebounce;
   private int bidCount = 0;
   private boolean auctionEnded = false;           // FIX: thêm field bị thiếu
-  private boolean dialogShown  = false;           // chỉ show popup 1 lần
   private int currentHighestBidderId = -1;        // FIX: track highest bidder riêng
   private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
   private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
@@ -401,10 +400,7 @@ public class AuctionRoomController {
         }
 
         // ── Hiện popup thông báo kết thúc
-        if (!dialogShown) {
-          dialogShown = true;
-          showAuctionEndedDialog(update);
-        }
+        showAuctionEndedDialog(update);
       }
       case PARTICIPANT_CHANGED -> {
         if (lblParticipants != null) {
@@ -484,6 +480,24 @@ public class AuctionRoomController {
         lblCountdown.setText("00:00:00");
         stopCountdown();
         disableBidActions();
+        // FIX: cập nhật đầy đủ UI khi countdown về 0 (thay vì chờ push AUCTION_ENDED có thể trễ)
+        // Chỉ cập nhật badge + ẩn section nếu chưa nhận được push AUCTION_ENDED
+        if (!auctionEnded) {
+          auctionEnded = true;
+          if (lblAuctionStatus != null) {
+            lblAuctionStatus.setText("ĐÃ KẾT THÚC");
+            lblAuctionStatus.getStyleClass().setAll("badge-ended");
+          }
+          if (placeBidSection != null) {
+            placeBidSection.setVisible(false);
+            placeBidSection.setManaged(false);
+          }
+          if (countdownSection != null) {
+            countdownSection.setVisible(false);
+            countdownSection.setManaged(false);
+          }
+          if (lblPriceTitleRight != null) lblPriceTitleRight.setText("💰  Giá chốt phiên");
+        }
         return;
       }
       long days    = secondsLeft / 86400;
@@ -583,10 +597,48 @@ public class AuctionRoomController {
           // Nếu currentPrice đã bằng hoặc cao hơn responsePrice → push đã xử lý đúng,
           // không cần làm gì thêm (updateYourStatus đã được handlePushUpdate gọi rồi).
         } else {
-          showBidError(res != null ? res.getMessage() : "Lỗi kết nối server");
+          String errMsg = res != null ? res.getMessage() : "Lỗi kết nối server";
+          showBidError(errMsg);
+
+          // FIX: Server báo phiên đã kết thúc nhưng client chưa nhận push AUCTION_ENDED
+          // (push bị trễ do queue bận hoặc mất gói). Cập nhật UI ngay theo thông báo server.
+          if (errMsg != null && (errMsg.contains("đã kết thúc") || errMsg.contains("kết thúc")
+                  || errMsg.contains("FINISHED") || errMsg.contains("already ended"))) {
+            handleServerReportedEnd(res.getCurrentHighestBid());
+          }
         }
       });
     }, "place-bid-thread").start();
+  }
+
+  /**
+   * Được gọi khi server trả về lỗi "đã kết thúc" nhưng push AUCTION_ENDED chưa tới.
+   * Cập nhật UI giống như khi nhận được push AUCTION_ENDED.
+   */
+  private void handleServerReportedEnd(BigDecimal finalPrice) {
+    if (auctionEnded) return; // đã xử lý rồi, bỏ qua
+    auctionEnded = true;
+    stopCountdown();
+    disableBidActions();
+
+    if (lblAuctionStatus != null) {
+      lblAuctionStatus.setText("ĐÃ KẾT THÚC");
+      lblAuctionStatus.getStyleClass().setAll("badge-ended");
+    }
+    if (lblCountdown != null) lblCountdown.setText("00:00:00");
+
+    if (placeBidSection != null) {
+      placeBidSection.setVisible(false);
+      placeBidSection.setManaged(false);
+    }
+    if (countdownSection != null) {
+      countdownSection.setVisible(false);
+      countdownSection.setManaged(false);
+    }
+    if (lblPriceTitleRight != null) lblPriceTitleRight.setText("💰  Giá chốt phiên");
+    if (finalPrice != null && lblCurrentPriceRight != null) {
+      lblCurrentPriceRight.setText(formatMoney(finalPrice) + " VNĐ");
+    }
   }
 
   // ── BID HISTORY REFRESH ───────────────────────────────────────────────────
