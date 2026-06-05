@@ -437,10 +437,7 @@ public class AuctionRoomController {
    * Tránh nhiều background thread đồng thời tranh responseQueue gây lẫn response.
    */
   private void scheduleBidHistoryReload() {
-    if (bidHistoryDebounce != null) bidHistoryDebounce.stop();
-    bidHistoryDebounce = new Timeline(new KeyFrame(Duration.millis(500), e -> loadBidHistory()));
-    bidHistoryDebounce.setCycleCount(1);
-    bidHistoryDebounce.play();
+    loadBidHistory();
   }
 
   private void loadBidHistory() {
