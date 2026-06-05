@@ -346,30 +346,43 @@ public class AuctionRoomController {
 
     switch (update.getType()) {
       case BID_PLACED, AUCTION_EXTENDED -> {
-        // ✅ Nếu mình vừa bị outbid → cộng lại tiền
         int myId = ClientSession.getCurrentUser() != null
                 ? ClientSession.getCurrentUser().getId() : -1;
-        if (myId != -1
-                && currentHighestBidderId == myId          // mình đang dẫn đầu
-                && update.getHighestBidderId() != myId) {  // người khác vừa vượt
-          BigDecimal newBalance = ClientSession.getCurrentUser()
-                  .getBalance().add(currentPrice);       // hoàn lại giá cũ
-          ClientSession.updateBalance(newBalance); // notify tất cả AuctionRoom đang mở
-        }
+
+        // Lưu giá CŨ trước khi bị ghi đè — dùng để hoàn tiền đúng số
+        BigDecimal previousPrice = currentPrice;
+        boolean iWasLeading = (myId != -1 && currentHighestBidderId == myId);
+        boolean iJustBid    = (myId != -1 && update.getHighestBidderId() == myId);
+
+        // Cập nhật state
         currentPrice = update.getNewPrice();
-        currentHighestBidderId = update.getHighestBidderId(); // FIX: update live
+        currentHighestBidderId = update.getHighestBidderId();
         auctionEndTime = update.getNewEndTime() != null ? update.getNewEndTime() : auctionEndTime;
         bidCount++;
+
+        // ── Xử lý balance client ──────────────────────────────────────────
+        if (!iJustBid && iWasLeading) {
+          BigDecimal newBalance = ClientSession.getCurrentUser().getBalance().add(previousPrice);
+          ClientSession.updateBalance(newBalance);
+        }
+        // Nếu mình chưa từng dẫn đầu → không liên quan đến tiền, bỏ qua.
+
         updateCurrentPriceUI();
         lblTotalBids.setText(String.valueOf(bidCount));
         lblLeadingUser.setText(update.getHighestBidderUsername() != null
                 ? update.getHighestBidderUsername() : "---");
         updateYourStatus();
-        // Xóa thông báo lỗi cũ khi có update mới — trạng thái đã được refresh
         if (lblBidError != null) lblBidError.setVisible(false);
-        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {}
+        // FIX: hiện thông báo gia hạn khi phiên được anti-snipe extend
+        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {
+          if (lblBidError != null) {
+            lblBidError.setStyle("-fx-text-fill: orange;");
+            lblBidError.setText("⏱ Phiên được gia hạn thêm 60 giây!");
+            lblBidError.setVisible(true);
+          }
+        }
         addChartPoint(currentPrice);
-        scheduleBidHistoryReload(); // debounced — tránh flood request khi nhiều bid liên tiếp
+        scheduleBidHistoryReload();
         if (lblPriceTitleRight != null)
           lblPriceTitleRight.setText("💰  Giá hiện tại");
       }
@@ -586,16 +599,13 @@ public class AuctionRoomController {
             updateCurrentPriceUI();
             updateYourStatus();
           }
-          // ✅ Thêm: trừ tiền hiển thị ngay trên UI
+          // Trừ tiền optimistic ngay trên UI để phản hồi nhanh.
+          // Push BID_PLACED sẽ nhận iJustBid=true → bỏ qua, không trừ lại → không double-subtract.
           if (ClientSession.getCurrentUser() != null) {
-            BigDecimal newBalance = ClientSession.getCurrentUser()
-                    .getBalance().subtract(bidAmount);
-            if (newBalance.compareTo(BigDecimal.ZERO) < 0)
-              newBalance = BigDecimal.ZERO;
-            ClientSession.updateBalance(newBalance); // notify tất cả AuctionRoom đang mở
+            BigDecimal newBalance = ClientSession.getCurrentUser().getBalance().subtract(bidAmount);
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0) newBalance = BigDecimal.ZERO;
+            ClientSession.updateBalance(newBalance);
           }
-          // Nếu currentPrice đã bằng hoặc cao hơn responsePrice → push đã xử lý đúng,
-          // không cần làm gì thêm (updateYourStatus đã được handlePushUpdate gọi rồi).
         } else {
           String errMsg = res != null ? res.getMessage() : "Lỗi kết nối server";
           showBidError(errMsg);

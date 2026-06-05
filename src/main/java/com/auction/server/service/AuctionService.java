@@ -590,6 +590,15 @@ public class AuctionService {
             auction.setStatus(AuctionStatus.CANCELED);
             boolean ok = auctionDAO.updateStatus(auctionId, AuctionStatus.CANCELED);
             if (ok) {
+                // Hoàn tiền cho người đang dẫn đầu (nếu có) khi phiên bị hủy
+                int leaderId  = auction.getHighestBidderId();
+                BigDecimal leadPrice = auction.getCurrentPrice();
+                if (leaderId != 0 && leadPrice != null
+                        && leadPrice.compareTo(BigDecimal.ZERO) > 0) {
+                    refundPreviousBidder(leaderId, leadPrice);
+                    log.info("Hoàn {} VNĐ cho bidderId={} do phiên {} bị hủy",
+                            leadPrice, leaderId, auctionId);
+                }
                 // Xóa khỏi cache vì phòng đã đóng hẳn
                 auctionCache.remove(auctionId);
                 auctionLocks.remove(auctionId);
