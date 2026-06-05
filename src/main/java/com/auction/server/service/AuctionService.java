@@ -317,6 +317,7 @@ public class AuctionService {
         auction.setStatus(AuctionStatus.FINISHED);
         auctionDAO.updateStatus(auction.getId(), AuctionStatus.FINISHED);
         auctionCache.remove(auction.getId());
+        auctionLocks.remove(auction.getId()); // FIX: tránh memory leak khi phiên kết thúc tự nhiên
 
         BigDecimal currentPrice = auction.getCurrentPrice();
         BigDecimal reservePrice = auction.getReservePrice();
