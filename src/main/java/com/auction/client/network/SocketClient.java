@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -61,6 +62,11 @@ public class SocketClient {
 
     // Lock CHỈ cho phần ghi ra `out` – push listener đọc `in` không cần lock này
     private final ReentrantLock writeLock = new ReentrantLock();
+
+    // Semaphore đảm bảo chỉ 1 request (send+receive) được xử lý tại một thời điểm.
+    // Ngăn race condition khi nhiều thread gọi đồng thời (vd: loadBidHistory + getActiveAuctions)
+    // làm response bị lẫn vào queue sai chỗ.
+    private final Semaphore requestLock = new Semaphore(1, true);
 
     // Queue nhận mọi response từ server (trừ PUSH_UPDATE đã tách riêng)
     private final LinkedBlockingQueue<Object> responseQueue = new LinkedBlockingQueue<>();
@@ -177,60 +183,83 @@ public class SocketClient {
     /**
      * FIX 2: Đọc response đúng kiểu expectedType, bỏ qua object sai kiểu.
      * Ngăn ClassCastException khi nhiều request đồng thời đưa response vào queue.
+     * Release requestLock sau khi nhận được response đúng kiểu.
      */
     @SuppressWarnings("unchecked")
     private <T> T readTypedResponse(Class<T> expectedType) throws Exception {
-        long deadline = System.currentTimeMillis() + RESPONSE_TIMEOUT_MS;
-        while (true) {
-            long remaining = deadline - System.currentTimeMillis();
-            if (remaining <= 0)
-                throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
-            Object resp = responseQueue.poll(remaining, TimeUnit.MILLISECONDS);
-            if (resp == null)
-                throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
-            if (expectedType.isInstance(resp))
-                return (T) resp;
-            // Sai kiểu → bỏ qua, đọc tiếp trong deadline còn lại
-            System.err.println("[SocketClient] Bỏ qua response sai kiểu: "
-                    + resp.getClass().getSimpleName()
-                    + " (cần " + expectedType.getSimpleName() + ")");
+        try {
+            long deadline = System.currentTimeMillis() + RESPONSE_TIMEOUT_MS;
+            while (true) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0)
+                    throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
+                Object resp = responseQueue.poll(remaining, TimeUnit.MILLISECONDS);
+                if (resp == null)
+                    throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
+                if (expectedType.isInstance(resp))
+                    return (T) resp;
+                // Sai kiểu → bỏ qua, đọc tiếp trong deadline còn lại
+                System.err.println("[SocketClient] Bỏ qua response sai kiểu: "
+                        + resp.getClass().getSimpleName()
+                        + " (cần " + expectedType.getSimpleName() + ")");
+            }
+        } finally {
+            requestLock.release();
         }
     }
 
-    /** Đọc không lọc kiểu – dùng cho unsubscribe. */
+    /** Đọc không lọc kiểu – dùng cho unsubscribe. Release requestLock sau khi đọc. */
     @SuppressWarnings("unchecked")
     private <T> T readResponse() throws Exception {
-        Object resp = responseQueue.poll(RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        if (resp == null)
-            throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
-        return (T) resp;
+        try {
+            Object resp = responseQueue.poll(RESPONSE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            if (resp == null)
+                throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
+            return (T) resp;
+        } finally {
+            requestLock.release();
+        }
     }
 
     // ── Send helpers ──────────────────────────────────────────────────────────
 
-    /** Ghi action + payload. Lock CHỈ khi ghi, thả trước khi đọc response. */
+    /** Ghi action + payload. writeLock chỉ giữ khi ghi, requestLock giữ suốt send+receive. */
     private void sendRequest(String action, Object payload) throws Exception {
         ensureConnected();
-        writeLock.lock();
+        requestLock.acquire();
         try {
-            out.writeObject(action);
-            if (payload != null) out.writeObject(payload);
-            out.flush();
-        } finally {
-            writeLock.unlock();
+            writeLock.lock();
+            try {
+                out.writeObject(action);
+                if (payload != null) out.writeObject(payload);
+                out.flush();
+            } finally {
+                writeLock.unlock();
+            }
+        } catch (Exception e) {
+            requestLock.release(); // release nếu ghi thất bại (readTypedResponse sẽ không được gọi)
+            throw e;
         }
+        // requestLock được release bởi readTypedResponse / readResponse
     }
 
     private void sendRequestWithInt(String action, int value) throws Exception {
         ensureConnected();
-        writeLock.lock();
+        requestLock.acquire();
         try {
-            out.writeObject(action);
-            out.writeInt(value);
-            out.flush();
-        } finally {
-            writeLock.unlock();
+            writeLock.lock();
+            try {
+                out.writeObject(action);
+                out.writeInt(value);
+                out.flush();
+            } finally {
+                writeLock.unlock();
+            }
+        } catch (Exception e) {
+            requestLock.release();
+            throw e;
         }
+        // requestLock được release bởi readTypedResponse / readResponse
     }
 
     private void sendRequest(String action) throws Exception {
@@ -299,6 +328,8 @@ public class SocketClient {
     public void unsubscribeAuctionNoWait(int auctionId) {
         try {
             ensureConnected();
+            // Acquire requestLock để không ghi đè giữa request đang chạy
+            requestLock.acquire();
             writeLock.lock();
             try {
                 out.writeObject("AUCTION_UNSUBSCRIBE");
@@ -307,6 +338,7 @@ public class SocketClient {
                 // ✅ KHÔNG readResponse() — gửi xong thôi
             } finally {
                 writeLock.unlock();
+                requestLock.release(); // release ngay vì không đọc response
             }
         } catch (Exception ignored) {}
     }
