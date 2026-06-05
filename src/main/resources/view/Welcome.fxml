@@ -23,7 +23,7 @@
                preserveRatio="false">
 
         <image>
-            <Image url="@../image/background.jpg"/>
+            <Image url="@../image/anh.jpg"/>
         </image>
 
     </ImageView>
