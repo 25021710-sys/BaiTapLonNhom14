@@ -113,6 +113,7 @@ public class AuctionRoomController {
   private Timeline bidHistoryDebounce;
   private int bidCount = 0;
   private boolean auctionEnded = false;           // FIX: thêm field bị thiếu
+  private boolean dialogShown  = false;           // chỉ show popup 1 lần
   private int currentHighestBidderId = -1;        // FIX: track highest bidder riêng
   private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
   private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
@@ -400,7 +401,10 @@ public class AuctionRoomController {
         }
 
         // ── Hiện popup thông báo kết thúc
-        showAuctionEndedDialog(update);
+        if (!dialogShown) {
+          dialogShown = true;
+          showAuctionEndedDialog(update);
+        }
       }
       case PARTICIPANT_CHANGED -> {
         if (lblParticipants != null) {
