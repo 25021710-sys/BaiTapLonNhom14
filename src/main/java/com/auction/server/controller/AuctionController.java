@@ -599,7 +599,7 @@ public class AuctionController {
             String reason = req.getReason() != null ? req.getReason() : "Admin tạm dừng phòng đấu giá";
             AuctionUpdateDTO update = new AuctionUpdateDTO(
                     auction.getId(),
-                    AuctionUpdateDTO.UpdateType.AUCTION_STARTED, // dùng làm status change event
+                    AuctionUpdateDTO.UpdateType.AUCTION_PAUSED, // đúng type
                     auction.getCurrentPrice(),
                     auction.getHighestBidderId(),
                     resolveUsername(auction.getHighestBidderId()),
@@ -635,7 +635,7 @@ public class AuctionController {
 
             AuctionUpdateDTO update = new AuctionUpdateDTO(
                     auction.getId(),
-                    AuctionUpdateDTO.UpdateType.AUCTION_STARTED,
+                    AuctionUpdateDTO.UpdateType.AUCTION_RESUMED, // đúng type
                     auction.getCurrentPrice(),
                     auction.getHighestBidderId(),
                     resolveUsername(auction.getHighestBidderId()),
@@ -701,20 +701,43 @@ public class AuctionController {
                 return;
             }
 
-            // Set CANCELED — không set winner
-            boolean ok = auctionDAO.updateStatus(req.getAuctionId(), AuctionStatus.CANCELED);
+            // Ghi lại thông tin trước khi hủy để hoàn tiền và broadcast
+            int previousBidderId = auction.getHighestBidderId();
+            java.math.BigDecimal heldAmount = auction.getCurrentPrice();
+
+            // Dùng cancelAuction() thay vì gọi DAO trực tiếp:
+            // cancelAuction() xóa khỏi cache + xóa lock → không bị memory leak
+            String reason = req.getReason() != null ? req.getReason() : "Admin hủy phiên";
+            boolean ok = auctionService.cancelAuction(auction.getId(), session.getUserId(), reason);
             if (!ok) {
                 send(out, new SimpleResponse(false, "Không thể hủy phòng."));
                 return;
+            }
+
+            // Hoàn tiền cho người đang dẫn đầu (nếu có)
+            if (previousBidderId != 0 && heldAmount != null
+                    && heldAmount.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                try {
+                    User prevBidder = userDAO.findById(previousBidderId);
+                    if (prevBidder != null) {
+                        prevBidder.setBalance(prevBidder.getBalance().add(heldAmount));
+                        userDAO.updateBalance(previousBidderId, prevBidder.getBalance());
+                        log.info("Hoàn {} VND cho bidderId={} do phòng {} bị hủy",
+                                heldAmount, previousBidderId, req.getAuctionId());
+                    }
+                } catch (Exception e) {
+                    log.error("Lỗi hoàn tiền bidderId={} khi hủy phòng {}: {}",
+                            previousBidderId, req.getAuctionId(), e.getMessage());
+                }
             }
 
             // Broadcast kết thúc với highestBidderId = 0 → client biết không có winner
             auctionManager.broadcastAuctionEnd(req.getAuctionId(), 0, 0);
 
             send(out, new SimpleResponse(true, "Đã hủy phòng đấu giá #" + req.getAuctionId()
-                    + " | Lý do: " + req.getReason()));
+                    + " | Lý do: " + reason));
             log.info("Admin {} HỦY phòng {} | Lý do: {}",
-                    session.getUsername(), req.getAuctionId(), req.getReason());
+                    session.getUsername(), req.getAuctionId(), reason);
         } catch (Exception e) {
             log.error("Lỗi ADMIN_CANCEL_ROOM: {}", e.getMessage(), e);
             send(out, new SimpleResponse(false, "Lỗi server: " + e.getMessage()));

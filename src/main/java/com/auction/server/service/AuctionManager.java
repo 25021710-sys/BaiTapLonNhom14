@@ -215,7 +215,10 @@ public class AuctionManager {
 
     private void checkExpiredAuctions() {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        auctionDAO.findActiveAuctions().forEach(auction -> {
+        // ĐỌC TỪ CACHE thay vì DB — tránh race condition với anti-snipe:
+        // nếu extendEndTime() vừa commit vào DB nhưng scheduler đọc DB cũ → đóng sai.
+        // Cache luôn được cập nhật ngay trong lock của placeBid/checkAndExtend.
+        new java.util.ArrayList<>(auctionService.getAuctionCache().values()).forEach(auction -> {
             if (now.isAfter(auction.getEndTime())
                     && (auction.getStatus() == AuctionStatus.RUNNING
                     || auction.getStatus() == AuctionStatus.OPEN)) {

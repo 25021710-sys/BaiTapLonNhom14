@@ -14,6 +14,8 @@ public class AuctionUpdateDTO implements Serializable {
         AUCTION_ENDED,
         AUCTION_EXTENDED,
         AUCTION_STARTED,
+        AUCTION_PAUSED,
+        AUCTION_RESUMED,
         PARTICIPANT_CHANGED
     }
 
