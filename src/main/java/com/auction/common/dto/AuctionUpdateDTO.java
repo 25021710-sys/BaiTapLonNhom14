@@ -1,10 +1,12 @@
 package com.auction.common.dto;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class AuctionUpdateDTO implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public enum UpdateType {
