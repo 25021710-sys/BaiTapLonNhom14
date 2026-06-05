@@ -361,11 +361,7 @@ public class AuctionRoomController {
         bidCount++;
 
         // ── Xử lý balance client ──────────────────────────────────────────
-        if (iJustBid) {
-          // Mình vừa thắng bid này → handlePlaceBid đã trừ tiền rồi, không làm gì thêm.
-          // (push chỉ confirm, không trừ lại)
-        } else if (iWasLeading) {
-          // Mình đang dẫn đầu nhưng vừa bị người khác vượt → hoàn lại previousPrice
+        if (!iJustBid && iWasLeading) {
           BigDecimal newBalance = ClientSession.getCurrentUser().getBalance().add(previousPrice);
           ClientSession.updateBalance(newBalance);
         }
@@ -377,6 +373,14 @@ public class AuctionRoomController {
                 ? update.getHighestBidderUsername() : "---");
         updateYourStatus();
         if (lblBidError != null) lblBidError.setVisible(false);
+        // FIX: hiện thông báo gia hạn khi phiên được anti-snipe extend
+        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_EXTENDED) {
+          if (lblBidError != null) {
+            lblBidError.setStyle("-fx-text-fill: orange;");
+            lblBidError.setText("⏱ Phiên được gia hạn thêm 60 giây!");
+            lblBidError.setVisible(true);
+          }
+        }
         addChartPoint(currentPrice);
         scheduleBidHistoryReload();
         if (lblPriceTitleRight != null)
