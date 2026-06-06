@@ -1,18 +1,25 @@
 package com.auction.client.controller;
 
 import com.auction.client.network.SocketClient;
+import com.auction.common.dto.DepositRecord;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.BalanceRequest;
+import com.auction.common.request.DepositHistoryRequest;
 import com.auction.common.response.BalanceResponse;
 import com.auction.client.session.ClientSession;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.text.TextFlow;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -30,6 +37,16 @@ public class BalanceController {
     @FXML private Label     balanceLabel;
     @FXML private Label     errorLabel;
 
+    @FXML private TableView<DepositRecord>            historyTable;
+    @FXML private TableColumn<DepositRecord, String>  colType;
+    @FXML private TableColumn<DepositRecord, String>  colAmount;
+    @FXML private TableColumn<DepositRecord, String>  colTime;
+
+    private static final DateTimeFormatter TIME_FMT =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final NumberFormat VND_FMT =
+            NumberFormat.getInstance(Locale.of("vi", "VN"));
+
     private boolean isDeposit = true;
 
     @FXML
@@ -38,7 +55,36 @@ public class BalanceController {
             balanceLabel.setText("0 VND");
             return;
         }
+        setupTable();
         refreshBalanceUI();
+        loadHistory();
+    }
+
+    /** Gắn cellValueFactory cho từng cột — chỉ gọi 1 lần trong initialize(). */
+    private void setupTable() {
+        colType.setCellValueFactory(row -> {
+            String label = row.getValue().getType().equals("DEPOSIT") ? "⬆ Nạp tiền" : "⬇ Rút tiền";
+            return new SimpleStringProperty(label);
+        });
+        colAmount.setCellValueFactory(row -> {
+            String sign   = row.getValue().getType().equals("DEPOSIT") ? "+" : "-";
+            String amount = VND_FMT.format(row.getValue().getAmount()) + " VND";
+            return new SimpleStringProperty(sign + amount);
+        });
+        colTime.setCellValueFactory(row ->
+                new SimpleStringProperty(row.getValue().getCreatedAt().format(TIME_FMT))
+        );
+    }
+
+    /** Gọi server lấy lịch sử rồi đổ vào TableView. */
+    private void loadHistory() {
+        UserDTO user = ClientSession.getCurrentUser();
+        if (user == null) return;
+
+        BalanceResponse res = SocketClient.getInstance().getDepositHistory(user.getId());
+        if (res != null && res.isSuccess() && res.getHistory() != null) {
+            historyTable.getItems().setAll(res.getHistory());
+        }
     }
 
     @FXML
@@ -96,6 +142,7 @@ public class BalanceController {
             ClientSession.setCurrentUser(response.getData());
             refreshBalanceUI();
             resetForm();
+            loadHistory(); // cập nhật bảng lịch sử
             System.out.println(type + " thành công. Số dư mới: " + response.getData().getBalance());
         } else {
             showError(response.getMessage());

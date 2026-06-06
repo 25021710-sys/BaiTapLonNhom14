@@ -1,5 +1,6 @@
 package com.auction.server.service;
 
+import com.auction.common.dto.DepositRecord;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.BalanceRequest;
 import com.auction.common.request.RegisterRequest;
@@ -13,6 +14,7 @@ import com.auction.common.request.LoginRequest;
 import com.auction.common.response.LoginResponse;
 
 import java.sql.SQLException;
+import java.util.List;
 
 public class AuthService {
     private UserDAO userDAO;
@@ -91,8 +93,9 @@ public class AuthService {
             }
 
             userDAO.updateBalance(user.getId(), user.getBalance());
+            // Lưu lịch sử giao dịch vào DB
+            userDAO.saveDepositHistory(user.getId(), req.getType(), req.getAmount());
 
-            // 🔥 map sang UserDTO
             UserDTO dto = new UserDTO(
                     user.getId(),
                     user.getUsername(),
@@ -106,6 +109,22 @@ public class AuthService {
 
             return new BalanceResponse(true, "Thành công", dto);
 
+        } catch (Exception e) {
+            return new BalanceResponse(false, e.getMessage(), null);
+        }
+    }
+
+    /**
+     * Lấy lịch sử nạp/rút của user — được gọi khi mở trang Balance.
+     */
+    public BalanceResponse getDepositHistory(int userId) {
+        try {
+            User user = userDAO.findById(userId);
+            if (user == null) return new BalanceResponse(false, "User không tồn tại", null);
+
+            List<DepositRecord> history = userDAO.getDepositHistory(userId);
+            UserDTO dto = mapToDTO(user);
+            return new BalanceResponse(true, "OK", dto, history);
         } catch (Exception e) {
             return new BalanceResponse(false, e.getMessage(), null);
         }

@@ -460,4 +460,12 @@ public class SocketClient {
             readTypedResponse(SimpleResponse.class);
         } catch (Exception ignored) {}
     }
+    public BalanceResponse getDepositHistory(int userId) {
+        try {
+            sendRequest("USER_BALANCE_HISTORY", new DepositHistoryRequest(userId));
+            return readTypedResponse(BalanceResponse.class);
+        } catch (Exception e) {
+            return new BalanceResponse(false, "Lỗi kết nối: " + e.getMessage(), null);
+        }
+    }
 }

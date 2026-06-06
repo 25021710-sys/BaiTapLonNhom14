@@ -1,10 +1,7 @@
 package com.auction.server.controller;
 
 import com.auction.common.dto.UserDTO;
-import com.auction.common.request.BalanceRequest;
-import com.auction.common.request.LoginRequest;
-import com.auction.common.request.RegisterRequest;
-import com.auction.common.request.UpdateProfileRequest;
+import com.auction.common.request.*;
 import com.auction.common.response.*;
 import com.auction.server.model.User;
 import com.auction.server.service.AuthService;
@@ -55,6 +52,7 @@ public class UserController {
                 case "USER_BALANCE"        -> handleBalance(in, out);
                 case "USER_GET_PROFILE_BY_USERNAME" -> handleGetProfileByUsername(in, out);
                 case "USER_RESOLVE_USERNAMES" -> handleResolveUsernames(in, out);
+                case "USER_BALANCE_HISTORY" -> handleBalanceHistory(in, out);
                 default -> {
                     log.warn("Action USER không hợp lệ: {}", action);
                     out.writeObject(new LoginResponse(false, "Action không hợp lệ: " + action, null));
@@ -199,6 +197,12 @@ public class UserController {
         java.util.Map<Integer, String> result =
             new com.auction.server.dao.UserDAO().findUsernamesByIds(new java.util.HashSet<>(ids));
         out.writeObject(result);
+        out.flush();
+    }
+    private void handleBalanceHistory(ObjectInputStream in, ObjectOutputStream out) throws Exception {
+        DepositHistoryRequest req = (DepositHistoryRequest) in.readObject();
+        BalanceResponse res = authService.getDepositHistory(req.getUserId());
+        out.writeObject(res);
         out.flush();
     }
 }
