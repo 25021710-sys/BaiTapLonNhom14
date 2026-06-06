@@ -82,5 +82,5 @@ Sau đó build lại trên máy Client.
 
 | Nội dung | Liên kết |
 |---|---|
-| 📄 Báo cáo PDF | *(Link Google Drive)* |
+| 📄 Báo cáo PDF | *https://drive.google.com/file/d/1T3RvcW8Ce3CATzpWXdqXrNoMll2xV8Gs/view?usp=drive_link* |
 | 🎬 Video demo | *(Link Google Drive)* |
