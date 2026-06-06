@@ -255,7 +255,7 @@ public class AuctionService {
                 // DB đã có giá >= bidAmount (người khác vừa thắng race ở DB level)
                 // Rollback: hoàn lại khoản tiền đã trừ ở bước 10
                 refundPreviousBidder(userId, requiredBalance);
-                if (previousBidderId != 0 && previousBidderId != userId) {
+                if (previousBidderId != 0) {
                     // Hoàn ngược lại tiền đã refund cho previousBidder ở bước 9
                     chargeUser(previousBidderId, currentPrice);
                 }

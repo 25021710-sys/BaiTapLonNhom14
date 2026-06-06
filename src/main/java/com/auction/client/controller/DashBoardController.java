@@ -72,10 +72,10 @@ public class DashBoardController {
     private List<AuctionDTO> allAuctions = new java.util.ArrayList<>();
 
     private final java.util.Map<Integer, ProductCardController> cardControllers =
-        new java.util.HashMap<>();
+            new java.util.HashMap<>();
 
     private final java.util.Map<Integer, Node> cardNodes =
-        new java.util.HashMap<>();
+            new java.util.HashMap<>();
 
     // ── INIT ──────────────────────────────────────────────────────────────────
 
@@ -109,8 +109,8 @@ public class DashBoardController {
         }
 
         autoRefresh = new Timeline(new KeyFrame(
-            javafx.util.Duration.seconds(5),
-            e -> loadAuctionDataFromServer()
+                javafx.util.Duration.seconds(5),
+                e -> loadAuctionDataFromServer()
         ));
         autoRefresh.setCycleCount(Timeline.INDEFINITE);
         autoRefresh.play();
@@ -313,7 +313,7 @@ public class DashBoardController {
             setActiveMenu(btnJoinedAuction);
             if (joinedAuctionView == null) {
                 FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/JoinedAuctionView.fxml"));
+                        getClass().getResource("/view/JoinedAuctionView.fxml"));
                 joinedAuctionView = loader.load();
                 joinedAuctionController = loader.getController();
                 joinedAuctionController.setOpenRoomCallback(this::openAuctionRoom);
@@ -332,7 +332,7 @@ public class DashBoardController {
             setActiveMenu(btnMyAuction);
             if (myAuctionView == null) {
                 FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/MyAuctionView.fxml"));
+                        getClass().getResource("/view/MyAuctionView.fxml"));
                 myAuctionView = loader.load();
                 myAuctionController = loader.getController();
                 myAuctionController.setOpenRoomCallback(this::openAuctionRoom);
@@ -345,38 +345,34 @@ public class DashBoardController {
         }
     }
     /**
-     * Nhận push update từ server khi user đang ở Dashboard
-     * (không ở trong phòng đấu giá cụ thể nào).
+     * Nhận push update từ server khi user đang ở Dashboard.
+     *
+     * FIX: Trước đây AUCTION_ENDED với winnerId==0 (phòng bị hủy) → return sớm
+     * → Dashboard không refresh → card phòng bị hủy vẫn hiện.
+     * Giờ: luôn gọi loadAuctionDataFromServer() khi AUCTION_ENDED.
      */
     private void handleGlobalPushUpdate(com.auction.common.dto.AuctionUpdateDTO update) {
-        // Refresh dashboard khi có phiên mới bắt đầu
-        if (update.getType() == AuctionUpdateDTO.UpdateType.AUCTION_STARTED) {
+        AuctionUpdateDTO.UpdateType type = update.getType();
+
+        // Refresh danh sách phòng trên Dashboard khi có phiên bắt đầu hoặc kết thúc/bị hủy
+        if (type == AuctionUpdateDTO.UpdateType.AUCTION_STARTED
+                || type == AuctionUpdateDTO.UpdateType.AUCTION_ENDED) {
             Platform.runLater(() -> {
-                loadAuctionDataFromServer(); // refresh dashboard
-                // Invalidate cache MyAuction để lần sau bấm vào sẽ load lại
+                loadAuctionDataFromServer();
                 if (myAuctionController != null) myAuctionController.invalidateCache();
             });
-            return;
         }
 
-        if (update.getType() == com.auction.common.dto.AuctionUpdateDTO.UpdateType.AUCTION_STARTED) {
-            Platform.runLater(this::loadAuctionDataFromServer);
-            return;
+        // Hiện toast kết thúc — chỉ khi có winner thực sự (winnerId != 0)
+        if (type == AuctionUpdateDTO.UpdateType.AUCTION_ENDED) {
+            int myId = ClientSession.getCurrentUser() != null
+                    ? ClientSession.getCurrentUser().getId() : -1;
+            if (myId == -1) return;
+            int winnerId = update.getHighestBidderId();
+            if (winnerId == 0) return; // hủy/không ai thắng → không toast
+            boolean iWon = (winnerId == myId);
+            Platform.runLater(() -> showToastNotification(update, iWon, myId));
         }
-
-        if (update.getType() != com.auction.common.dto.AuctionUpdateDTO.UpdateType.AUCTION_ENDED)
-            return;
-
-        int myId = ClientSession.getCurrentUser() != null
-            ? ClientSession.getCurrentUser().getId() : -1;
-        if (myId == -1) return;
-
-        int winnerId = update.getHighestBidderId();
-        boolean iWon = (winnerId == myId);
-
-        if (winnerId == 0) return;
-
-        Platform.runLater(() -> showToastNotification(update, iWon, myId));
     }
 
     /**
@@ -460,12 +456,12 @@ public class DashBoardController {
         if (allAuctions == null) return;
 
         List<AuctionDTO> filtered = keyword.isEmpty()
-            ? allAuctions
-            : allAuctions.stream()
-            .filter(dto -> dto.getItemName() != null &&
-                dto.getItemName().toLowerCase()
-                    .contains(keyword.toLowerCase()))
-            .collect(java.util.stream.Collectors.toList());
+                ? allAuctions
+                : allAuctions.stream()
+                .filter(dto -> dto.getItemName() != null &&
+                        dto.getItemName().toLowerCase()
+                                .contains(keyword.toLowerCase()))
+                .collect(java.util.stream.Collectors.toList());
 
         renderCardsFromData(filtered);
     }
@@ -475,7 +471,7 @@ public class DashBoardController {
 
         // Delay 200ms để UI render xong trước, rồi mới preload các view phụ
         javafx.animation.PauseTransition delay =
-            new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
+                new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
         delay.setOnFinished(e -> {
             // Load lần lượt nhưng sau khi UI đã hiện xong → không cảm thấy lag
             try {
@@ -500,41 +496,41 @@ public class DashBoardController {
         try {
 
             FXMLLoader loader =
-                new FXMLLoader(
-                    getClass().getResource("/view/ProductCard.fxml")
-                );
+                    new FXMLLoader(
+                            getClass().getResource("/view/ProductCard.fxml")
+                    );
 
             Node card = loader.load();
 
             ProductCardController ctrl =
-                loader.getController();
+                    loader.getController();
 
             ctrl.setData(dto);
 
             ctrl.setOnJoinCallback(this::openAuctionRoom);
 
             cardControllers.put(
-                dto.getAuctionId(),
-                ctrl
+                    dto.getAuctionId(),
+                    ctrl
             );
 
             cardNodes.put(
-                dto.getAuctionId(),
-                card
+                    dto.getAuctionId(),
+                    card
             );
 
             String status =
-                dto.getStatus() != null
-                    ? dto.getStatus().name()
-                    : "";
+                    dto.getStatus() != null
+                            ? dto.getStatus().name()
+                            : "";
 
             switch (status) {
 
                 case "RUNNING" ->
-                    pnlOpenBids.getChildren().add(card);
+                        pnlOpenBids.getChildren().add(card);
 
                 case "OPEN" ->
-                    pnlUpComingBids.getChildren().add(card);
+                        pnlUpComingBids.getChildren().add(card);
             }
 
         } catch (Exception e) {
@@ -544,6 +540,7 @@ public class DashBoardController {
     }
 
     private void syncAuctions(List<AuctionDTO> newList) {
+        // ── Bước 1: Thêm mới / cập nhật card cho phòng còn active ──────────────
         for (AuctionDTO dto : newList) {
             ProductCardController ctrl = cardControllers.get(dto.getAuctionId());
             Node card = cardNodes.get(dto.getAuctionId());
@@ -567,6 +564,23 @@ public class DashBoardController {
                         pnlUpComingBids.getChildren().add(card);
                     }
                 }
+            }
+        }
+
+        // ── Bước 2: Xóa card của phòng không còn trong danh sách (bị hủy/kết thúc) ──
+        java.util.Set<Integer> activeIds = new java.util.HashSet<>();
+        for (AuctionDTO dto : newList) activeIds.add(dto.getAuctionId());
+
+        java.util.List<Integer> toRemove = new java.util.ArrayList<>();
+        for (Integer id : cardNodes.keySet()) {
+            if (!activeIds.contains(id)) toRemove.add(id);
+        }
+        for (Integer id : toRemove) {
+            Node card = cardNodes.remove(id);
+            cardControllers.remove(id);
+            if (card != null) {
+                pnlOpenBids.getChildren().remove(card);
+                pnlUpComingBids.getChildren().remove(card);
             }
         }
 

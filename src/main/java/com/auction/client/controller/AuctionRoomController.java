@@ -610,11 +610,13 @@ public class AuctionRoomController {
           String errMsg = res != null ? res.getMessage() : "Lỗi kết nối server";
           showBidError(errMsg);
 
-          // FIX: Server báo phiên đã kết thúc nhưng client chưa nhận push AUCTION_ENDED
+          // FIX: Server báo phiên đã kết thúc / bị hủy nhưng client chưa nhận push AUCTION_ENDED
           // (push bị trễ do queue bận hoặc mất gói). Cập nhật UI ngay theo thông báo server.
           if (errMsg != null && (errMsg.contains("đã kết thúc") || errMsg.contains("kết thúc")
-                  || errMsg.contains("FINISHED") || errMsg.contains("already ended"))) {
-            handleServerReportedEnd(res.getCurrentHighestBid());
+                  || errMsg.contains("FINISHED") || errMsg.contains("already ended")
+                  || errMsg.contains("Đã hủy") || errMsg.contains("CANCELED"))) {
+            boolean canceled = errMsg.contains("Đã hủy") || errMsg.contains("CANCELED");
+            handleServerReportedEnd(res.getCurrentHighestBid(), canceled);
           }
         }
       });
@@ -626,13 +628,18 @@ public class AuctionRoomController {
    * Cập nhật UI giống như khi nhận được push AUCTION_ENDED.
    */
   private void handleServerReportedEnd(BigDecimal finalPrice) {
+    handleServerReportedEnd(finalPrice, false);
+  }
+
+  /** @param isCanceled true → badge "ĐÃ HỦY", false → badge "ĐÃ KẾT THÚC" */
+  private void handleServerReportedEnd(BigDecimal finalPrice, boolean isCanceled) {
     if (auctionEnded) return; // đã xử lý rồi, bỏ qua
     auctionEnded = true;
     stopCountdown();
     disableBidActions();
 
     if (lblAuctionStatus != null) {
-      lblAuctionStatus.setText("ĐÃ KẾT THÚC");
+      lblAuctionStatus.setText(isCanceled ? "ĐÃ HỦY" : "ĐÃ KẾT THÚC");
       lblAuctionStatus.getStyleClass().setAll("badge-ended");
     }
     if (lblCountdown != null) lblCountdown.setText("00:00:00");

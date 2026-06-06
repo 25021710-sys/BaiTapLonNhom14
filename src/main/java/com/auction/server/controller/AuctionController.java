@@ -714,23 +714,6 @@ public class AuctionController {
                 return;
             }
 
-            // Hoàn tiền cho người đang dẫn đầu (nếu có)
-            if (previousBidderId != 0 && heldAmount != null
-                    && heldAmount.compareTo(java.math.BigDecimal.ZERO) > 0) {
-                try {
-                    User prevBidder = userDAO.findById(previousBidderId);
-                    if (prevBidder != null) {
-                        prevBidder.setBalance(prevBidder.getBalance().add(heldAmount));
-                        userDAO.updateBalance(previousBidderId, prevBidder.getBalance());
-                        log.info("Hoàn {} VND cho bidderId={} do phòng {} bị hủy",
-                                heldAmount, previousBidderId, req.getAuctionId());
-                    }
-                } catch (Exception e) {
-                    log.error("Lỗi hoàn tiền bidderId={} khi hủy phòng {}: {}",
-                            previousBidderId, req.getAuctionId(), e.getMessage());
-                }
-            }
-
             // Broadcast kết thúc với highestBidderId = 0 → client biết không có winner
             auctionManager.broadcastAuctionEnd(req.getAuctionId(), 0, 0);
 
