@@ -37,7 +37,7 @@ mvn clean package -DskipTests
 
 ```bash
 # Windows / macOS / Linux
-mvn exec:java -Dexec.mainClass="com.auction.server.network.SocketServer"
+mvn exec:java "-Dexec.mainClass=com.auction.server.network.SocketServer"
 ```
 
 Server lắng nghe mặc định trên cổng **8080**. Để đổi cổng:
