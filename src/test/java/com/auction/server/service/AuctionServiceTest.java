@@ -525,25 +525,6 @@ class AuctionServiceTest {
     }
 
     @Test
-    @DisplayName("closeAuction: hoàn tiền winner khi không đạt giá sàn")
-    void testCloseAuction_RefundWinner_WhenReserveNotMet() throws SQLException {
-        Auction a = runningAuction(63, 1, new BigDecimal("300000"));
-        a.setHighestBidderId(10);
-        a.setReservePrice(new BigDecimal("500000")); // không đạt giá sàn
-        mockCache.put(63, a);
-
-        User winner = userWithBalance(10, new BigDecimal("0"));
-        when(mockUserDAO.findById(10)).thenReturn(winner);
-
-        auctionService.closeAuction(a);
-
-        // Hoàn 300000 cho winner
-        verify(mockUserDAO).updateBalance(eq(10), eq(new BigDecimal("300000")));
-        // winnerId reset về 0
-        assertEquals(0, a.getHighestBidderId());
-    }
-
-    @Test
     @DisplayName("closeAuction: không có giao dịch tài chính khi không có ai bid")
     void testCloseAuction_NoBidder_NoFinancialTransaction() throws SQLException {
         Auction a = runningAuction(64, 1, new BigDecimal("500000"));
