@@ -1100,7 +1100,7 @@ public class AuctionRoomController {
     if (noOne) {
       icon      = "🔨";
       title     = "Phiên đấu giá kết thúc";
-      sub       = "Không có người thắng\n(không đạt giá sàn)";
+      sub       = "Không có người thắng";
       btnText   = "Đóng";
       cardColor = "#37474F";
     } else if (iWon) {
