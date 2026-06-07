@@ -7,6 +7,7 @@ import com.auction.common.request.BalanceRequest;
 import com.auction.common.request.DepositHistoryRequest;
 import com.auction.common.response.BalanceResponse;
 import com.auction.client.session.ClientSession;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -62,13 +63,13 @@ public class BalanceController {
 
     /** Gắn cellValueFactory cho từng cột — chỉ gọi 1 lần trong initialize(). */
     private void setupTable() {
-        colType.setCellValueFactory(row -> {
-            String label = row.getValue().getType().equals("DEPOSIT") ? "⬆ Nạp tiền" : "⬇ Rút tiền";
-            return new SimpleStringProperty(label);
-        });
+        colType.setCellValueFactory(row ->
+                new SimpleStringProperty(row.getValue().getDisplayType())
+        );
         colAmount.setCellValueFactory(row -> {
-            String sign   = row.getValue().getType().equals("DEPOSIT") ? "+" : "-";
-            String amount = VND_FMT.format(row.getValue().getAmount()) + " VND";
+            DepositRecord rec = row.getValue();
+            String sign   = rec.isCredit() ? "+" : "-";
+            String amount = VND_FMT.format(rec.getAmount()) + " VND";
             return new SimpleStringProperty(sign + amount);
         });
         colTime.setCellValueFactory(row ->
@@ -76,15 +77,19 @@ public class BalanceController {
         );
     }
 
-    /** Gọi server lấy lịch sử rồi đổ vào TableView. */
+    /** Gọi server lấy lịch sử trên background thread, rồi update TableView trên FX thread. */
     private void loadHistory() {
         UserDTO user = ClientSession.getCurrentUser();
         if (user == null) return;
 
-        BalanceResponse res = SocketClient.getInstance().getDepositHistory(user.getId());
-        if (res != null && res.isSuccess() && res.getHistory() != null) {
-            historyTable.getItems().setAll(res.getHistory());
-        }
+        int userId = user.getId();
+        new Thread(() -> {
+            BalanceResponse res = SocketClient.getInstance().getDepositHistory(userId);
+            if (res != null && res.isSuccess() && res.getHistory() != null) {
+                List<DepositRecord> history = res.getHistory();
+                Platform.runLater(() -> historyTable.getItems().setAll(history));
+            }
+        }, "load-history-thread").start();
     }
 
     @FXML
@@ -132,21 +137,26 @@ public class BalanceController {
             return;
         }
 
-        // --- Gửi yêu cầu đến server qua socket ---
+        // --- Gửi yêu cầu đến server trên background thread ---
         String type = isDeposit ? "DEPOSIT" : "WITHDRAW";
-        BalanceRequest  request  = new BalanceRequest(user.getId(), amount, type);
-        BalanceResponse response = SocketClient.getInstance().updateBalance(request);
+        BalanceRequest request = new BalanceRequest(user.getId(), amount, type);
+        confirmButton.setDisable(true); // tránh double-click
 
-        if (response.isSuccess()) {
-            // Cập nhật session với dữ liệu mới từ server
-            ClientSession.setCurrentUser(response.getData());
-            refreshBalanceUI();
-            resetForm();
-            loadHistory(); // cập nhật bảng lịch sử
-            System.out.println(type + " thành công. Số dư mới: " + response.getData().getBalance());
-        } else {
-            showError(response.getMessage());
-        }
+        new Thread(() -> {
+            BalanceResponse response = SocketClient.getInstance().updateBalance(request);
+            Platform.runLater(() -> {
+                confirmButton.setDisable(false);
+                if (response != null && response.isSuccess()) {
+                    ClientSession.setCurrentUser(response.getData());
+                    refreshBalanceUI();
+                    resetForm();
+                    loadHistory(); // reload bảng lịch sử
+                    System.out.println(type + " thành công. Số dư mới: " + response.getData().getBalance());
+                } else {
+                    showError(response != null ? response.getMessage() : "Lỗi kết nối server!");
+                }
+            });
+        }, "balance-request-thread").start();
     }
 
     @FXML
@@ -177,12 +187,17 @@ public class BalanceController {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
         errorLabel.setManaged(true);
-        withdrawField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+        if (isDeposit) {
+            depositField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+        } else {
+            withdrawField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+        }
     }
 
     private void hideError() {
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
+        depositField.setStyle("");
         withdrawField.setStyle("");
     }
 }

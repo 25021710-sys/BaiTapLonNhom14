@@ -235,6 +235,7 @@ public class AuctionService {
             try {
                 user.setBalance(user.getBalance().subtract(requiredBalance));
                 userDAO.updateBalance(user.getId(), user.getBalance());
+                userDAO.saveDepositHistory(userId, "AUCTION_BID", requiredBalance);
             } catch (Exception e) {
                 log.error("Lỗi trừ tiền user {}: {}", userId, e.getMessage());
                 // Rollback: hoàn lại tiền cho previousBidder nếu đã hoàn
@@ -320,16 +321,29 @@ public class AuctionService {
         auctionLocks.remove(auction.getId()); // FIX: tránh memory leak khi phiên kết thúc tự nhiên
 
         BigDecimal currentPrice = auction.getCurrentPrice();
+        BigDecimal reservePrice = auction.getReservePrice();
         int winnerId  = auction.getHighestBidderId();
         int sellerId  = auction.getSellerId();
 
-        if (winnerId != 0 && currentPrice != null
+        if (winnerId != 0 && reservePrice != null
+                && currentPrice != null
+                && currentPrice.compareTo(reservePrice) < 0) {
+            // Không đạt giá sàn → hoàn tiền người thắng, không cộng cho seller
+            log.info("Phiên {} không đạt giá sàn. Hoàn tiền bidderId={}.",
+                    auction.getId(), winnerId);
+            refundPreviousBidder(winnerId, currentPrice, "AUCTION_REFUND");
+            auction.setHighestBidderId(0);
+
+        } else if (winnerId != 0 && currentPrice != null
                 && currentPrice.compareTo(BigDecimal.ZERO) > 0) {
+            // ✅ Có người thắng + đạt giá sàn → cộng tiền GIÁ THẮNG cho seller
+            // currentPrice = giá bid thắng cuối cùng (không phải tổng)
             try {
                 User seller = userDAO.findById(sellerId);
                 if (seller != null) {
-                    seller.setBalance(seller.getBalance().add(currentPrice));
-                    userDAO.updateBalance(sellerId, seller.getBalance());
+                    BigDecimal newSellerBalance = seller.getBalance().add(currentPrice);
+                    userDAO.updateBalance(sellerId, newSellerBalance);
+                    userDAO.saveDepositHistory(sellerId, "AUCTION_SALE", currentPrice);
                     log.info("Cộng {} VNĐ cho seller id={} (phiên {})",
                             currentPrice, sellerId, auction.getId());
                 }
@@ -464,8 +478,8 @@ public class AuctionService {
     private boolean checkAndExtend(Auction auction) {
         long secondsLeft = Duration.between(LocalDateTime.now(), auction.getEndTime()).getSeconds();
         if (secondsLeft > 0
-            && secondsLeft < ANTI_SNIPE_THRESHOLD_SECONDS
-            && auction.getExtensionCount() < 5) {   // ✅ thêm điều kiện giới hạn 5 lần
+                && secondsLeft < ANTI_SNIPE_THRESHOLD_SECONDS
+                && auction.getExtensionCount() < 5) {   // ✅ thêm điều kiện giới hạn 5 lần
 
             LocalDateTime newEnd = auction.getEndTime().plusSeconds(ANTI_SNIPE_EXTEND_SECONDS);
             auction.setEndTime(newEnd);
@@ -473,7 +487,7 @@ public class AuctionService {
             auctionDAO.extendEndTime(auction.getId(), newEnd);
 
             log.info("Anti-snipe: phiên {} gia hạn đến {} (lần {})",
-                auction.getId(), newEnd, auction.getExtensionCount());
+                    auction.getId(), newEnd, auction.getExtensionCount());
             return true;
         }
         return false;
@@ -485,12 +499,17 @@ public class AuctionService {
      * Log warning nếu thất bại nhưng không throw (không chặn bid đang diễn ra).
      */
     private void refundPreviousBidder(int bidderId, BigDecimal amount) {
+        refundPreviousBidder(bidderId, amount, "AUCTION_REFUND");
+    }
+
+    private void refundPreviousBidder(int bidderId, BigDecimal amount, String historyType) {
         try {
             User prev = userDAO.findById(bidderId);
             if (prev != null) {
-                prev.setBalance(prev.getBalance().add(amount));
-                userDAO.updateBalance(prev.getId(), prev.getBalance());
-                log.debug("Hoàn {} VND cho userId={}", amount, bidderId);
+                BigDecimal newBalance = prev.getBalance().add(amount);
+                userDAO.updateBalance(prev.getId(), newBalance);
+                userDAO.saveDepositHistory(bidderId, historyType, amount);
+                log.debug("Hoàn {} VND cho userId={} (type={})", amount, bidderId, historyType);
             }
         } catch (Exception e) {
             log.warn("Lỗi hoàn tiền cho userId={}: {}", bidderId, e.getMessage());
