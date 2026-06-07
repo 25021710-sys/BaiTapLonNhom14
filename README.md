@@ -83,4 +83,4 @@ Sau đó build lại trên máy Client.
 | Nội dung | Liên kết |
 |---|---|
 | 📄 Báo cáo PDF | *https://drive.google.com/file/d/1T3RvcW8Ce3CATzpWXdqXrNoMll2xV8Gs/view?usp=drive_link* |
-| 🎬 Video demo | *https://drive.google.com/drive/folders/1LKYFVHGvG1QqYAjXKxDeuiffmOlf2BrR?usp=drive_link* |
+| 🎬 Video demo | *https://drive.google.com/file/d/1LxUNeMPNUnHL9Rr6Wn0GwAO38u1GjC-b/view?usp=drive_link* |
