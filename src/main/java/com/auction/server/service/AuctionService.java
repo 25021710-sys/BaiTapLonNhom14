@@ -320,22 +320,11 @@ public class AuctionService {
         auctionLocks.remove(auction.getId()); // FIX: tránh memory leak khi phiên kết thúc tự nhiên
 
         BigDecimal currentPrice = auction.getCurrentPrice();
-        BigDecimal reservePrice = auction.getReservePrice();
         int winnerId  = auction.getHighestBidderId();
         int sellerId  = auction.getSellerId();
 
-        if (winnerId != 0 && reservePrice != null
-                && currentPrice != null
-                && currentPrice.compareTo(reservePrice) < 0) {
-            // Không đạt giá sàn → hoàn tiền người thắng, không cộng cho seller
-            log.info("Phiên {} không đạt giá sàn. Hoàn tiền bidderId={}.",
-                    auction.getId(), winnerId);
-            refundPreviousBidder(winnerId, currentPrice);
-            auction.setHighestBidderId(0);
-
-        } else if (winnerId != 0 && currentPrice != null
+        if (winnerId != 0 && currentPrice != null
                 && currentPrice.compareTo(BigDecimal.ZERO) > 0) {
-            // ✅ Có người thắng + đạt giá sàn → cộng tiền cho seller
             try {
                 User seller = userDAO.findById(sellerId);
                 if (seller != null) {
