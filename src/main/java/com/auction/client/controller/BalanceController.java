@@ -194,6 +194,12 @@ public class BalanceController {
         NumberFormat nf = NumberFormat.getInstance(Locale.of("vi", "VN"));
         balanceLabel.setText(nf.format(user.getBalance()) + " VND");
     }
+
+    /** Gọi khi navigate ra khỏi tab Balance để hủy callback, tránh memory leak. */
+    public void cleanup() {
+        SocketClient.getInstance().removeBalanceUpdateCallback(balancePushHandler);
+    }
+
     private void resetForm() {
         depositField.clear();
         withdrawField.clear();

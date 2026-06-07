@@ -69,6 +69,12 @@ public class DashBoardController {
 
     private Timeline autoRefresh;
 
+    // Field lưu reference cố định — tránh bug lambda tạo object mới mỗi lần
+    private final java.util.function.Consumer<com.auction.common.dto.AuctionUpdateDTO>
+            pushHandler    = this::handleGlobalPushUpdate;
+    private final java.util.function.Consumer<com.auction.common.dto.AuctionUpdateDTO>
+            balanceHandler = this::handleBalancePush;
+
     private List<AuctionDTO> allAuctions = new java.util.ArrayList<>();
 
     private final java.util.Map<Integer, ProductCardController> cardControllers =
@@ -115,9 +121,25 @@ public class DashBoardController {
         autoRefresh.setCycleCount(Timeline.INDEFINITE);
         autoRefresh.play();
         // ── Lắng nghe push update từ server khi đang ở Dashboard
-        SocketClient.getInstance().addPushCallback(this::handleGlobalPushUpdate);
+        SocketClient.getInstance().addPushCallback(pushHandler);
+
+        // ── Đăng ký nhận BALANCE_UPDATED push từ server (dù ở màn hình nào)
+        // Callback này tồn tại suốt session đăng nhập, cleanup() sẽ remove khi logout
+        SocketClient.getInstance().addBalanceUpdateCallback(balanceHandler);
+
         dashboardCenter = rootPane.getCenter();
         preloadAllViews();
+
+        // Hook cleanup() vào lifecycle của Stage — gọi khi đóng cửa sổ hoặc đổi scene
+        rootPane.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((obs2, oldWin, newWin) -> {
+                    if (newWin instanceof javafx.stage.Stage stage) {
+                        stage.setOnHiding(e -> cleanup());
+                    }
+                });
+            }
+        });
     }
 
     // ── LOAD DATA TỪ SERVER ───────────────────────────────────────────────────
@@ -449,7 +471,21 @@ public class DashBoardController {
      */
     public void cleanup() {
         if (autoRefresh != null) autoRefresh.stop();
-        SocketClient.getInstance().removePushCallback(this::handleGlobalPushUpdate);
+        SocketClient.getInstance().removePushCallback(pushHandler);
+        SocketClient.getInstance().removeBalanceUpdateCallback(balanceHandler);
+    }
+
+    /**
+     * Nhận BALANCE_UPDATED push từ server sau khi phiên đấu giá kết thúc.
+     * newPrice field của DTO chứa balance mới của user hiện tại.
+     * Được gọi trên FX thread (đã Platform.runLater trong SocketClient).
+     */
+    private void handleBalancePush(com.auction.common.dto.AuctionUpdateDTO update) {
+        if (update.getNewPrice() == null) return;
+        // Chỉ cập nhật balance trong session — KHÔNG hiện Alert ở đây.
+        // AuctionRoomController đã có dialog kết thúc phiên cho người trong phòng.
+        // Người ở Dashboard sẽ thấy toast từ handleGlobalPushUpdate (AUCTION_ENDED).
+        ClientSession.updateBalance(update.getNewPrice());
     }
 
     private void filterAndRender(String keyword) {

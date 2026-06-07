@@ -26,13 +26,20 @@ public class UserProfileController {
     @FXML private AnchorPane contentArea;
     @FXML private ImageView sideBarAvatar;
 
+    /** Controller của trang đang hiển thị trong contentArea (nếu có). */
+    private Object currentPageController = null;
+
     private void setPage(String fxmlPath) {
         try {
-            // 1. Load file giao diện mới
+            // Gọi cleanup() trên controller cũ trước khi thay trang
+            cleanupCurrentPage();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/" + fxmlPath));
             Node node = loader.load();
 
-            // 2. Xóa nội dung hiện tại và thêm nội dung mới vào
+            // Lưu lại controller mới để có thể cleanup sau
+            currentPageController = loader.getController();
+
             contentArea.getChildren().clear();
             contentArea.getChildren().add(node);
             AnchorPane.setTopAnchor(node, 0.0);
@@ -45,9 +52,29 @@ public class UserProfileController {
             System.out.println("Lỗi: Không tìm thấy file " + fxmlPath);
         }
     }
+
+    /**
+     * Gọi cleanup() trên controller hiện tại nếu nó hỗ trợ.
+     * Dùng reflection để không cần ép kiểu cứng — thêm cleanup() vào
+     * bất kỳ controller nào cũng sẽ được gọi tự động khi rời trang.
+     */
+    private void cleanupCurrentPage() {
+        if (currentPageController == null) return;
+        try {
+            currentPageController.getClass()
+                    .getMethod("cleanup")
+                    .invoke(currentPageController);
+        } catch (NoSuchMethodException ignored) {
+            // Controller không có cleanup() → bình thường, bỏ qua
+        } catch (Exception e) {
+            System.err.println("[UserProfileController] cleanup() lỗi: " + e.getMessage());
+        }
+        currentPageController = null;
+    }
+
     @FXML
     public void showProfile() {
-        setPage("ProfileContent.fxml"); // File FXML chỉ chứa ruột của trang Profile
+        setPage("ProfileContent.fxml");
     }
 
     @FXML
@@ -57,9 +84,10 @@ public class UserProfileController {
 
     @FXML
     public void handleLogout(javafx.scene.input.MouseEvent event) {
+        // Dọn dẹp trang hiện tại trước khi logout
+        cleanupCurrentPage();
 
         try {
-
             ClientSession.clear();
 
             FXMLLoader loader = new FXMLLoader(
@@ -72,18 +100,14 @@ public class UserProfileController {
                     .getScene()
                     .getWindow();
 
-            // Giữ nguyên kích thước hiện tại
             double width = stage.getWidth();
             double height = stage.getHeight();
 
             Scene scene = new Scene(root, width, height);
 
             stage.setScene(scene);
-
             stage.setTitle("Login");
-
             stage.centerOnScreen();
-
             stage.show();
 
         } catch (Exception e) {
@@ -93,9 +117,10 @@ public class UserProfileController {
 
     @FXML
     public void returnDashBoard(javafx.scene.input.MouseEvent event) {
+        // Dọn dẹp trang hiện tại trước khi rời UserProfile
+        cleanupCurrentPage();
 
         try {
-
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/DashboardView.fxml")
             );
@@ -106,7 +131,6 @@ public class UserProfileController {
                     .getScene()
                     .getWindow();
 
-            // Giữ nguyên kích thước hiện tại
             double width = stage.getWidth();
             double height = stage.getHeight();
 
@@ -119,6 +143,7 @@ public class UserProfileController {
             e.printStackTrace();
         }
     }
+
     @FXML
     public void initialize() {
         UserDTO user = ClientSession.getCurrentUser();
