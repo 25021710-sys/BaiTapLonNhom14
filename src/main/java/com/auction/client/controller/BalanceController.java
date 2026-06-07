@@ -59,6 +59,22 @@ public class BalanceController {
         setupTable();
         refreshBalanceUI();
         loadHistory();
+
+        // FIX: Đăng ký listener để auto-refresh khi balance thay đổi từ bên ngoài
+        // (ví dụ: phiên đấu giá kết thúc → server cộng tiền → AuctionRoomController
+        //  gọi ClientSession.updateBalance() → listener này được trigger)
+        ClientSession.addBalanceListener(this::onBalanceChanged);
+    }
+
+    /**
+     * Được gọi bởi ClientSession khi balance thay đổi từ bất kỳ nơi nào.
+     * Phải chuyển sang FX thread vì listener có thể được gọi từ background thread.
+     */
+    private void onBalanceChanged() {
+        Platform.runLater(() -> {
+            refreshBalanceUI();
+            loadHistory();
+        });
     }
 
     /** Gắn cellValueFactory cho từng cột — chỉ gọi 1 lần trong initialize(). */

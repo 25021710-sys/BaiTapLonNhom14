@@ -414,6 +414,24 @@ public class AuctionRoomController {
 
         // ── Hiện popup thông báo kết thúc
         showAuctionEndedDialog(update);
+
+        // ── FIX: Fetch balance + lịch sử mới từ server
+        // Server đã cộng tiền cho seller / hoàn tiền bidder thua trong DB,
+        // nhưng ClientSession chưa biết → phải chủ động lấy về.
+        // Dùng getDepositHistory vì nó trả về cả UserDTO (balance mới) lẫn history.
+        int myId = ClientSession.getCurrentUser() != null
+                ? ClientSession.getCurrentUser().getId() : -1;
+        if (myId != -1) {
+          new Thread(() -> {
+            com.auction.common.response.BalanceResponse res =
+                    SocketClient.getInstance().getDepositHistory(myId);
+            if (res != null && res.isSuccess() && res.getData() != null) {
+              // updateBalance() sẽ notify tất cả balanceListener đã đăng ký,
+              // bao gồm BalanceController (nếu tab đang mở) → tự reload lịch sử
+              ClientSession.updateBalance(res.getData().getBalance());
+            }
+          }, "refresh-balance-after-end").start();
+        }
       }
       case PARTICIPANT_CHANGED -> {
         if (lblParticipants != null) {

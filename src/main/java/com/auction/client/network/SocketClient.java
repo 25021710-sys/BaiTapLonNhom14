@@ -193,7 +193,7 @@ public class SocketClient {
                 long remaining = deadline - System.currentTimeMillis();
                 if (remaining <= 0)
                     throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
-                Object resp = responseQueue.poll(remaining, TimeUnit.MILLISECONDS);
+                Object resp = responseQueue.poll(remaining, TimeUnit.MILLISECONDS);// lấy phần tử đầu tiên trong queue và loại bỏ nó.
                 if (resp == null)
                     throw new IOException("Timeout chờ response từ server (" + RESPONSE_TIMEOUT_MS + "ms)");
                 if (expectedType.isInstance(resp))
