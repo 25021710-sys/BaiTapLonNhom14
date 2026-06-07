@@ -116,6 +116,11 @@ public class DashBoardController {
         autoRefresh.play();
         // ── Lắng nghe push update từ server khi đang ở Dashboard
         SocketClient.getInstance().addPushCallback(this::handleGlobalPushUpdate);
+
+        // ── Đăng ký nhận BALANCE_UPDATED push từ server (dù ở màn hình nào)
+        // Callback này tồn tại suốt session đăng nhập, cleanup() sẽ remove khi logout
+        SocketClient.getInstance().addBalanceUpdateCallback(this::handleBalancePush);
+
         dashboardCenter = rootPane.getCenter();
         preloadAllViews();
     }
@@ -450,6 +455,26 @@ public class DashBoardController {
     public void cleanup() {
         if (autoRefresh != null) autoRefresh.stop();
         SocketClient.getInstance().removePushCallback(this::handleGlobalPushUpdate);
+        SocketClient.getInstance().removeBalanceUpdateCallback(this::handleBalancePush);
+    }
+
+    /**
+     * Nhận BALANCE_UPDATED push từ server sau khi phiên đấu giá kết thúc.
+     * newPrice field của DTO chứa balance mới của user hiện tại.
+     * Được gọi trên FX thread (đã Platform.runLater trong SocketClient).
+     */
+    private void handleBalancePush(com.auction.common.dto.AuctionUpdateDTO update) {
+        if (update.getNewPrice() == null) return;
+        ClientSession.updateBalance(update.getNewPrice());
+        // Hiện thông báo nhỏ cho seller biết tiền đã được cộng
+        if (update.getMessage() != null && !update.getMessage().isBlank()) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setTitle("Phiên đấu giá kết thúc");
+            alert.setHeaderText(null);
+            alert.setContentText("💰 " + update.getMessage());
+            alert.show();
+        }
     }
 
     private void filterAndRender(String keyword) {

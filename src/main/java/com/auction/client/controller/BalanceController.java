@@ -1,6 +1,7 @@
 package com.auction.client.controller;
 
 import com.auction.client.network.SocketClient;
+import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.dto.DepositRecord;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.BalanceRequest;
@@ -60,21 +61,24 @@ public class BalanceController {
         refreshBalanceUI();
         loadHistory();
 
-        // FIX: Đăng ký listener để auto-refresh khi balance thay đổi từ bên ngoài
-        // (ví dụ: phiên đấu giá kết thúc → server cộng tiền → AuctionRoomController
-        //  gọi ClientSession.updateBalance() → listener này được trigger)
-        ClientSession.addBalanceListener(this::onBalanceChanged);
+        // FIX: Đăng ký nhận BALANCE_UPDATED push từ server.
+        // Dùng Consumer<AuctionUpdateDTO> thay Runnable để nhận history đính kèm trong DTO
+        // → render thẳng vào bảng, không gọi socket thêm (tránh race condition với push listener)
+        SocketClient.getInstance().addBalanceUpdateCallback(this::onBalancePush);
     }
 
     /**
-     * Được gọi bởi ClientSession khi balance thay đổi từ bất kỳ nơi nào.
-     * Phải chuyển sang FX thread vì listener có thể được gọi từ background thread.
+     * Nhận BALANCE_UPDATED từ server — được gọi trên FX thread (Platform.runLater trong SocketClient).
+     * update.getNewPrice()  = balance mới của seller
+     * update.getHistory()   = toàn bộ lịch sử mới nhất (server đính kèm sẵn)
      */
-    private void onBalanceChanged() {
-        Platform.runLater(() -> {
-            refreshBalanceUI();
-            loadHistory();
-        });
+    private void onBalancePush(AuctionUpdateDTO update) {
+        if (update.getNewPrice() != null) {
+            refreshBalanceUI(); // ClientSession.updateBalance đã được gọi trước đó ở DashBoardController
+        }
+        if (update.getHistory() != null) {
+            historyTable.getItems().setAll(update.getHistory());
+        }
     }
 
     /** Gắn cellValueFactory cho từng cột — chỉ gọi 1 lần trong initialize(). */
@@ -188,6 +192,11 @@ public class BalanceController {
         if (user == null) return;
         NumberFormat nf = NumberFormat.getInstance(Locale.of("vi", "VN"));
         balanceLabel.setText(nf.format(user.getBalance()) + " VND");
+    }
+
+    /** Gọi khi navigate ra khỏi tab Balance để hủy callback, tránh memory leak. */
+    public void cleanup() {
+        SocketClient.getInstance().removeBalanceUpdateCallback(this::onBalancePush);
     }
 
     private void resetForm() {

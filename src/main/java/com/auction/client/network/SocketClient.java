@@ -75,6 +75,19 @@ public class SocketClient {
     // khi add/remove đồng thời với push listener đang iterate
     private final List<Consumer<AuctionUpdateDTO>> pushCallbacks = new CopyOnWriteArrayList<>();
 
+    // Callback nhận BALANCE_UPDATED push từ server (update balance bất kể đang ở màn hình nào)
+    private final List<Consumer<AuctionUpdateDTO>> balanceUpdateCallbacks = new CopyOnWriteArrayList<>();
+
+    /** Đăng ký nhận push BALANCE_UPDATED. Gọi một lần sau khi đăng nhập. */
+    public void addBalanceUpdateCallback(Consumer<AuctionUpdateDTO> callback) {
+        if (callback != null) balanceUpdateCallbacks.add(callback);
+    }
+
+    /** Hủy đăng ký (gọi khi logout). */
+    public void removeBalanceUpdateCallback(Consumer<AuctionUpdateDTO> callback) {
+        balanceUpdateCallbacks.remove(callback);
+    }
+
     private SocketClient(String host, int port) {
         this.host = host;
         this.port = port;
@@ -149,6 +162,24 @@ public class SocketClient {
                     Object obj = in.readObject();
                     if ("AUCTION_PUSH_UPDATE".equals(obj)) {
                         AuctionUpdateDTO update = (AuctionUpdateDTO) in.readObject();
+
+                        // BALANCE_UPDATED → route riêng, không cần đang trong phòng đấu giá
+                        if (update.getType() == AuctionUpdateDTO.UpdateType.BALANCE_UPDATED) {
+                            List<Consumer<AuctionUpdateDTO>> balSnap =
+                                    new java.util.ArrayList<>(balanceUpdateCallbacks);
+                            if (!balSnap.isEmpty()) {
+                                javafx.application.Platform.runLater(() -> {
+                                    for (Consumer<AuctionUpdateDTO> cb : balSnap) {
+                                        try { cb.accept(update); }
+                                        catch (Exception ex) {
+                                            System.err.println("[SocketClient] BalanceCallback lỗi: " + ex.getMessage());
+                                        }
+                                    }
+                                });
+                            }
+                            continue; // không forward sang pushCallbacks
+                        }
+
                         // Fan-out đến tất cả callback đã đăng ký (mỗi màn hình phòng đấu giá mở)
                         List<Consumer<AuctionUpdateDTO>> snapshot = new java.util.ArrayList<>(pushCallbacks);
                         if (!snapshot.isEmpty()) {

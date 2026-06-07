@@ -346,6 +346,27 @@ public class AuctionService {
                     userDAO.saveDepositHistory(sellerId, "AUCTION_SALE", currentPrice);
                     log.info("Cộng {} VNĐ cho seller id={} (phiên {})",
                             currentPrice, sellerId, auction.getId());
+
+                    // Push balance mới thẳng đến seller (dù seller không ở trong phòng)
+                    // Đính kèm luôn history mới nhất → client render thẳng, không cần gọi socket thêm
+                    java.util.List<com.auction.common.dto.DepositRecord> sellerHistory = null;
+                    try {
+                        sellerHistory = userDAO.getDepositHistory(sellerId);
+                    } catch (Exception he) {
+                        log.warn("Không lấy được history cho seller id={}: {}", sellerId, he.getMessage());
+                    }
+
+                    com.auction.common.dto.AuctionUpdateDTO balanceUpdate =
+                            new com.auction.common.dto.AuctionUpdateDTO(
+                                    auction.getId(),
+                                    com.auction.common.dto.AuctionUpdateDTO.UpdateType.BALANCE_UPDATED,
+                                    newSellerBalance,   // newPrice field tái dụng để chứa balance mới
+                                    sellerId, null, null,
+                                    "Phiên đấu giá kết thúc! Bạn nhận được " +
+                                            String.format("%,.0f", currentPrice.doubleValue()) + " VNĐ."
+                            );
+                    balanceUpdate.setHistory(sellerHistory);
+                    com.auction.server.network.ClientHandler.pushToUser(sellerId, balanceUpdate);
                 }
             } catch (Exception e) {
                 log.error("Lỗi cộng tiền seller id={}: {}", sellerId, e.getMessage());

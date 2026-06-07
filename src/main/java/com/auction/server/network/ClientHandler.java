@@ -32,6 +32,22 @@ public class ClientHandler implements Runnable, AuctionObserver {
 
     private static final Logger log = LoggerFactory.getLogger(ClientHandler.class);
 
+    // ── Registry: userId → ClientHandler đang online ──────────────────────────
+    // Dùng để server push thẳng đến 1 user cụ thể (ví dụ cộng tiền seller)
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, ClientHandler>
+            onlineHandlers = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Tìm handler đang online của userId, null nếu user không online. */
+    public static ClientHandler findOnline(int userId) {
+        return onlineHandlers.get(userId);
+    }
+
+    /** Push AuctionUpdateDTO đến một userId cụ thể (nếu đang online). */
+    public static void pushToUser(int userId, com.auction.common.dto.AuctionUpdateDTO update) {
+        ClientHandler h = onlineHandlers.get(userId);
+        if (h != null) h.onAuctionUpdate(update);
+    }
+
     private final Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream  in;
@@ -89,6 +105,10 @@ public class ClientHandler implements Runnable, AuctionObserver {
                             }
                         }
                     }
+
+                    // Sau mỗi request, nếu user vừa đăng nhập → đăng ký vào registry
+                    int uid = session.getUserId();
+                    if (uid != -1) onlineHandlers.put(uid, this);
                 }
             }
 
@@ -97,6 +117,9 @@ public class ClientHandler implements Runnable, AuctionObserver {
         } catch (Exception e) {
             log.error("[{}] Lỗi kết nối: {} ({})", clientAddr, e.getMessage(), session);
         } finally {
+            // Hủy đăng ký khỏi registry khi ngắt kết nối
+            int uid = session.getUserId();
+            if (uid != -1) onlineHandlers.remove(uid);
             session.logout();
             closeConnections();
         }
@@ -116,7 +139,6 @@ public class ClientHandler implements Runnable, AuctionObserver {
                 out.reset(); // xóa object cache sau push
             }
         } catch (Exception e) {
-            log.warn("Không thể push update đến client: {}", e.getMessage());
         }
     }
 
@@ -126,4 +148,3 @@ public class ClientHandler implements Runnable, AuctionObserver {
         try { if (socket != null && !socket.isClosed()) socket.close();} catch (Exception ignored) {}
     }
 }
- 

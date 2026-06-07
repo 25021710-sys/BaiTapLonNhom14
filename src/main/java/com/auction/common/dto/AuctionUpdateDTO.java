@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class AuctionUpdateDTO implements Serializable {
     @Serial
@@ -16,7 +17,8 @@ public class AuctionUpdateDTO implements Serializable {
         AUCTION_STARTED,
         AUCTION_PAUSED,
         AUCTION_RESUMED,
-        PARTICIPANT_CHANGED
+        PARTICIPANT_CHANGED,
+        BALANCE_UPDATED   // Server push balance mới thẳng đến client (không cần ở trong phòng)
     }
 
     private int auctionId;
@@ -27,6 +29,10 @@ public class AuctionUpdateDTO implements Serializable {
     private LocalDateTime newEndTime;
     private String message;
     private int participantCount;
+
+    // Dùng cho BALANCE_UPDATED: server đính kèm luôn history mới nhất
+    // → client render thẳng, không cần gọi socket thêm lần nào
+    private List<com.auction.common.dto.DepositRecord> history;
 
     public AuctionUpdateDTO() {}
 
@@ -72,4 +78,7 @@ public class AuctionUpdateDTO implements Serializable {
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
+
+    public List<com.auction.common.dto.DepositRecord> getHistory() { return history; }
+    public void setHistory(List<com.auction.common.dto.DepositRecord> history) { this.history = history; }
 }
