@@ -318,26 +318,14 @@ public class AuctionService {
         auction.setStatus(AuctionStatus.FINISHED);
         auctionDAO.updateStatus(auction.getId(), AuctionStatus.FINISHED);
         auctionCache.remove(auction.getId());
-        auctionLocks.remove(auction.getId()); // FIX: tránh memory leak khi phiên kết thúc tự nhiên
+        auctionLocks.remove(auction.getId());
 
         BigDecimal currentPrice = auction.getCurrentPrice();
-        BigDecimal reservePrice = auction.getReservePrice();
-        int winnerId  = auction.getHighestBidderId();
-        int sellerId  = auction.getSellerId();
+        int winnerId = auction.getHighestBidderId();
+        int sellerId = auction.getSellerId();
 
-        if (winnerId != 0 && reservePrice != null
-                && currentPrice != null
-                && currentPrice.compareTo(reservePrice) < 0) {
-            // Không đạt giá sàn → hoàn tiền người thắng, không cộng cho seller
-            log.info("Phiên {} không đạt giá sàn. Hoàn tiền bidderId={}.",
-                    auction.getId(), winnerId);
-            refundPreviousBidder(winnerId, currentPrice, "AUCTION_REFUND");
-            auction.setHighestBidderId(0);
-
-        } else if (winnerId != 0 && currentPrice != null
+        if (winnerId != 0 && currentPrice != null
                 && currentPrice.compareTo(BigDecimal.ZERO) > 0) {
-            // ✅ Có người thắng + đạt giá sàn → cộng tiền GIÁ THẮNG cho seller
-            // currentPrice = giá bid thắng cuối cùng (không phải tổng)
             try {
                 User seller = userDAO.findById(sellerId);
                 if (seller != null) {
@@ -347,9 +335,7 @@ public class AuctionService {
                     log.info("Cộng {} VNĐ cho seller id={} (phiên {})",
                             currentPrice, sellerId, auction.getId());
 
-                    // Push balance mới thẳng đến seller (dù seller không ở trong phòng)
-                    // Đính kèm luôn history mới nhất → client render thẳng, không cần gọi socket thêm
-                    java.util.List<com.auction.common.dto.DepositRecord> sellerHistory = null;
+                    List<com.auction.common.dto.DepositRecord> sellerHistory = null;
                     try {
                         sellerHistory = userDAO.getDepositHistory(sellerId);
                     } catch (Exception he) {
@@ -360,7 +346,7 @@ public class AuctionService {
                             new com.auction.common.dto.AuctionUpdateDTO(
                                     auction.getId(),
                                     com.auction.common.dto.AuctionUpdateDTO.UpdateType.BALANCE_UPDATED,
-                                    newSellerBalance,   // newPrice field tái dụng để chứa balance mới
+                                    newSellerBalance,
                                     sellerId, null, null,
                                     "Phiên đấu giá kết thúc! Bạn nhận được " +
                                             String.format("%,.0f", currentPrice.doubleValue()) + " VNĐ."
@@ -374,7 +360,7 @@ public class AuctionService {
         }
 
         log.info("Phiên {} kết thúc. Winner={}, giá={}",
-                auction.getId(), auction.getHighestBidderId(), currentPrice);
+                auction.getId(), winnerId, currentPrice);
     }
 
     // ── ADMIN ─────────────────────────────────────────────────────────────────

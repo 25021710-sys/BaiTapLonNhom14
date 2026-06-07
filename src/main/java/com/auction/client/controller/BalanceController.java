@@ -5,7 +5,6 @@ import com.auction.common.dto.AuctionUpdateDTO;
 import com.auction.common.dto.DepositRecord;
 import com.auction.common.dto.UserDTO;
 import com.auction.common.request.BalanceRequest;
-import com.auction.common.request.DepositHistoryRequest;
 import com.auction.common.response.BalanceResponse;
 import com.auction.client.session.ClientSession;
 import javafx.application.Platform;
@@ -23,6 +22,7 @@ import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 /**
  * BalanceController - xử lý giao diện nạp/rút tiền.
@@ -51,6 +51,13 @@ public class BalanceController {
 
     private boolean isDeposit = true;
 
+    /**
+     * Lưu reference cố định để add và remove là CÙNG một object.
+     * Nếu dùng this::onBalancePush trực tiếp ở cả 2 chỗ thì Java tạo
+     * 2 lambda object khác nhau → remove() không tìm thấy → memory leak.
+     */
+    private final Consumer<AuctionUpdateDTO> balancePushHandler = this::onBalancePush;
+
     @FXML
     public void initialize() {
         if (ClientSession.getCurrentUser() == null) {
@@ -61,10 +68,7 @@ public class BalanceController {
         refreshBalanceUI();
         loadHistory();
 
-        // FIX: Đăng ký nhận BALANCE_UPDATED push từ server.
-        // Dùng Consumer<AuctionUpdateDTO> thay Runnable để nhận history đính kèm trong DTO
-        // → render thẳng vào bảng, không gọi socket thêm (tránh race condition với push listener)
-        SocketClient.getInstance().addBalanceUpdateCallback(this::onBalancePush);
+        SocketClient.getInstance().addBalanceUpdateCallback(balancePushHandler);
     }
 
     /**
@@ -74,7 +78,7 @@ public class BalanceController {
      */
     private void onBalancePush(AuctionUpdateDTO update) {
         if (update.getNewPrice() != null) {
-            refreshBalanceUI(); // ClientSession.updateBalance đã được gọi trước đó ở DashBoardController
+            refreshBalanceUI();
         }
         if (update.getHistory() != null) {
             historyTable.getItems().setAll(update.getHistory());
@@ -137,7 +141,6 @@ public class BalanceController {
         UserDTO user = ClientSession.getCurrentUser();
         if (user == null) return;
 
-        // Lấy số tiền từ input
         String amountStr = isDeposit ? depositField.getText() : withdrawField.getText();
         BigDecimal amount;
         try {
@@ -151,16 +154,14 @@ public class BalanceController {
             return;
         }
 
-        // Kiểm tra đủ tiền rút không (validate trước khi gửi server)
         if (!isDeposit && user.getBalance().compareTo(amount) < 0) {
             showError("Số dư không đủ để thực hiện rút tiền!");
             return;
         }
 
-        // --- Gửi yêu cầu đến server trên background thread ---
         String type = isDeposit ? "DEPOSIT" : "WITHDRAW";
         BalanceRequest request = new BalanceRequest(user.getId(), amount, type);
-        confirmButton.setDisable(true); // tránh double-click
+        confirmButton.setDisable(true);
 
         new Thread(() -> {
             BalanceResponse response = SocketClient.getInstance().updateBalance(request);
@@ -170,7 +171,7 @@ public class BalanceController {
                     ClientSession.setCurrentUser(response.getData());
                     refreshBalanceUI();
                     resetForm();
-                    loadHistory(); // reload bảng lịch sử
+                    loadHistory();
                     System.out.println(type + " thành công. Số dư mới: " + response.getData().getBalance());
                 } else {
                     showError(response != null ? response.getMessage() : "Lỗi kết nối server!");
@@ -193,12 +194,6 @@ public class BalanceController {
         NumberFormat nf = NumberFormat.getInstance(Locale.of("vi", "VN"));
         balanceLabel.setText(nf.format(user.getBalance()) + " VND");
     }
-
-    /** Gọi khi navigate ra khỏi tab Balance để hủy callback, tránh memory leak. */
-    public void cleanup() {
-        SocketClient.getInstance().removeBalanceUpdateCallback(this::onBalancePush);
-    }
-
     private void resetForm() {
         depositField.clear();
         withdrawField.clear();
